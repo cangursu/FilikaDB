@@ -1,0 +1,4 @@
+# ext_orc extension
+comment = 'ext_orc datatype'
+default_version = '0.0.1'
+relocatable = true
