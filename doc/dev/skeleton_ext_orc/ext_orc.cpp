@@ -33,7 +33,7 @@ void Print(std::ostream &out, const std::string &name, const std::string &value 
 
 void Print(std::ostream &out, const std::string &name, long value)
 {
-    Print(out, std::move(std::to_string(value)));
+    Print(out, name, std::move(std::to_string(value)));
 }
 
 void ORCPrintContents(std::ostream &out, const std::string &filename, const orc::RowReaderOptions& rowReaderOpts) 
@@ -46,7 +46,7 @@ void ORCPrintContents(std::ostream &out, const std::string &filename, const orc:
         orc::ReaderOptions              readerOpts;
         std::unique_ptr<orc::Reader>    reader;
         std::unique_ptr<orc::RowReader> rowReader;
-        
+
         reader     = orc::createReader(orc::readLocalFile(filename), readerOpts);
         rowReader  = reader->createRowReader(rowReaderOpts);
 
