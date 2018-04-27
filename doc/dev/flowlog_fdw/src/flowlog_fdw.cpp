@@ -59,7 +59,7 @@ static void fileGetOptions( Oid foreigntableid,
                             bool *is_program,
                             List **other_options) ;
 
-static void PrintOptionList(List *optionList, const char *msg = nullptr);
+static void PrintOptionList(List *optionList, const char *msg /*= nullptr*/);
 
 
 
