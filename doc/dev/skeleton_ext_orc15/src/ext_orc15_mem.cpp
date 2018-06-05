@@ -542,8 +542,8 @@ Datum ext_orc_mem_test(PG_FUNCTION_ARGS)
 
     std::unique_ptr<MemOutputStream> outStream(new MemOutputStream("MemOStream"));
 
-    MemTestLoad("/home/postgres/projects/filikadb/doc/dev/skeleton_ext_orc/TestCSVFileImport.test10rows.csv", outStream);
-
+    //MemTestLoad("/home/postgres/projects/filikadb/doc/dev/skeleton_ext_orc/TestCSVFileImport.test10rows.csv", outStream);
+    MemTestLoad("/home/postgres/projects/orc/examples/TestCSVFileImport.test10rows.csv", outStream);
 
     std::string dmp = outStream->dump();
 	LOG_LINE_GLOBAL("DUMP", "\n%s", dmp.c_str());

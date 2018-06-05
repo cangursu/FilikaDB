@@ -6,25 +6,21 @@ MODULES = ext_orc          # our c module file to build
 
 # postgres build stuff
 
-HOME_DIR=/home/postgres
-#HOME_DIR=~
+LIB_DIR_ORC=/home/postgres/projects/orc/build/_CPack_Packages/Linux/TGZ/ORC-1.5.1-SNAPSHOT-Linux/lib
+INC_DIR_ORC=/home/postgres/projects/orc/build/_CPack_Packages/Linux/TGZ/ORC-1.5.1-SNAPSHOT-Linux/include
+
+INC_DIRS=$(INC_DIR_ORC)
+LIB_DIRS=$(LIB_DIR_ORC)
+
 
 PG_CONFIG = /usr/local/pgsql/bin/pg_config
 
-PG_CPPFLAGS = -fPIC -std=c++11 -rdynamic            \
-              -I$(HOME_DIR)/orc/c++/include                   \
-              -I$(HOME_DIR)/orc/c++/src                       \
-              -I$(HOME_DIR)/orc/build/c++/include             \
-              -I$(HOME_DIR)/orc/build/c++/src                 \
-              -I$(HOME_DIR)/orc/c++/libs/protobuf-2.6.0/src   \
+PG_CPPFLAGS = -fPIC -std=c++11 -rdynamic        \
+              $(foreach d, $(INC_DIRS), -I$d)   \
 
 #PG_LIBS = -libstdc++
 CUSTOM_COPT = -lstdc++ -rdynamic -shared            \
-              -L$(HOME_DIR)/orc/build/c++/src                 \
-              -L$(HOME_DIR)/orc/build/c++/libs/protobuf-2.6.0 \
-              -L$(HOME_DIR)/orc/build/c++/libs/zlib-1.2.8     \
-              -L$(HOME_DIR)/orc/build/c++/libs/snappy-1.1.2   \
-              -L$(HOME_DIR)/orc/build/c++/libs/lz4-r131       \
+              $(foreach d, $(LIB_DIRS), -L$d)       \
               -lorc                                 \
               -lprotobuf                            \
               -lz                                   \

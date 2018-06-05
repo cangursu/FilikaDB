@@ -7,7 +7,6 @@ SELECT ext_orc_scan('/home/postgres/projects/filikadb/doc/dev/skeleton_ext_orc/T
  orcFile Len       :  79                                                                             +
  ORCScanFile       :                                                                                 +
  filename          :  /home/postgres/projects/filikadb/doc/dev/skeleton_ext_orc/TestOrcFile.test1.orc+
- cwd               :  /usr/local/pgsql/data                                                          +
  Rows              :  2                                                                              +
  Batches           :  1                                                                              +
  

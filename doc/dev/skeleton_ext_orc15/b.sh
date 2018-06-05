@@ -15,7 +15,6 @@ make clean && sudo make uninstall && make && sudo make install
 if [ "$?" != "0" ]; then
     echo
     echo .... build error ....
-
 else
     echo
     echo .... start db ....

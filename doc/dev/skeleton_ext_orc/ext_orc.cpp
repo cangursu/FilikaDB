@@ -83,7 +83,8 @@ void ORCScanFile(std::ostream &out, const std::string &filename, uint64_t batchS
     Print(out, "filename", filename);
     
     char cwd[1024] = "";
-    Print(out, "cwd", getcwd(cwd, sizeof(cwd)) ? cwd : "NA");
+    getcwd(cwd, sizeof(cwd));
+    //Print(out, "cwd", getcwd(cwd, sizeof(cwd)) ? cwd : "NA");
     
     try
     {
