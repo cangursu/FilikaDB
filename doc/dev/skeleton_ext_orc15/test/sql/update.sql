@@ -1,0 +1,5 @@
+BEGIN;
+DROP EXTENSION ext_orc15;
+CREATE EXTENSION ext_orc15 VERSION '0.0.1';
+ALTER EXTENSION ext_orc15 UPDATE TO '0.0.2';
+SELECT 'abcdefg'::big_ext_orc15;
