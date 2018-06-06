@@ -6,26 +6,30 @@ MODULES = ext_orc          # our c module file to build
 
 # postgres build stuff
 
-LIB_DIR_ORC=/home/postgres/projects/orc/build/_CPack_Packages/Linux/TGZ/ORC-1.5.1-SNAPSHOT-Linux/lib
-INC_DIR_ORC=/home/postgres/projects/orc/build/_CPack_Packages/Linux/TGZ/ORC-1.5.1-SNAPSHOT-Linux/include
-
-INC_DIRS=$(INC_DIR_ORC)
-LIB_DIRS=$(LIB_DIR_ORC)
-
+ORC_HOME_DIR=/home/postgres/projects/orc14
+#HOME_DIR=~
 
 PG_CONFIG = /usr/local/pgsql/bin/pg_config
 
-PG_CPPFLAGS = -fPIC -std=c++11 -rdynamic        \
-              $(foreach d, $(INC_DIRS), -I$d)   \
+PG_CPPFLAGS = -fPIC -std=c++11 -rdynamic                      \
+              -I$(ORC_HOME_DIR)/c++/include                   \
+              -I$(ORC_HOME_DIR)/c++/src                       \
+              -I$(ORC_HOME_DIR)/build/c++/include             \
+              -I$(ORC_HOME_DIR)/build/c++/src                 \
+              -I$(ORC_HOME_DIR)/c++/libs/protobuf-2.6.0/src   \
 
 #PG_LIBS = -libstdc++
-CUSTOM_COPT = -lstdc++ -rdynamic -shared            \
-              $(foreach d, $(LIB_DIRS), -L$d)       \
-              -lorc                                 \
-              -lprotobuf                            \
-              -lz                                   \
-              -lsnappy                              \
-              -llz4                                 \
+CUSTOM_COPT = -lstdc++ -rdynamic -shared                      \
+              -L$(ORC_HOME_DIR)/build/c++/src                 \
+              -L$(ORC_HOME_DIR)/build/c++/libs/protobuf-2.6.0 \
+              -L$(ORC_HOME_DIR)/build/c++/libs/zlib-1.2.8     \
+              -L$(ORC_HOME_DIR)/build/c++/libs/snappy-1.1.2   \
+              -L$(ORC_HOME_DIR)/build/c++/libs/lz4-r131       \
+              -lorc                                           \
+              -lprotobuf                                      \
+              -lz                                             \
+              -lsnappy                                        \
+              -llz4                                           \
 
 #SHLIB_LINK =    -l$(HOME_DIR)/orc/build/c++/src/liborc.a                      \
 #                -l$(HOME_DIR)/orc/build/c++/libs/protobuf-2.6.0/libprotobuf.a \

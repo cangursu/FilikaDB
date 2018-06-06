@@ -1,5 +1,5 @@
 # Orc Ext extension
 comment = 'ext_orc15 datatype'
-default_version = '0.0.3'
+default_version = '0.0.2'
 relocatable = true
 module_pathname = '$libdir/ext_orc15'

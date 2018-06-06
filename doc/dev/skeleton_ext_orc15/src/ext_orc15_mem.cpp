@@ -426,10 +426,10 @@ void MemTestLoad(const std::string &input, std::unique_ptr<MemOutputStream> &out
 
     CallMeasure  callElapses;
 
-	LOG_LINE_GLOBAL("MemTest", "Open csv %s", input.c_str());
+    LOG_LINE_GLOBAL("MemTest", "Open csv %s", input.c_str());
     FileBatchLoader  finput(input.c_str());
 
-	LOG_LINE_GLOBAL("MemTest", "Begin looping");
+    LOG_LINE_GLOBAL("MemTest", "Begin looping");
 
     while (/*!eof*/ !finput.IsEof())
     {
@@ -475,20 +475,20 @@ void MemTestLoad(const std::string &input, std::unique_ptr<MemOutputStream> &out
             }
 
 
-			LOG_LINE_GLOBAL("MemTest", "Write");
+            LOG_LINE_GLOBAL("MemTest", "Write");
             callElapses += CallMeasureFrame([&](){writer->add(*rowBatch);});
         }
 
     }
 
 
-	LOG_LINE_GLOBAL("MemTest", "Close");
+    LOG_LINE_GLOBAL("MemTest", "Close");
     callElapses += CallMeasureFrame([&](){writer->close();});
 
 
-	LOG_LINE_GLOBAL("MemTest", "Finish importing Orc file." );
-	LOG_LINE_GLOBAL("MemTest", "Total writer elasped time: %f ns.", callElapses.elapses);
-	LOG_LINE_GLOBAL("MemTest", "Total writer CPU time: %f ns."    , callElapses.elapsesCPU);
+    LOG_LINE_GLOBAL("MemTest", "Finish importing Orc file." );
+    LOG_LINE_GLOBAL("MemTest", "Total writer elasped time: %f ns.", callElapses.elapses);
+    LOG_LINE_GLOBAL("MemTest", "Total writer CPU time: %f ns."    , callElapses.elapsesCPU);
 }
 
 
@@ -497,7 +497,7 @@ void TestMemReader(void *buff, uint64_t len)
 {
     try
     {
-		LOG_LINE_GLOBAL("MemTest", "----> buff=%p, len=%ul", buff, len);
+        LOG_LINE_GLOBAL("MemTest", "----> buff=%p, len=%ul", buff, len);
 
         orc::ReaderOptions              readerOpts;
         std::unique_ptr<orc::Reader>    reader     = orc::createReader(std::unique_ptr<orc::InputStream> (new MemInputStream ("TestMemStream",  (MemIOStream::byte_t *)buff, len)), readerOpts);;
@@ -522,20 +522,28 @@ void TestMemReader(void *buff, uint64_t len)
             }
         }
 
-		LOG_LINE_GLOBAL("MemTest", "----<");
+        LOG_LINE_GLOBAL("MemTest", "----<");
     }
     catch(...)
     {
-		LOG_LINE_GLOBAL("ERROR", ".... Something CATHED ....");
+        LOG_LINE_GLOBAL("ERROR", ".... Something CATHED ....");
     }
 }
 
 
 Datum ext_orc_mem_test(PG_FUNCTION_ARGS)
 {
-    elog(LOG, "ext_orc_mem_test 1");
-	LogLineGlbSocketName("/home/postgres/sock_ext_orc15");
-	LOG_LINE_GLOBAL("Init", "VER  0.0.1\n");
+    elog(LOG, "ext_orc_mem_test 0.0.1");
+    
+    std::string sname;
+    text *snameText = PG_GETARG_TEXT_PP(0);
+    if (snameText != nullptr && VARSIZE_ANY_EXHDR(snameText) > 0)
+        sname = std::string(VARDATA(snameText), VARSIZE_ANY_EXHDR(snameText));
+    else 
+        sname = std::string("/home/postgres/sock_ext_orc15");
+    
+    LogLineGlbSocketName (sname.c_str());
+    LOG_LINE_GLOBAL("Init", "VER  0.0.1\n");
 
 
     LOG_LINE_GLOBAL("ext_orc_mem_test", "---->");
@@ -546,12 +554,12 @@ Datum ext_orc_mem_test(PG_FUNCTION_ARGS)
     MemTestLoad("/home/postgres/projects/orc/examples/TestCSVFileImport.test10rows.csv", outStream);
 
     std::string dmp = outStream->dump();
-	LOG_LINE_GLOBAL("DUMP", "\n%s", dmp.c_str());
+    LOG_LINE_GLOBAL("DUMP", "\n%s", dmp.c_str());
 
 
     TestMemReader(outStream->Ptr(), outStream->Idx());
 
     LOG_LINE_GLOBAL("ext_orc_mem_test", "----<");
-    PG_RETURN_TEXT_P(cstring_to_text("ext_orc_mem_test done"));
+    PG_RETURN_TEXT_P(cstring_to_text(sname.c_str()));
 }
 
