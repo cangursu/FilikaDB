@@ -1,0 +1,6 @@
+# OrcInMem extension
+comment = 'OrcInMem Extension'
+default_version = '0.0.1'
+relocatable = true
+module_pathname = '$libdir/OrcInMem'
+
