@@ -1,0 +1,6 @@
+select orc_inmem_test('/home/postgres/sock_orcinmem');
+    orc_inmem_test     
+-----------------------
+ TestMemReader SUCCEED
+(1 row)
+
