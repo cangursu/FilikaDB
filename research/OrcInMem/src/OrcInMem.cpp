@@ -39,25 +39,32 @@ PG_FUNCTION_INFO_V1(orc_inmem_test);
 //#include <sstream>
 //#include <memory>
 #include <string>
+#include <sstream>
 #include <vector>
 #include <algorithm>
+#include <dirent.h>
+#include <stdexcept>
 
 
 
 
 
+const char  g_delimiter       = ',';
+const int   g_buffLength      = 8192;
 
-char gDelimiter = ',';
+const char* g_defLogSocket    = "/home/postgres/sock_orcinmem";
+const char* g_defTestDataPath = "/home/postgres/projects/filikadb/research/OrcInMem/test/sql/data/";
+
 
 std::string extractColumn(std::string s, uint64_t colIndex)
 {
     uint64_t col = 0;
     size_t start = 0;
-    size_t end = s.find(gDelimiter);
+    size_t end = s.find(g_delimiter);
     while (col < colIndex && end != std::string::npos)
     {
         start = end + 1;
-        end = s.find(gDelimiter, start);
+        end = s.find(g_delimiter, start);
         ++col;
     }
     return col == colIndex ? s.substr(start, end - start) : "";
@@ -365,11 +372,14 @@ ORC_UNIQUE_PTR<orc::Writer> MemTestWriter(orc::Type &ftype, MemOutputStream *out
 class BatchLoader
 {
     public:
+        virtual ~BatchLoader()
+        {
+        }
         virtual const std::vector<std::string> &LoadBatch(uint64_t batchSize) = 0;
         virtual bool IsEqual(const std::vector<std::string> val) const
         {
             return true;
-        }            
+        }
 };
 
 class FileBatchLoader : public BatchLoader
@@ -379,15 +389,15 @@ public:
     {
         _data.clear();
     }
-    
+
     FileBatchLoader(const std::string &fname)
         : _f(fname.c_str())
         , _isEof(false)
     {
         if (!_f)
         {
-            elog (ERROR, "Unable to open %s", fname.c_str());
             LOG_LINE_GLOBAL("ERROR", "Unable to open %s", fname.c_str());
+            elog (LOG, "ERROR : Unable to open %s", fname.c_str());
             _isEof = true;
         }
     }
@@ -399,7 +409,7 @@ public:
 
         for (uint64_t i = 0; i < batchSize; ++i)
         {
-            if (!std::getline(_f, line))
+            if (!_f.good() || !std::getline(_f, line))
             {
                 _isEof = true;
                 break;
@@ -408,11 +418,11 @@ public:
         }
         return Data();
     }
-    
-    virtual bool IsEqual(const std::vector<std::string> val) const 
+
+    virtual bool IsEqual(const std::vector<std::string> val) const
     {
-          return ( _data.size() < val.size() ) ? 
-               std::equal(_data.cbegin(), _data.cend(),   val.cbegin()) : 
+          return ( _data.size() < val.size() ) ?
+               std::equal(_data.cbegin(), _data.cend(),   val.cbegin()) :
                std::equal(val.cbegin(),     val.cend(), _data.cbegin()) ;
 
     }
@@ -435,23 +445,48 @@ private :
 };
 
 
+
+class RandomBatchLoader  : public BatchLoader
+{
+    public:
+        RandomBatchLoader(int startIndex, int increment, const std::string typestr)
+            : _startIdx(startIndex)
+            , _inc(increment)
+        {
+            //std::vector<std::pair<std::string, Type*> > res = TypeImpl::parseType(input, 0, input.size());
+        }
+
+        virtual const std::vector<std::string> &LoadBatch(uint64_t batchSize)
+        {
+            return _data;
+        }
+        std::vector<std::string> _data;
+    private :
+        int _startIdx = 1;
+        int _idx      = 1;
+        int _inc      = 1;
+};
+
+
+
+
+
 void MemTestLoad(const std::string &input, std::unique_ptr<MemOutputStream> &outStream)
 {
     char cwd[256];
 
-	LOG_LINE_GLOBAL("MemTest", "--->");
-	LOG_LINE_GLOBAL("cwd", "%s", getcwd(cwd, 256));
+    LOG_LINE_GLOBAL("MemTest", "--->");
+    LOG_LINE_GLOBAL("cwd", "%s", getcwd(cwd, 256));
 
+    uint64_t                                batchSize   = 2*2048;//1024;
 
-    uint64_t                   batchSize   = 1024;
+    orc::DataBuffer<char>                   buffer(*orc::getDefaultPool(), 4 * 1024 * 1024);
 
-    orc::DataBuffer<char>      buffer(*orc::getDefaultPool(), 4 * 1024 * 1024);
+    std::string                             schema   = "struct<a:bigint,b:string,c:double>";
+    std::unique_ptr<orc::Type>              fileType = orc::Type::buildTypeFromString("struct<col1:bigint,col2:string,col3:double>");
 
-    std::string                schema = "struct<a:bigint,b:string,c:double>";
-    std::unique_ptr<orc::Type> fileType = orc::Type::buildTypeFromString("struct<col1:bigint,col2:string,col3:double>");
-
-    std::unique_ptr<orc::Writer>               writer      = MemTestWriter(*fileType, outStream.get());
-    std::unique_ptr<orc::ColumnVectorBatch>    rowBatch    = writer->createRowBatch(batchSize);
+    std::unique_ptr<orc::Writer>            writer   = MemTestWriter(*fileType, outStream.get());
+    std::unique_ptr<orc::ColumnVectorBatch> rowBatch = writer->createRowBatch(batchSize);
 
 
     CallMeasure  callElapses;
@@ -459,7 +494,6 @@ void MemTestLoad(const std::string &input, std::unique_ptr<MemOutputStream> &out
     LOG_LINE_GLOBAL("MemTest", "Open csv %s", input.c_str());
     FileBatchLoader  finput(input.c_str());
 
-    LOG_LINE_GLOBAL("MemTest", "Begin looping");
 
     while (/*!eof*/ !finput.IsEof())
     {
@@ -523,106 +557,139 @@ void MemTestLoad(const std::string &input, std::unique_ptr<MemOutputStream> &out
 
 
 
-const char * g_source =
-"0,a,0.0\n"
-"1,b,1.1\n"
-"2,c,2.2\n"
-"3,d,\n"
-"4,,4.4\n"
-",f,5.5\n"
-",,\n"
-"7,h,7.7\n"
-"8,i,8.8\n"
-"9,j,9.9\n";
-
-
-
-std::vector <std::string> g_expect = 
-{
-    "{\"col1\": 0, \"col2\": \"a\", \"col3\": 0}"      ,
-    "{\"col1\": 1, \"col2\": \"b\", \"col3\": 1.1}"    ,
-    "{\"col1\": 2, \"col2\": \"c\", \"col3\": 2.2}"     ,
-    "{\"col1\": 3, \"col2\": \"d\", \"col3\": null}"    ,
-    "{\"col1\": 4, \"col2\": null, \"col3\": 4.4}"      ,
-    "{\"col1\": null, \"col2\": \"f\", \"col3\": 5.5}"  ,
-    "{\"col1\": null, \"col2\": null, \"col3\": null}"  ,
-    "{\"col1\": 7, \"col2\": \"h\", \"col3\": 7.7}"     ,
-    "{\"col1\": 8, \"col2\": \"i\", \"col3\": 8.8}"     ,
-    "{\"col1\": 9, \"col2\": \"j\", \"col3\": 9.9}"     
-};
-
-bool TestMemReader(void *buff, uint64_t len)
+bool TestMemReader(void *buff, uint64_t len, const std::string &fname)
 {
     bool isEqual = true;
     try
     {
-        LOG_LINE_GLOBAL("MemTest", "----> buff=%p, len=%ul", buff, len);
+        LOG_LINE_GLOBAL("MemTest", "----> buff=%p, len=%lu, fname=%s", buff, len, fname.c_str());
 
-        orc::ReaderOptions              readerOpts;
-        std::unique_ptr<orc::Reader>    reader     = orc::createReader(std::unique_ptr<orc::InputStream> (new MemInputStream ("TestMemStream",  (MemIOStream::byte_t *)buff, len)), readerOpts);;
-
-        orc::RowReaderOptions           rowReaderOpts;
-        std::unique_ptr<orc::RowReader> rowReader  = reader->createRowReader(rowReaderOpts);
-
-        std::unique_ptr<orc::ColumnVectorBatch> batch = rowReader->createRowBatch(1000);
-
-        std::string line;
-        std::unique_ptr<orc::ColumnPrinter> printer = createColumnPrinter(line, &rowReader->getSelectedType());
-
-        while (isEqual && rowReader->next(*batch))
+        std::ifstream fexpected(fname);
+        if (!fexpected.good())
         {
-            printer->reset(*batch);
-            for(unsigned long i = 0; isEqual && (i < batch->numElements); ++i)
-            {                
-                line.clear();
-                printer->printRow(i);
+            LOG_LINE_GLOBAL("MemTest", "Unable to open file %s", fname.c_str());
+            isEqual = false;
+        }
+        else
+        {
+            orc::ReaderOptions              readerOpts;
+            std::unique_ptr<orc::Reader>    reader     = orc::createReader(std::unique_ptr<orc::InputStream> (new MemInputStream ("TestMemStream",  (MemIOStream::byte_t *)buff, len)), readerOpts);
 
-                //LOG_LINE_GLOBAL("MemTest", "line:%s, expect:%s %s" , line.c_str(), g_expect[i].c_str(), ( g_expect[i] == line)? "true":"false"        );
-                isEqual = (line == g_expect[i]);
+            orc::RowReaderOptions           rowReaderOpts;
+            std::unique_ptr<orc::RowReader> rowReader  = reader->createRowReader(rowReaderOpts);
+
+            std::unique_ptr<orc::ColumnVectorBatch> batch = rowReader->createRowBatch(512);
+
+            std::string lineMem;
+            char        lineFile[g_buffLength];
+
+            std::unique_ptr<orc::ColumnPrinter> printer = createColumnPrinter(lineMem, &rowReader->getSelectedType());
+            while (isEqual && rowReader->next(*batch))
+            {
+                printer->reset(*batch);
+                for(unsigned long i = 0; isEqual && (i < batch->numElements); ++i)
+                {
+                    lineMem.clear();
+                    printer->printRow(i);
+
+                    fexpected.getline(lineFile, g_buffLength);
+
+                    //LOG_LINE_GLOBAL("MemTest", "line:%s, expect:%s %s" , lineMem.c_str(), lineFile, lineMem.compare(lineFile)? "true":"false"        );
+                    isEqual = lineMem.compare(lineFile);
+                }
             }
         }
-
         LOG_LINE_GLOBAL("MemTest", "----<");
         return isEqual;
+    }
+    catch(std::exception &ex)
+    {
+        isEqual = false;
+        LOG_LINE_GLOBAL("ERROR", "(%s) CATHED", ex.what());
     }
     catch(...)
     {
         isEqual = false;
         LOG_LINE_GLOBAL("ERROR", ".... Something CATHED ....");
     }
-    
-    return isEqual;    
+
+    return isEqual;
 }
 
+
+bool OrcInmemTest(const std::string &fname)
+{
+    std::string in  = fname;
+    std::string out = fname;
+    in  += ".in";
+    out += ".out";
+
+    std::unique_ptr<MemOutputStream> outStream(new MemOutputStream("MemOStream"));
+    MemTestLoad(in, outStream);
+
+    std::string dmp = outStream->dump();
+    LOG_LINE_GLOBAL("OrcInmemTst", "Size : %ld, Idx : %ld", outStream->Size(), outStream->Idx());
+
+    bool result = TestMemReader(outStream->Ptr(), outStream->Idx(), out);
+    LOG_LINE_GLOBAL("OrcInmemTst", "result = %s", result?"true":"false");
+
+    return result;
+}
+
+#define GETARG_TEXT(pidx, defVal)  getarg_text(PG_GETARG_TEXT_PP(pidx), (defVal))
+
+std::string getarg_text(text *textVal, const char *defVal)
+{
+    if (textVal != nullptr && VARSIZE_ANY_EXHDR(textVal) > 0)
+        return std::move(std::string(VARDATA(textVal), VARSIZE_ANY_EXHDR(textVal)));
+    else
+        return defVal;
+    
+}
 
 Datum orc_inmem_test(PG_FUNCTION_ARGS)
 {
     elog(LOG, "orc_inmem_test - ver:0.0.1");
+
+    const std::string logs = GETARG_TEXT(0, g_defLogSocket);
+    const std::string path  = GETARG_TEXT(1, g_defTestDataPath);
+
+    LogLineGlbSocketName (logs.c_str());
     
-    std::string sname;
-    text *snameText = PG_GETARG_TEXT_PP(0);
-    if (snameText != nullptr && VARSIZE_ANY_EXHDR(snameText) > 0)
-        sname = std::string(VARDATA(snameText), VARSIZE_ANY_EXHDR(snameText));
-    else 
-        sname = std::string("/home/postgres/sock_orcinmemzzz");
-    
-    LogLineGlbSocketName (sname.c_str());
     LOG_LINE_GLOBAL("Init", "VER  0.0.1\n");
-
-
     LOG_LINE_GLOBAL("orc_inmem_test", "---->");
-
-    std::unique_ptr<MemOutputStream> outStream(new MemOutputStream("MemOStream"));
-    MemTestLoad("/home/postgres/projects/filikadb/research/OrcInMem/source_data.csv", outStream);
-
-    std::string dmp = outStream->dump();
-    LOG_LINE_GLOBAL("orc_inmem_test", "DUMP : \n%s", dmp.c_str());
-
-
-    std::string result = TestMemReader(outStream->Ptr(), outStream->Idx()) ? "TestMemReader SUCCEED" : "TestMemReader FAILED";
-    LOG_LINE_GLOBAL("orc_inmem_test", "result = %s", result.c_str());
+    LOG_LINE_GLOBAL("orc_inmem_test", "Path : %s", path.c_str());
     
+    bool  isPass = true;
+    DIR *dir = opendir(path.c_str());
+    if (dir == NULL)
+    {
+        LOG_LINE_GLOBAL("orc_inmem_test", "Unable to access path");
+        isPass = false;
+    }
+    else
+    {
+        dirent *de = nullptr;
+        while (nullptr != (de = readdir (dir)) && (true == isPass))
+        {
+            if (   (de->d_type && DT_REG)
+                && (0 == strncmp(de->d_name, "TestData", 8))
+                && (0 == strncmp(de->d_name + (strlen(de->d_name)-3), ".in", 8)) )
+            {
+                std::string fname(de->d_name, 0, (strlen(de->d_name)-3));
+                LOG_LINE_GLOBAL("orc_inmem_test", "*");
+                LOG_LINE_GLOBAL("orc_inmem_test", "FName   = %s", fname.c_str());
+
+                isPass = OrcInmemTest(path + fname);
+                LOG_LINE_GLOBAL("orc_inmem_test", "isPass = %s", isPass?"true":"false");
+            }
+        }
+
+        closedir(dir);
+    }
+
+
     LOG_LINE_GLOBAL("orc_inmem_test", "----<");
-    PG_RETURN_TEXT_P(cstring_to_text(result.c_str()));
+    PG_RETURN_TEXT_P(cstring_to_text(isPass ? "TestMemReader SUCCEED" : "TestMemReader FAILED"));
 }
 
