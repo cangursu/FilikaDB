@@ -23,3 +23,6 @@
 *.swp
 temp
 results
+
+# Prj
+nbproject

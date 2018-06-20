@@ -34,8 +34,8 @@ public:
     {
     }
     */
-    
-    
+
+
     CallMeasure operator + (const CallMeasure &other) const
     {
         return { elapses  + other.elapses, elapsesCPU  + other.elapsesCPU };
@@ -44,11 +44,11 @@ public:
     {
         return { elapses  - other.elapses, elapsesCPU  - other.elapsesCPU };
     }
-    CallMeasure operator += (const CallMeasure &other) 
+    CallMeasure operator += (const CallMeasure &other)
     {
         return { elapses += other.elapses, elapsesCPU += other.elapsesCPU };
     }
-    CallMeasure operator -= (const CallMeasure &other) 
+    CallMeasure operator -= (const CallMeasure &other)
     {
         return { elapses -= other.elapses, elapsesCPU -= other.elapsesCPU };
     }
@@ -56,34 +56,32 @@ public:
 //private :
     double elapses    = 0.0;
     double elapsesCPU = 0.0;
-}; 
-    
+};
+
 
 template <typename Functor>
 CallMeasure CallMeasureFrame(Functor f)
 {
     timespec ts_start;
-    timespec ts_start_clock;
+    timespec ts_start_cpu;
     timespec ts_end;
-    timespec ts_end_clock;
-    
-    clock_gettime(CLOCK_MONOTONIC         , &ts_start       );
-    clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts_start_clock );
+    timespec ts_end_cpu;
+
+    clock_gettime(CLOCK_MONOTONIC         , &ts_start     );
+    clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts_start_cpu );
 
     f();
-    
-    clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts_end_clock   );
-    clock_gettime(CLOCK_MONOTONIC         , &ts_end         );
 
-    return { TS_TO_MICRO(ts_end - ts_start), TS_TO_MICRO(ts_end_clock - ts_start_clock)} ; 
+    clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts_end_cpu   );
+    clock_gettime(CLOCK_MONOTONIC         , &ts_end       );
+
+    return { TS_TO_MICRO(ts_end - ts_start), TS_TO_MICRO(ts_end_cpu - ts_start_cpu)} ;
 }
-    
-    
 
 
 
 
-    
+
 #define CALL_MEASURE_FRAME(s1, s2, ...)                                                                           \
     {                                                                                                             \
         struct timeval t_start, t_end;                                                                            \
@@ -92,7 +90,7 @@ CallMeasure CallMeasureFrame(Functor f)
                                                                                                                   \
                                                                                                                   \
         LOG_LINE_GLOBAL(s1, s2);                                                                                  \
-         #__VA_ARGS__ ;                                                                                              \
+         #__VA_ARGS__ ;                                                                                           \
                                                                                                                   \
                                                                                                                   \
         totalCPUTime += (clock() - c_start);                                                                      \

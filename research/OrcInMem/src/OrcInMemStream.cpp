@@ -2,14 +2,14 @@
 
 
 #ifdef __cplusplus
-extern "C" { 
+extern "C" {
 #endif
 
 #include "postgres.h"
 #include "utils/builtins.h"
 
 #ifdef __cplusplus
-} 
+}
 #endif
 
 
@@ -26,7 +26,7 @@ extern "C" {
 
 /**
  *    PGMemPool : Memory Manager
- * 
+ *
  */
 
 PGMemPool &PGMemPool::Pool()
@@ -37,11 +37,18 @@ PGMemPool &PGMemPool::Pool()
 
 char* PGMemPool::malloc(uint64_t size)
 {
-    return static_cast<char*>(palloc(size)); 
+    void *p = nullptr;
+    if (size > 0 && (nullptr == (p = palloc(size))))
+    {
+        LOG_LINE_GLOBAL("***ERROR***", "Memory ERROR... palloc() fialed (size:%ld)", size);
+    }
+    //LOG_LINE_GLOBAL("Mem", "size:%ld, p:%p", size, p);
+    return static_cast<char*>(p);
 }
 
 void  PGMemPool::free(char* p)
 {
+    //LOG_LINE_GLOBAL("Mem", "%p", p);
     if (p) pfree(p);
 }
 
@@ -51,17 +58,18 @@ void  PGMemPool::free(char* p)
 
 
 /**
- *    MemOutputStream: ORC's OutputStream interface implementation 
+ *    MemOutputStream: ORC's OutputStream interface implementation
  *
  */
 
 
-void MemOutputStream::write(const void* buf, size_t length) 
+void MemOutputStream::write(const void* buf, size_t length)
 {
-	// LOG_LINE_GLOBAL("OutputStream", "length = %d", length);    
+//    LOG_LINE_GLOBAL("OutputStream-1", "Size = %ld, Idx = %ld, length = %ld", Size(), Idx(), length);
+
     _buffer.Appand((byte_t*)buf, length);
-    _curIdx = _buffer.Idx();
-	// LOG_LINE_GLOBAL("OutputStream", "Idx = %d", _buffer.Idx());
+
+//    LOG_LINE_GLOBAL("OutputStream-2", "Size = %ld, Idx = %ld, length = %ld", Size(), Idx(), length);
 }
 
 
@@ -73,7 +81,7 @@ std::string MemOutputStream::dump(const std::string &msg/* = "" */)
     ss << /*GetDate() <<*/ "Size   :  " << _buffer.Size() << std::endl;
     ss << /*GetDate() <<*/ "Length :  " << _buffer.Idx()  << std::endl;
     ss << /*GetDate() <<*/ "Dump ---< ";
-    
+
     return std::move(ss.str());
 }
 
