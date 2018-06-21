@@ -1,6 +1,3 @@
-# The project contains 2 folders:
-# src: contains all *.cpp source code;
-# include: contains all header files.
 
 # Compiler & linker.
 CC=g++

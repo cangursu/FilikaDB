@@ -401,7 +401,7 @@ public:
     {
         if (!_f)
         {
-            LOG_LINE_GLOBAL("ERROR", "Unable to open %s", fname.c_str());
+            LOG_LINE_GLOBAL("ERROR", "Unable to open ", fname);
             elog (LOG, "ERROR : Unable to open %s", fname.c_str());
             _isEof = true;
         }
@@ -434,8 +434,8 @@ public:
 
     static void dump (const std::string &msg, const std::vector<std::string> &data)
     {
-        LOG_LINE_GLOBAL("MemTest", "Data Dump: %s", msg.c_str());
-        for (const auto &ln : data) LOG_LINE_GLOBAL("MemTest", "%s", ln.c_str());
+        LOG_LINE_GLOBAL("MemTest", "Data Dump: ", msg);
+        for (const auto &ln : data) LOG_LINE_GLOBAL("MemTest", ln);
     }
 
 
@@ -491,7 +491,7 @@ void MemTestLoad(const std::string &input, std::unique_ptr<MemOutputStream> &out
 
     CallMeasure  callElapses;
 
-    //LOG_LINE_GLOBAL("MemTest", "Open csv %s", input.c_str());
+    //LOG_LINE_GLOBAL("MemTest", "Open csv", input);
     FileBatchLoader  finput(input.c_str());
 
     try
@@ -544,7 +544,7 @@ void MemTestLoad(const std::string &input, std::unique_ptr<MemOutputStream> &out
     }
     catch(std::exception &ex)
     {
-        LOG_LINE_GLOBAL("ERROR", "(%s) CATHED", ex.what());
+        LOG_LINE_GLOBAL("ERROR", "Excaption CATHED ", ex.what());
     }
     catch(...)
     {
@@ -552,8 +552,8 @@ void MemTestLoad(const std::string &input, std::unique_ptr<MemOutputStream> &out
     }
 
 
-    LOG_LINE_GLOBAL("MemTest", "Total writer elasped time: %.03f ms.", callElapses.elapses);
-    LOG_LINE_GLOBAL("MemTest", "Total writer CPU time: %.03f ms."    , callElapses.elapsesCPU);
+    LOG_LINE_GLOBAL("MemTest", "Total writer elasped time: ", callElapses.elapses,    " ms.");
+    LOG_LINE_GLOBAL("MemTest", "Total writer CPU time    : ", callElapses.elapsesCPU, " ms.");
 }
 
 
@@ -566,12 +566,12 @@ bool TestMemReader(void *buff, uint64_t len, const std::string &fname)
 
     try
     {
-        //LOG_LINE_GLOBAL("MemTest", "----> buff=%p, len=%lu, fname=%s", buff, len, fname.c_str());
+        LOG_LINE_GLOBAL("MemTest", "----> buff=", buff, ", len=", len, ", fname=", fname);
 
         std::ifstream fexpected(fname);
         if (!fexpected.good())
         {
-            LOG_LINE_GLOBAL("**ERROR**", "Unable to open file %s", fname.c_str());
+            LOG_LINE_GLOBAL("**ERROR**", "Unable to open file ", fname);
             isEqual = false;
         }
         else
@@ -603,23 +603,23 @@ bool TestMemReader(void *buff, uint64_t len, const std::string &fname)
 
                         fexpected.getline(lineFile, g_buffLength);
 
-                        //LOG_LINE_GLOBAL("MemTest", "line:%s, expect:%s %s" , lineMem.c_str(), lineFile, lineMem.compare(lineFile)? "true":"false"        );
+                        //LOG_LINE_GLOBAL("MemTest", "line:", lineMem, ", expect:" , lineFile, " ", lineMem.compare(lineFile)? "true":"false");
                         isEqual = lineMem.compare(lineFile);
                     }
                 }
             }
         }
 
-        LOG_LINE_GLOBAL("MemTest", "Total reader elasped time: %.03f ms.", callMsr.elapses);
-        LOG_LINE_GLOBAL("MemTest", "Total reader CPU time: %.03f ms."    , callMsr.elapsesCPU);
+        LOG_LINE_GLOBAL("MemTest", "Total reader elasped time: ", callMsr.elapses,    " ms.");
+        LOG_LINE_GLOBAL("MemTest", "Total reader CPU     time: ", callMsr.elapsesCPU, " ms.");
 
-        //LOG_LINE_GLOBAL("MemTest", "----<");
+        LOG_LINE_GLOBAL("MemTest", "----<");
         return isEqual;
     }
     catch(std::exception &ex)
     {
         isEqual = false;
-        LOG_LINE_GLOBAL("ERROR", "(%s) CATHED", ex.what());
+        LOG_LINE_GLOBAL("ERROR", "Excaption CATHED : ", ex.what());
     }
     catch(...)
     {
@@ -642,10 +642,10 @@ bool OrcInmemTest(const std::string &fname)
     MemTestLoad(in, outStream);
 
     //std::string dmp = outStream->dump();
-    LOG_LINE_GLOBAL("MemTest", "Size : %ld, Len : %ld", outStream->Size(), outStream->Idx());
+    LOG_LINE_GLOBAL("MemTest", "Size : ", outStream->Size() ,", Len : ", outStream->Idx());
 
     bool result = TestMemReader(outStream->Ptr(), outStream->Idx(), out);
-    //LOG_LINE_GLOBAL("MemTest", "result = %s", result?"true":"false");
+    //LOG_LINE_GLOBAL("MemTest", "result = ", result?"true":"false");
 
     return result;
 }
@@ -661,7 +661,7 @@ Datum orc_inmem_test(PG_FUNCTION_ARGS)
 
     LOG_LINE_GLOBAL("Init", "VER  0.0.1\n");
     LOG_LINE_GLOBAL("orc_inmem_test", "---->");
-    LOG_LINE_GLOBAL("orc_inmem_test", "Path : %s", path.c_str());
+    LOG_LINE_GLOBAL("orc_inmem_test", "Path : ", path.c_str());
 
     bool  isPass = true;
     DIR *dir = opendir(path.c_str());
@@ -681,10 +681,10 @@ Datum orc_inmem_test(PG_FUNCTION_ARGS)
             {
                 std::string fname(de->d_name, 0, (strlen(de->d_name)-3));
                 LOG_LINE_GLOBAL("orc_inmem_test", " ");
-                LOG_LINE_GLOBAL("orc_inmem_test", "FName   = %s", fname.c_str());
+                LOG_LINE_GLOBAL("orc_inmem_test", "FName   = ", fname.c_str());
 
                 isPass = OrcInmemTest(path + fname);
-                LOG_LINE_GLOBAL("orc_inmem_test", "isPass = %s", isPass?"true":"false");
+                LOG_LINE_GLOBAL("orc_inmem_test", "isPass = ", isPass?"true":"false");
             }
         }
 

@@ -1,7 +1,7 @@
 
-/* 
+/*
  * File:   main.cpp
- * Author: postgres
+ * Author: can.gursu@medyasoft.com.tr
  *
  * Created on April 19, 2018, 12:08 PM
  */
@@ -13,7 +13,7 @@
 #include "LoggerGlobal.h"
 #include <unistd.h>
 /*
- * 
+ *
  */
 int main(int argc, char** argv)
 {
@@ -37,7 +37,7 @@ int main(int argc, char** argv)
         LogLine(logObject, "root->type : %s", "test");
     }
 
-    
+
     LogLineGlbSocketName (sFile);
     LogLineGlb_1("LogLineGlb_1");
     LogLineGlb_2("LogLineGlb_2", "Deneme %d", __FILEN__.c_str(), 5);
@@ -45,15 +45,15 @@ int main(int argc, char** argv)
 */
 /*
     LogLineGlbSocketName(sFile);
-    LOG_LINE_GLOBAL("deneme","%s", "columnar_store_load");
-*/  
- 
+    LOG_LINE_GLOBAL("deneme", "columnar_store_load");
+*/
+
    /*
     Filika::LogStream<Filika::SockDomain> lg(sFile);
     lg.get() << "Kello\n";
-   */       
-            
-    
+   */
+
+
     //LSOCK_LOG(Filika::TLogStreamLevel::LSL_INFO) << "Mello";
 
     {
@@ -63,25 +63,25 @@ int main(int argc, char** argv)
         lg.Get() << "Meneme .... " << std::endl;
         lg.Get() << "Meleme .... " << std::endl;
         lg.send();
-        
+
         LOG_LINE(lg) << "Bu da başka deneme";
-    }          
-    
- 
+    }
+
+
     {
         LogLineGlbSocketName(sFile);
-        LOG_LINE_GLOBAL("desc olayi", "test -> %s", "olayı");
+        LOG_LINE_GLOBAL("desc olayi", "test -> ", "olayı");
     }
-    {    
-        LOG_LINE_GLOBAL("desc olayi", "Mest -> %s", "olayı");
+    {
+        LOG_LINE_GLOBAL("desc olayi", "Mest -> ", "olayı");
     }
-    {    
-        LOG_LINE_GLOBAL("desc olayi", "Pest -> %s", "olayı");
+    {
+        LOG_LINE_GLOBAL("desc olayi", "Pest -> ", "olayı");
     }
-    {    
-        LOG_LINE_GLOBAL("desc olayi", "Rest -> %s", "olayı");
+    {
+        LOG_LINE_GLOBAL("desc olayi", "Rest -> ", "olayı");
     }
-    
+
     std::cout << "Filika Logger Sender: Quited\n";
     return 0;
 }

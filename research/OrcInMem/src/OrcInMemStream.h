@@ -196,7 +196,7 @@ public:
         , _ptr(buff)
         , _len(len)
     {
-        //LOG_LINE_GLOBAL("InputStream", "_len = %ld", _len);
+        //LOG_LINE_GLOBAL("InputStream", "_len = ", _len);
     }
 
     ~MemInputStream() override
@@ -205,25 +205,25 @@ public:
 
     virtual uint64_t getLength() const override
     {
-        //LOG_LINE_GLOBAL("InputStream", "_len = %ld", _len);
+        //LOG_LINE_GLOBAL("InputStream", "_len = ", _len);
         return _len;
     }
 
     virtual uint64_t getNaturalReadSize() const override
     {
-        //LOG_LINE_GLOBAL("InputStream", "_len = %ld", _len);
+        //LOG_LINE_GLOBAL("InputStream", "_len = ", _len);
         return 1024;
     }
 
     virtual void read(void* buf, uint64_t length, uint64_t offset) override
     {
-        //LOG_LINE_GLOBAL("InputStream", "_len = %ld, length = %ld, offset = %ld, o-l = %ld", _len, length, offset, offset + length);
+        //LOG_LINE_GLOBAL("InputStream", "_len = ", _len, ", length = ", length, ", offset = ", offset , ", o-l = ", offset + length);
         memcpy(buf, _ptr + offset, length);
     }
 
     virtual const std::string& getName() const override
     {
-        //LOG_LINE_GLOBAL("InputStream", "_len = %ld", _len);
+        //LOG_LINE_GLOBAL("InputStream", "_len = ", _len);
         return _name;
     }
 

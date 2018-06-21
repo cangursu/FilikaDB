@@ -6,7 +6,7 @@
 
 /*
  * File:   OrcInMemGlobals.h
- * Author: can.gursu
+ * Author: can.gursu@medyasoft.com.tr
  *
  * Created on 19 June 2018, 10:31
  */

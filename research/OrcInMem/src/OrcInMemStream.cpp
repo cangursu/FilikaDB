@@ -40,15 +40,15 @@ char* PGMemPool::malloc(uint64_t size)
     void *p = nullptr;
     if (size > 0 && (nullptr == (p = palloc(size))))
     {
-        LOG_LINE_GLOBAL("***ERROR***", "Memory ERROR... palloc() fialed (size:%ld)", size);
+        LOG_LINE_GLOBAL("***ERROR***", "Memory ERROR... palloc() fialed (size:", size, ")");
     }
-    //LOG_LINE_GLOBAL("Mem", "size:%ld, p:%p", size, p);
+    //LOG_LINE_GLOBAL("Mem", "size:", size, ", p:", (int)p);
     return static_cast<char*>(p);
 }
 
 void  PGMemPool::free(char* p)
 {
-    //LOG_LINE_GLOBAL("Mem", "%p", p);
+    //LOG_LINE_GLOBAL("Mem", (int)p);
     if (p) pfree(p);
 }
 
@@ -65,11 +65,11 @@ void  PGMemPool::free(char* p)
 
 void MemOutputStream::write(const void* buf, size_t length)
 {
-//    LOG_LINE_GLOBAL("OutputStream-1", "Size = %ld, Idx = %ld, length = %ld", Size(), Idx(), length);
+//    LOG_LINE_GLOBAL("OutputStream-1", "Size = ", Size(), ", Idx = ", Idx(), ", length = %ld", length);
 
     _buffer.Appand((byte_t*)buf, length);
 
-//    LOG_LINE_GLOBAL("OutputStream-2", "Size = %ld, Idx = %ld, length = %ld", Size(), Idx(), length);
+//    LOG_LINE_GLOBAL("OutputStream-2", "Size = ", Size(), ", Idx = ", Idx(), ", length = %ld", length);
 }
 
 

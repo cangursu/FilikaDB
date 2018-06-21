@@ -6,7 +6,7 @@
 
 /*
  * File:   main.cpp
- * Author: can.gursu
+ * Author: can.gursu@medyasoft.com.tr
  *
  * Created on 13 June 2018, 13:38
  */
