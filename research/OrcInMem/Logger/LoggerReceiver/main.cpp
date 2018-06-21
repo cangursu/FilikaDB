@@ -14,11 +14,11 @@ int main(int argc, char** argv)
     while (true)
     {
         lg.recv(logitem);
-        std::cout << logitem /*<< std::endl*/;
+        std::cout << logitem << std::endl;
     }
 
     std::cout << "Filika Logger Receiver Quited\n";
-    return 0; 
+    return 0;
 }
 
 

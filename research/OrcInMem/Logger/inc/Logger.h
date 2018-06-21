@@ -4,20 +4,12 @@
  * and open the template in the editor.
  */
 
-/* 
+/*
  * File:   Logger.h
- * Author: postgres
+ * Author: can.gursu@medyasoft.com.tr
  *
  * Created on April 19, 2018, 9:44 AM
  */
-
-
-    /*
-     * http://www.drdobbs.com/cpp/logging-in-c/201804215
-     * https://code.i-harness.com/en/q/7cf18
-     * 
-     * 
-    */
 
 
 #ifndef __LOGGER_H__
@@ -55,21 +47,21 @@
 
 
 namespace  Filika
-{    
+{
     enum FILIKA_RESULT
     {
         FR_SUCCESS =  0,
         FR_ERROR   = -1
     };
-    
-    class SockDomain 
+
+    class SockDomain
     {
         public:
 
-        SockDomain() {} 
+        SockDomain() {}
         SockDomain(SockDomain &)  = delete;
         SockDomain(SockDomain &&) = delete;
-        SockDomain(const char *path); 
+        SockDomain(const char *path);
         virtual ~SockDomain() ;
 
         int init();
@@ -87,10 +79,10 @@ namespace  Filika
 
 
 
-    
-    
-    
-    
+
+
+
+
 #ifndef __LOG_H__
 #define __LOG_H__
 
@@ -103,13 +95,13 @@ inline std::string NowTime();
 
 enum TLogStreamLevel
 {
-    LSL_ERROR, 
-    LSL_WARNING, 
-    LSL_INFO, 
-    LSL_DEBUG, 
-    LSL_DEBUG1, 
-    LSL_DEBUG2, 
-    LSL_DEBUG3, 
+    LSL_ERROR,
+    LSL_WARNING,
+    LSL_INFO,
+    LSL_DEBUG,
+    LSL_DEBUG1,
+    LSL_DEBUG2,
+    LSL_DEBUG3,
     LSL_DEBUG4
 };
 
@@ -122,8 +114,8 @@ public:
     inline std::ostringstream&     Get(TLogStreamLevel level = LSL_INFO);
     inline std::ostringstream&     Get(const char *line, const char *file, TLogStreamLevel level = LSL_INFO);
     inline std::ostringstream&     Get(int line,         const char *file, TLogStreamLevel level = LSL_INFO);
-    
-    inline void                    Reset() { _os.str(std::move(std::string())); _os.clear(); } 
+
+    inline void                    Reset() { _os.str(std::move(std::string())); _os.clear(); }
 
 public:
     inline static TLogStreamLevel& LogLevel();
@@ -140,10 +132,8 @@ private:
 };
 
 inline std::ostringstream& LogStream::Get(TLogStreamLevel level /*= LSL_INFO*/)
-{    
+{
     _os << NowTime() << " " << ToString(level) << " - ";
-    //_os << std::string(level > LSL_DEBUG ? level - LSL_DEBUG : 0, '\t');
-    
     return _os;
 }
 
@@ -173,7 +163,7 @@ inline TLogStreamLevel& LogStream::LogLevel()
     return logLevel;
 }
 
-inline 
+inline
 std::string LogStream::ToString(TLogStreamLevel level)
 {
     static const char* const buffer[] = {"ERROR", "WARNING", "INFO", "DEBUG", "DEBUG1", "DEBUG2", "DEBUG3", "DEBUG4"};
@@ -190,7 +180,7 @@ inline TLogStreamLevel LogStream::FromString(const std::string& level)
     if (level == "INFO")    return LSL_INFO;
     if (level == "WARNING") return LSL_WARNING;
     if (level == "ERROR")   return LSL_ERROR;
-    
+
     LogStream().Get(LSL_WARNING) << "Unknown logging level '" << level << "'. Using INFO level as default.";
     return LSL_INFO;
 }
@@ -212,7 +202,7 @@ inline FILE*& Output2FILE::Stream()
 }
 
 inline void Output2FILE::Output(const std::string& msg)
-{   
+{
     FILE* pStream = Stream();
     if (!pStream)
         return;
@@ -249,11 +239,11 @@ class FILELOG_DECLSPEC LSockLogServer : public LogStream,
         {
             if( 0 != initServer()) std::cerr << "Unable To initialize Log Server\n";
         }
-        
+
         FILIKA_RESULT recv(std::string &item)
         {
             static __thread  char buff[1024];
-            
+
             FILIKA_RESULT res = FILIKA_RESULT::FR_ERROR;
             int len = recvFrom(buff, 1024);
             if (len > 0 && len < 1024)
@@ -269,11 +259,11 @@ class FILELOG_DECLSPEC LSockLogServer : public LogStream,
 class FILELOG_DECLSPEC LSockLog : public LogStream,
                                   public SockDomain
 {
-    public :          
+    public :
         LSockLog()
         {
             init();
-        }        
+        }
         LSockLog(const char *path) : SockDomain(path)
         {
             init();
@@ -290,12 +280,8 @@ class FILELOG_DECLSPEC LSockLog : public LogStream,
             if (len > 0)
             {
                 /*ssize_t res   = */sendTo(s.c_str(), len);
-                //sendTo("", 0);
-                //sendTo("xxx\n", 4);
-                //sendTo("", 0);
-                
             }
-            
+
             Reset();
 
             return ( (res == -1) || (res != (ssize_t)len)) ? FILIKA_RESULT::FR_ERROR : FILIKA_RESULT::FR_SUCCESS;
@@ -326,67 +312,12 @@ inline std::string NowTime()
     struct timeval tv;
     gettimeofday(&tv, 0);
     char result[100] = {0};
-    std::sprintf(result, "%s.%03ld", buffer, (long)tv.tv_usec / 1000); 
+    std::sprintf(result, "%s.%03ld", buffer, (long)tv.tv_usec / 1000);
     return result;
 }
 
 
 #endif //__LOG_H__
 
-
-
-
-    
-    
-    
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-    /*
-    class LoggerServer : public Logger
-    {
-    public:
-        LoggerServer(const char *path) : Logger(path) { if( 0 != _sock.initServer()) std::cerr << "Unable To initialize Log Server\n"; }
-        LoggerServer()                                { if( 0 != _sock.initServer()) std::cerr << "Unable To initialize Log Server\n"; } 
-    private :
-    };
-    */
-
-    
-    /*
-#define __FILEN__ std::string(strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
-#define LOG_LINE(lg)          (lg).send( static_cast<std::stringstream &>(std::stringstream()<< std::to_string(__LINE__) << std::string(":") << __FILEN__ << std::string(" -> ") << __func__ ).str());
-#define LOG_LINE_STR(lg, msg) (lg).send( static_cast<std::stringstream &>(std::stringstream()<< std::to_string(__LINE__) << std::string(":") << __FILEN__ << std::string(" -> ") << __func__ << " - " << std::string(msg)).str());
-    //#define LOG_LINE (cfg, stm, dsc, fmt, ...) if(cfg) fprintf(stm, "%03d: %-28s: %-20s : %-35s : "  fmt "\n",   __LINE__, __FILEN__, __FUNCTION__, dsc, ##__VA_ARGS__)
-//#define LOG_LINE_STR2 (lg, dsc, fmt, ...) { char bf[1024] = ""; vsnprintf(bf, 1024, "%03d: %-28s: %-20s : %-35s : "  fmt "\n",   __LINE__, __FILEN__, __FUNCTION__, dsc, ##__VA_ARGS__); (lg).send(bf); }
-
-//#define LOG_LINE_STR2 (lg, dsc, fmt, ...) LogLine(lg, dsc, fmt, __LINE__, __FILEN__.c_str(), __FUNCTION__, __VA_ARGS__)
-void LogLine(Logger &lg, const char *desc, const char *fmt, int lineNo, const char *fname, const char *funcName, ...);
-void LogLine(Logger &lg, const char *desc, const char *fmt, int lineNo, const char *fname, const char *funcName, std::va_list list);
-void LogLine(Logger &lg, const char *desc, const char *fmt, const char *funcName, ...);
-void LogLine(Logger &lg, const char *desc, const char *fmt, const char *funcName, std::va_list list);
-void LogLine(Logger &lg, const char *fmt, ...);
-void LogLine(Logger &lg, const char *fmt, std::va_list list);
-    */
-    
 } //::Filika 
-
-
-
-
-
-
-
-#endif // __LOGGER_H__ 
-
+#endif // __LOGGER_H__
