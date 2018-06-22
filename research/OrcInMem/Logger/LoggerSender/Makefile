@@ -1,24 +1,33 @@
-# Declaration of variables
-CC = g++
-CC_FLAGS = -ggdb -w -Wall -fPIC -std=c++11  -I../inc
 
-# File names
-EXEC = LoggerSender
-SOURCES = $(wildcard *.cpp)
-SOURCES += $(wildcard ../src/*.cpp)
-OBJECTS = $(SOURCES:.cpp=.o)
+CC=g++
+
+#CFLAGS= -ggdb -w -Wall -fPIC -std=c++11
+CFLAGS= -O3 -w -Wall -fPIC -std=c++11
+LDFLAGS=
+#LDLIBS=../HElib/src/fhe.a ../ntl-10.3.0/src/ntl.a -lgmp -lpthread
+LDLIBS=
+INCLUDE_PATH=-I.. -I../inc
+
+SOURCES=$(wildcard *.cpp)
+SOURCES+=$(wildcard ../src/*.cpp)
+
+OBJECTS=$(SOURCES:.cpp=.o)
+DEPENDS=$(SOURCES:.cpp=.d)
+
+EXEC=LoggerSender
 
 all: $(EXEC)
 
-# Main target
 $(EXEC): $(OBJECTS)
-	$(CC) $(OBJECTS) -o $(EXEC)
+	$(CC) $(LDFLAGS) $^ -o $@ $(LDLIBS)
 
-# To obtain object files
-%.o: %.cpp
-	$(CC) -c $(CC_FLAGS) $< -o $@
+%.o:%.cpp
+	$(CC) -c $(INCLUDE_PATH) $(CFLAGS) $< -o $@
 
-# To remove generated files
+%.d:%.cpp
+	$(CC) -c $(INCLUDE_PATH) $(CFLAGS) -M $< > $@
+
+-include $(DEPENDS)
+    
 clean:
-	rm -f $(EXEC) $(OBJECTS)
-
+	rm -f $(OBJECTS) $(EXEC) $(DEPENDS)
