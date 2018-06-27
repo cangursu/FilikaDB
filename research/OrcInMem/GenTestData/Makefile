@@ -4,7 +4,7 @@ CC=g++
 
 # Compile flags.
 #CFLAGS= -ggdb -w -Wall -fPIC -std=c++11
-CFLAGS= -O3 -w -Wall -fPIC -std=c++11
+CFLAGS= -O3 -w -Wall -fPIC -std=c++17
 
 # Link flags.
 LDFLAGS=

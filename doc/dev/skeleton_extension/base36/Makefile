@@ -6,6 +6,6 @@ MODULES = base36          # our c module file to build
 
 # postgres build stuff
 PG_CONFIG = /usr/local/pgsql/bin/pg_config
-PG_CPPFLAGS = -fPIC -std=c++11
+PG_CPPFLAGS = -fPIC -std=c++17
 PGXS := $(shell $(PG_CONFIG) --pgxs)
 include $(PGXS)

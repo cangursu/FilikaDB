@@ -20,15 +20,16 @@ MODULE_big    = $(EXTENSION)
 
 
 # Additional  directories
-LIB_DIR_ORC   = /home/postgres/projects/orc/build/_CPack_Packages/Linux/TGZ/ORC-1.5.1-SNAPSHOT-Linux/lib
-INC_DIR_ORC   = /home/postgres/projects/orc/build/_CPack_Packages/Linux/TGZ/ORC-1.5.1-SNAPSHOT-Linux/include
+LIB_DIR_ORC   = /home/postgres/projects/orc/build/_CPack_Packages/Linux/TGZ/ORC-1.5.2-Linux/lib
+INC_DIR_ORC   = /home/postgres/projects/orc/build/_CPack_Packages/Linux/TGZ/ORC-1.5.2-Linux/include
 INC_DIR_LOG   = Logger/inc/
 
 INC_DIRS      = $(INC_DIR_ORC) $(INC_DIR_LOG)
 LIB_DIRS      = $(LIB_DIR_ORC)
 
+CUSTOM_CC = g++
 
-PG_CPPFLAGS = -fPIC -std=c++11 -rdynamic      \
+PG_CPPFLAGS = -fPIC -std=c++17 -rdynamic      \
               $(foreach d, $(INC_DIRS), -I$d) \
 
               
