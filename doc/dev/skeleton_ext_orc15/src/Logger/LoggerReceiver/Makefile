@@ -1,6 +1,6 @@
 # Declaration of variables
 CC = g++
-CC_FLAGS = -ggdb -w -Wall -fPIC -std=c++11  -I../inc
+CC_FLAGS = -ggdb -w -Wall -fPIC -std=c++17  -I../inc
 
 # File names
 EXEC = LoggerReceiever

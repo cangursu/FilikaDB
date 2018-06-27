@@ -132,7 +132,7 @@ Datum ext_orc_scan(PG_FUNCTION_ARGS)
 
     std::stringstream ss;
     Print (ss, "ext_orc_sca");
-    Print (ss, "orcFile"    , VARDATA(orcFile)          );   
+    Print (ss, "orcFile"    , std::string(VARDATA(orcFile), VARSIZE_ANY_EXHDR(orcFile)));
     Print (ss, "orcFile Len", VARSIZE_ANY_EXHDR(orcFile));
 
     ORCScanFile(ss, std::move(std::string(VARDATA(orcFile), VARSIZE_ANY_EXHDR(orcFile))), 128);
@@ -160,7 +160,7 @@ Datum ext_orc_content(PG_FUNCTION_ARGS)
     
     std::stringstream ss;
     Print (ss, "ext_orc_content");
-    Print (ss, "orcFile"    , VARDATA(orcFile)          );   
+    Print (ss, "orcFile"    , std::string(VARDATA(orcFile), VARSIZE_ANY_EXHDR(orcFile)));
     Print (ss, "orcFile Len", VARSIZE_ANY_EXHDR(orcFile));   
                             
     orc::RowReaderOptions rowReaderOpts;

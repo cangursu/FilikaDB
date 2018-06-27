@@ -19,14 +19,14 @@
 
 # the extensions name
 EXTENSION     = ext_orc15
-DATA          = $(wildcard *--*.sql) 		# script files to install
+DATA          = $(wildcard *--*.sql)            # script files to install
 TESTS         = $(wildcard test/sql/*.sql)      # use test/sql/*.sql as testfiles
 
 # find the sql and expected directories under test
 # load plpgsql into test db
 # load ext_orc15 extension into test db
 # dbname
-REGRESS_OPTS  = --inputdir=test         \
+REGRESS_OPTS  = --inputdir=test            \
                 --load-extension=ext_orc15 \
                 --load-language=plpgsql
 REGRESS       = $(patsubst test/sql/%.sql,%,$(TESTS))
@@ -37,17 +37,17 @@ OBJS         += $(patsubst %.cpp,%.o,$(wildcard src/Logger/src/*.cpp)) # CPP obj
 MODULE_big    = $(EXTENSION)
 
 # Additional  directories
-LIB_DIR_ORC=/home/postgres/projects/orc/build/_CPack_Packages/Linux/TGZ/ORC-1.5.1-SNAPSHOT-Linux/lib
-INC_DIR_ORC=/home/postgres/projects/orc/build/_CPack_Packages/Linux/TGZ/ORC-1.5.1-SNAPSHOT-Linux/include
+LIB_DIR_ORC=/home/postgres/projects/orc15/build/_CPack_Packages/Linux/TGZ/ORC-1.5.2-Linux/lib
+INC_DIR_ORC=/home/postgres/projects/orc15/build/_CPack_Packages/Linux/TGZ/ORC-1.5.2-Linux/include
 INC_DIR_LOG=./src/Logger/inc/
 
 INC_DIRS=$(INC_DIR_ORC) $(INC_DIR_LOG)
 LIB_DIRS=$(LIB_DIR_ORC)
 
-PG_CPPFLAGS = -fPIC -std=c++11 -rdynamic      \
+PG_CPPFLAGS = -fPIC -std=c++17 -rdynamic      \
               $(foreach d, $(INC_DIRS), -I$d) \
 
-              
+CUSTOM_CC = g++
 
 #PG_LIBS = -libstdc++
 CUSTOM_COPT = -lstdc++ -rdynamic -shared      \

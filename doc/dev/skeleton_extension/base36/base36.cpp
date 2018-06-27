@@ -1,6 +1,6 @@
 
 #ifdef __cplusplus
-extern "C" { 
+extern "C" {
 #endif
 
 #include "postgres.h"
@@ -19,11 +19,11 @@ PG_FUNCTION_INFO_V1(base36_encode);
 
 class Base34SAMPLE
 {
-	public	:
-		char operator [](unsigned int idx) { return _base36[idx]; }
-		
-	private :
-		char _base36[37] = "0123456789abcdefghijklmnopqrstuvwxyz";
+    public :
+        char operator [](unsigned int idx) { return _base36[idx]; }
+
+    private :
+        char _base36[37] = "0123456789abcdefghijklmnopqrstuvwxyz";
 };
 
 Datum base36_encode(PG_FUNCTION_ARGS)
@@ -39,12 +39,13 @@ Datum base36_encode(PG_FUNCTION_ARGS)
              errhint("make it positive")
             )
         );
-		
-	Base34SAMPLE b36;
 
-    /* max 6 char + '\0' */
-    char *buffer = (char *)palloc(7 * sizeof(char));
-    unsigned int offset = sizeof(buffer);
+    Base34SAMPLE b36;
+
+    const int len = 7; /* max 6 char + '\0' */
+    char *buffer = (char *)palloc(len * sizeof(char));
+
+    unsigned int offset = len;//sizeof(buffer);
     buffer[--offset] = '\0';
 
     do {
@@ -57,5 +58,5 @@ Datum base36_encode(PG_FUNCTION_ARGS)
 
 
 #ifdef __cplusplus
-} 
+}
 #endif
