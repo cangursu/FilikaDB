@@ -83,7 +83,8 @@ int main(int argc, char** argv)
 
             ss.str(strEmpty);
             ss.clear();
-            ss << "{\"col1\": " << l << ", \"col2\": " << "col" << l << ", \"col3\": " << double (l/10.0) << "}" << std::endl;
+            ss << "{\"col1\": " << l << ", \"col2\": " << "\"col" << l << "\", \"col3\": " << double (l/10.0) << "}";
+            if (l+1 < lcount) ss << std::endl;
             str = ss.str();
             fsOut.write(str.c_str(), str.length());
         }
