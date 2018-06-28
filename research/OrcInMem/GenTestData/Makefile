@@ -44,8 +44,8 @@ $(EXEC): $(OBJECTS)
 	$(CC) -c $(INCLUDE_PATH) $(CFLAGS) -M $< > $@
 
 -include $(DEPENDS)
-    
-    
+
+
 # Remove executable file and all object files
 clean:
 	rm -f $(OBJECTS) $(EXEC) $(DEPENDS)

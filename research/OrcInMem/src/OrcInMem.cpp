@@ -561,18 +561,18 @@ void MemTestLoad(const std::string &input, std::unique_ptr<MemOutputStream> &out
 bool TestMemReader(void *buff, uint64_t len, const std::string &fname)
 {
     CallMeasure  callMsr;
-    bool isEqual = true;
+    int  lnCmp   = 0;
     bool isNext  = true;
 
     try
     {
-        LOG_LINE_GLOBAL("MemTest", "----> buff=", buff, ", len=", len, ", fname=", fname);
+        //LOG_LINE_GLOBAL("MemTest", "----> buff=", buff, ", len=", len, ", fname=", fname);
 
         std::ifstream fexpected(fname);
         if (!fexpected.good())
         {
             LOG_LINE_GLOBAL("**ERROR**", "Unable to open file ", fname);
-            isEqual = false;
+            lnCmp = 1;
         }
         else
         {
@@ -590,44 +590,52 @@ bool TestMemReader(void *buff, uint64_t len, const std::string &fname)
             char        lineFile[g_buffLength];
 
             std::unique_ptr<orc::ColumnPrinter> printer = createColumnPrinter(lineMem, &rowReader->getSelectedType());
-            while (isEqual && isNext)
+            while ((lnCmp == 0) && isNext)
             {
                 callMsr += CallMeasureFrame([&](){isNext = rowReader->next(*batch);});
                 if (isNext)
                 {
                     printer->reset(*batch);
-                    for(unsigned long i = 0; isEqual && (i < batch->numElements); ++i)
+                    for(unsigned long i = 0; (lnCmp == 0) && (i < batch->numElements); ++i)
                     {
                         lineMem.clear();
                         callMsr += CallMeasureFrame([&](){printer->printRow(i);});
 
                         fexpected.getline(lineFile, g_buffLength);
+                        lnCmp = lineMem.compare(lineFile);
 
-                        //LOG_LINE_GLOBAL("MemTest", "line:", lineMem, ", expect:" , lineFile, " ", lineMem.compare(lineFile)? "true":"false");
-                        isEqual = lineMem.compare(lineFile);
+                        //LOG_LINE_GLOBAL("MemTest", "line    : ", lineMem);
+                        //LOG_LINE_GLOBAL("MemTest", "expect  : ", lineFile);
+                        //LOG_LINE_GLOBAL("MemTest", "lnCmp   : ", lnCmp);
+
                     }
                 }
+            }
+
+            if (fexpected.good())
+            {
+                //LOG_LINE_GLOBAL("MemTest", ".out file still have data");
+                lnCmp = 1;
             }
         }
 
         LOG_LINE_GLOBAL("MemTest", "Total reader elasped time: ", callMsr.elapses,    " ms.");
         LOG_LINE_GLOBAL("MemTest", "Total reader CPU     time: ", callMsr.elapsesCPU, " ms.");
 
-        LOG_LINE_GLOBAL("MemTest", "----<");
-        return isEqual;
+        //LOG_LINE_GLOBAL("MemTest", "----<");
     }
     catch(std::exception &ex)
     {
-        isEqual = false;
+        lnCmp = 1;
         LOG_LINE_GLOBAL("ERROR", "Excaption CATHED : ", ex.what());
     }
     catch(...)
     {
-        isEqual = false;
+        lnCmp = 1;
         LOG_LINE_GLOBAL("ERROR", ".... Something CATHED ....");
     }
 
-    return isEqual;
+    return lnCmp == 0;
 }
 
 
@@ -639,9 +647,8 @@ bool OrcInmemTest(const std::string &fname)
     out += ".out";
 
     std::unique_ptr<MemOutputStream> outStream(new MemOutputStream("MemOStream"));
-    MemTestLoad(in, outStream);
 
-    //std::string dmp = outStream->dump();
+    MemTestLoad(in, outStream);
     LOG_LINE_GLOBAL("MemTest", "Size : ", outStream->Size() ,", Len : ", outStream->Idx());
 
     bool result = TestMemReader(outStream->Ptr(), outStream->Idx(), out);
@@ -659,7 +666,7 @@ Datum orc_inmem_test(PG_FUNCTION_ARGS)
 
     LogLineGlbSocketName (logs.c_str());
 
-    LOG_LINE_GLOBAL("Init", "VER  0.0.1\n");
+    LOG_LINE_GLOBAL("Init", "VER  0.0.3\n");
     LOG_LINE_GLOBAL("orc_inmem_test", "---->");
     LOG_LINE_GLOBAL("orc_inmem_test", "Path : ", path.c_str());
 
@@ -694,7 +701,7 @@ Datum orc_inmem_test(PG_FUNCTION_ARGS)
     }
 
 
-    LOG_LINE_GLOBAL("orc_inmem_test", "----<");
+    LOG_LINE_GLOBAL("orc_inmem_test", "----<  ", isPass ? "TestMemReader SUCCEED" : "TestMemReader FAILED");
     PG_RETURN_TEXT_P(cstring_to_text(isPass ? "TestMemReader SUCCEED" : "TestMemReader FAILED"));
 }
 
