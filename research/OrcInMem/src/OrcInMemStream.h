@@ -53,7 +53,7 @@ public:
  *
  */
 
-    class MemOutputStream : public orc::OutputStream,
+class MemOutputStream : public orc::OutputStream,
                         public MemIOStream
 {
 public:
@@ -70,7 +70,7 @@ public:
     }
     uint64_t getNaturalWriteSize() const override
     {
-        return 128 * 1024;
+        return /*128 * */1024;
     }
 
     void write(const void* buf, size_t length) override;
