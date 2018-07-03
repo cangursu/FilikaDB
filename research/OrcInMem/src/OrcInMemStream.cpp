@@ -53,35 +53,3 @@ void  PGMemPool::free(char* p)
 }
 
 
-
-
-
-
-/**
- *    MemOutputStream: ORC's OutputStream interface implementation
- *
- */
-
-
-void MemOutputStream::write(const void* buf, size_t length)
-{
-//    LOG_LINE_GLOBAL("OutputStream-1", "Size = ", Size(), ", Idx = ", Idx(), ", length = %ld", length);
-
-    _buffer.Appand((byte_t*)buf, length);
-
-//    LOG_LINE_GLOBAL("OutputStream-2", "Size = ", Size(), ", Idx = ", Idx(), ", length = %ld", length);
-}
-
-
-std::string MemOutputStream::dump(const std::string &msg/* = "" */)
-{
-    std::stringstream ss;
-
-    ss << /*GetDate() <<*/ "Dump ---> " << msg << std::endl;
-    ss << /*GetDate() <<*/ "Size   :  " << _buffer.Size() << std::endl;
-    ss << /*GetDate() <<*/ "Length :  " << _buffer.Idx()  << std::endl;
-    ss << /*GetDate() <<*/ "Dump ---< ";
-
-    return std::move(ss.str());
-}
-

@@ -1,5 +1,14 @@
 
 
+
+
+until pg_isready -q
+do
+    echo .... start db ....
+    pg_ctl -D ~/pgdata -l ~/pgdata/log start
+done
+
+
 echo .... drop ext ....
 psql -c "drop extension orcinmem;"
 

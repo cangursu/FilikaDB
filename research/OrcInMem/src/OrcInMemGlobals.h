@@ -16,7 +16,7 @@
 
 
 extern const int   g_defBufferSize   ;
-extern const int   g_buffLength      ;
+extern const int   g_readLineLength  ;
 extern const int   g_naturalWriteSize;
 
 extern const char  g_delimiter       ;

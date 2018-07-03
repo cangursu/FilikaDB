@@ -7,8 +7,8 @@
 #include "OrcInMemGlobals.h"
 
 
-const int   g_defBufferSize    = 16 * 1024;//1024;
-const int   g_buffLength       = 8192;
+const int   g_defBufferSize    = 256 * 4 * 1024;
+const int   g_readLineLength   = 8192;
 const int   g_naturalWriteSize = 512;
 
 const char  g_delimiter        = ',';

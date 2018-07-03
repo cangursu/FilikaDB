@@ -4,3 +4,10 @@
 CREATE FUNCTION orc_inmem_test(text, text) RETURNS text
 AS '$libdir/orcinmem'
 LANGUAGE C IMMUTABLE STRICT;
+
+
+CREATE FUNCTION orc_memstream_test(text) RETURNS text
+AS '$libdir/orcinmem'
+LANGUAGE C IMMUTABLE STRICT;
+
+

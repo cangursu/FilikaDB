@@ -8,6 +8,7 @@
 #include "OrcInMemGlobals.h"
 #include "LoggerGlobal.h"
 
+#include <deque>
 
 /**
  *    PGMemPool : Memory Manager
@@ -48,32 +49,98 @@ public:
 
 
 /**
- *    MemOutputStream: ORC's OutputStream interface implementation
+ *    MemOutputStream: ORC's OutputStream/InputStream interface implementation
  *
  *
  */
 
-class MemOutputStream : public orc::OutputStream,
-                        public MemIOStream
+template <class U>
+class MemStream : public orc::OutputStream,
+                  public orc::InputStream,
+                  public MemIOStream
 {
 public:
-    MemOutputStream(const std::string &name) : _name(name)
+    MemStream(const std::string &name) : _name(name)
     {
+        AddNewBuffer();
     }
-    ~MemOutputStream() override
+    ~MemStream() override
     {
         close();
     }
     uint64_t getLength() const override
     {
-        return Idx();
+        return Len();
     }
     uint64_t getNaturalWriteSize() const override
     {
         return /*128 * */1024;
     }
+    virtual uint64_t getNaturalReadSize() const override
+    {
+        return 1024;
+    }
 
-    void write(const void* buf, size_t length) override;
+
+    virtual void write (const void* buf, size_t length) override
+    {
+        //LOG_LINE_GLOBAL("orc_memstream_test", "---->  length = ", length);
+
+        uint64_t lenWritten = 0;
+        for( const byte_t* pbuff = static_cast<const byte_t*>(buf); length > 0; )
+        {
+            //LOG_LINE_GLOBAL("orc_memstream_test", "");
+            auto &itEnd = --_listBuffer.end();
+
+            lenWritten = itEnd->Appand(pbuff, length);
+            length -= lenWritten;
+            pbuff  += lenWritten;
+
+            //LOG_LINE_GLOBAL("orc_memstream_test", "lenWritten = ", lenWritten, " length = ", length);
+
+            if (itEnd->Size() <= itEnd->Idx())
+                AddNewBuffer();
+        }
+
+
+        //LOG_LINE_GLOBAL("orc_memstream_test", "---->");
+    }
+
+
+    virtual void read  (void* buf, uint64_t length, uint64_t offset) override
+    {
+        uint64_t sze = 0;
+        uint64_t pos = 0;
+        uint64_t len = 0;
+
+        auto it    = _listBuffer.begin();
+        auto itCur = it;
+        auto itEnd = _listBuffer.end();
+
+        for ( ; (it != itEnd) && (offset > pos); ++it)
+        {
+            itCur = it;
+            pos += (sze = itCur->Size());
+        }
+        pos = sze + offset - pos;
+
+        it = itCur;
+        U *buffer = static_cast<U*>(buf);
+
+        for ( ; (it != itEnd) && (length > 0); ++it)
+        {
+            itCur = it;
+            sze   = itCur->Size();
+            len   = (pos + length) > sze ? sze - pos : length;
+
+            std::memcpy(buffer, itCur->Ptr() + pos, len);
+
+            pos     = 0;
+            buffer += len;
+            length -= len;
+        }
+    }
+
 
     const std::string& getName() const override
     {
@@ -86,12 +153,21 @@ public:
         //_buffer.Clear();
     }
 
-    std::string dump(const std::string &msg = "");
+    std::string dump(const std::string &msg = "")
+    {
+        std::stringstream ss;
 
-    uint64_t Size() const  { return _buffer.Size();  }
-    uint64_t Idx()  const  { return _buffer.Idx() ;  }
-    byte_t * Ptr()  const  { return _buffer.Ptr() ;  }
-    byte_t * Pos()  const  { return _buffer.Pos() ;  }
+        ss << /*GetDate() <<*/ "Dump ---> " << msg << std::endl;
+        ss << /*GetDate() <<*/ "Size   :  " << Size() << std::endl;
+        ss << /*GetDate() <<*/ "Length :  " << Len()  << std::endl;
+        ss << /*GetDate() <<*/ "Dump ---< ";
+
+        return std::move(ss.str());
+    }
+
+    uint64_t Size() const  { uint64_t s = 0; for(const auto &i:_listBuffer) s+=i.Size(); return s;  }
+    uint64_t Len()  const  { uint64_t s = 0; for(const auto &i:_listBuffer) s+=i.Idx();  return s;  }
+    uint64_t Cnt()  const  { _listBuffer.size();  }
 
 
 private :
@@ -125,6 +201,7 @@ private :
                 , _size  (other._size)
                 , _ptr   (other._ptr)
             {
+                other._ptr  = nullptr;
                 other.Clear();
             }
 
@@ -135,7 +212,7 @@ private :
 
             void Resize(uint64_t addSize)
             {
-                uint64_t size = _size;// * 2;
+                uint64_t size = _size;
                 if ((_idx + addSize) > size)
                 {
                     while ((_idx + addSize) > size)
@@ -157,15 +234,24 @@ private :
                 _idx  = 0;
             }
 
-            uint64_t Appand(byte_t *buff, uint64_t len)
+            uint64_t Appand(const byte_t *buff, uint64_t len, bool doResize = false)
             {
                 uint64_t  amount = len * sizeof(T);
-                Resize(amount);
+                if (doResize)
+                {
+                    Resize(amount);
+                }
+                else
+                {
+                    if (_idx + amount > _size)
+                        amount = _size - _idx;
+
+                }
+
                 memcpy(_ptr + _idx, buff, amount);
                 _idx += amount;
                 return amount;
             }
-
 
         private :
 
@@ -176,66 +262,20 @@ private :
             T               *_ptr  = nullptr;
     };
 
+    size_t AddNewBuffer()
+    {
+        //LOG_LINE_GLOBAL("orc_memstream_test", "---->");
+        Buffer<byte_t> buff;
+        _listBuffer.push_back(std::move(buff));
 
+        //LOG_LINE_GLOBAL("orc_memstream_test", "---->  _listSize = ", _listSize + 1);
+        return _listSize++;
+    }
 
-    Buffer<byte_t>      _buffer;
+    std::deque <Buffer<U> >  _listBuffer;
+    size_t                   _listSize  = 0;  // prevent to call list::size();
 
 };
-
-
-
-
-
-
-class MemInputStream : public orc::InputStream,
-                       public MemIOStream
-{
-public:
-    MemInputStream(const std::string &name, byte_t *buff, uint64_t len)
-        : _name(name)
-        , _ptr(buff)
-        , _len(len)
-    {
-        //LOG_LINE_GLOBAL("InputStream", "_len = ", _len);
-    }
-
-    ~MemInputStream() override
-    {
-    }
-
-    virtual uint64_t getLength() const override
-    {
-        //LOG_LINE_GLOBAL("InputStream", "_len = ", _len);
-        return _len;
-    }
-
-    virtual uint64_t getNaturalReadSize() const override
-    {
-        //LOG_LINE_GLOBAL("InputStream", "_len = ", _len);
-        return 1024;
-    }
-
-    virtual void read(void* buf, uint64_t length, uint64_t offset) override
-    {
-        //LOG_LINE_GLOBAL("InputStream", "_len = ", _len, ", length = ", length, ", offset = ", offset , ", o-l = ", offset + length);
-        memcpy(buf, _ptr + offset, length);
-    }
-
-    virtual const std::string& getName() const override
-    {
-        //LOG_LINE_GLOBAL("InputStream", "_len = ", _len);
-        return _name;
-    }
-
-
-private :
-    std::string  _name;
-    byte_t      *_ptr = nullptr;
-    uint64_t     _len = 0;
-};
-
-
-
 
 
 #endif  //__EXT_ORC15_MEM_STREAM_H__
