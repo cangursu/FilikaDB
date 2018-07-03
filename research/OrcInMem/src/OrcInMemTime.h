@@ -8,9 +8,9 @@
 timespec operator + (const timespec &a, const timespec &b);
 timespec operator - (const timespec &a, const timespec& b);
 
-#define TS_TO_NANO(ts) ((ts).tv_sec * 1000000000.0 + (ts).tv_nsec)
-#define TS_TO_MICRO(ts)((ts).tv_sec * 1000000.0    + (ts).tv_nsec / 1000.0)
-#define TS_TO_MILI(ts)
+#define TS_TO_NANO(ts) (((ts).tv_sec * 1.0e+9) + (ts).tv_nsec)
+#define TS_TO_MICRO(ts)(((ts).tv_sec * 1.0e+6) + ((ts).tv_nsec * 1.0e-3))
+#define TS_TO_MILI(ts) (((ts).tv_sec * 1.0e+3) + ((ts).tv_nsec * 1.0e-6))
 #define TS_TO_SEC(ts)  ((ts).tv_sec)
 
 
@@ -75,7 +75,7 @@ CallMeasure CallMeasureFrame(Functor f)
     clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts_end_cpu   );
     clock_gettime(CLOCK_MONOTONIC         , &ts_end       );
 
-    return { TS_TO_MICRO(ts_end - ts_start), TS_TO_MICRO(ts_end_cpu - ts_start_cpu)} ;
+    return { TS_TO_MILI(ts_end - ts_start), TS_TO_MILI(ts_end_cpu - ts_start_cpu)} ;
 }
 
 

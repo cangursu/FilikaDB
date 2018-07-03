@@ -14,13 +14,15 @@
 #ifndef __ORC_INMEM_GLOBALS_H__
 #define __ORC_INMEM_GLOBALS_H__
 
-extern const int   g_defBufferSize;
 
-extern const char  g_delimiter;
-extern const int   g_buffLength;
+extern const int   g_defBufferSize   ;
+extern const int   g_readLineLength  ;
+extern const int   g_naturalWriteSize;
 
-extern const char* g_defLogSocket;
-extern const char* g_defTestDataPath;
+extern const char  g_delimiter       ;
+
+extern const char* g_defLogSocket    ;
+extern const char* g_defTestDataPath ;
 
 #endif /* __ORC_INMEM_GLOBALS_H__ */
 

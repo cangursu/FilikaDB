@@ -7,7 +7,6 @@
 #include "OrcInMemGlobals.h"
 
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -17,14 +16,14 @@ extern "C" {
 
 PG_MODULE_MAGIC;
 
-
 PG_FUNCTION_INFO_V1(orc_inmem_test);
-
-
+PG_FUNCTION_INFO_V1(orc_memstream_test);
 
 #ifdef __cplusplus
 }
 #endif
+
+
 
 //#include "fmgr.h"
 
@@ -359,11 +358,11 @@ void fillTimestampValues(const std::vector<std::string>& data,
 }
 
 
-ORC_UNIQUE_PTR<orc::Writer> MemTestWriter(orc::Type &ftype, MemOutputStream *outStream)
+ORC_UNIQUE_PTR<orc::Writer> MemTestWriter(orc::Type &ftype, orc::OutputStream *outStream)
 {
     uint64_t             stripeSize  = (128 << 20); // 128M
     uint64_t             blockSize   = (64 << 10);  // 64K
-    orc::CompressionKind compression = orc::CompressionKind_ZLIB;
+    orc::CompressionKind compression = orc::CompressionKind_NONE;//orc::CompressionKind_ZLIB;
 
     orc::WriterOptions options;
     options.setStripeSize(stripeSize);
@@ -476,22 +475,20 @@ class RandomBatchLoader  : public BatchLoader
 
 
 
-void MemTestLoad(const std::string &input, std::unique_ptr<MemOutputStream> &outStream)
+void MemTestLoad(const std::string &msg, const std::string &input, std::unique_ptr<orc::OutputStream> &outStream)
 {
-    uint64_t                                batchSize   = 4*1048;//1024;
+    uint64_t                                batchSize   = 1024;
 
     orc::DataBuffer<char>                   buffer(*orc::getDefaultPool(), 4 * 1024 * 1024);
 
-    std::string                             schema   = "struct<a:bigint, b:string, c:double>";
     std::unique_ptr<orc::Type>              fileType = orc::Type::buildTypeFromString("struct<col1:bigint,col2:string,col3:double>");
-
     std::unique_ptr<orc::Writer>            writer   = MemTestWriter(*fileType, outStream.get());
     std::unique_ptr<orc::ColumnVectorBatch> rowBatch = writer->createRowBatch(batchSize);
 
 
     CallMeasure  callElapses;
 
-    //LOG_LINE_GLOBAL("MemTest", "Open csv", input);
+    LOG_LINE_GLOBAL("MemTest", msg, " - source:", input);
     FileBatchLoader  finput(input.c_str());
 
     try
@@ -557,8 +554,7 @@ void MemTestLoad(const std::string &input, std::unique_ptr<MemOutputStream> &out
 }
 
 
-
-bool TestMemReader(void *buff, uint64_t len, const std::string &fname)
+bool TestMemReader(const std::string &msg, const std::string &fname, std::unique_ptr<orc::InputStream> &inStream)
 {
     CallMeasure  callMsr;
     int  lnCmp   = 0;
@@ -566,6 +562,7 @@ bool TestMemReader(void *buff, uint64_t len, const std::string &fname)
 
     try
     {
+        LOG_LINE_GLOBAL("MemTest", msg, " - source:", fname);
         //LOG_LINE_GLOBAL("MemTest", "----> buff=", buff, ", len=", len, ", fname=", fname);
 
         std::ifstream fexpected(fname);
@@ -576,20 +573,22 @@ bool TestMemReader(void *buff, uint64_t len, const std::string &fname)
         }
         else
         {
-            orc::ReaderOptions              readerOpts;
-            std::unique_ptr<orc::Reader>    reader     = orc::createReader(std::unique_ptr<orc::InputStream> (new MemInputStream ("TestMemStream",  (MemIOStream::byte_t *)buff, len)), readerOpts);
-
-            orc::RowReaderOptions           rowReaderOpts;
-            //rowReaderOpts.include({0,1,2});
-
-            std::unique_ptr<orc::RowReader> rowReader  = reader->createRowReader(rowReaderOpts);
-
-            std::unique_ptr<orc::ColumnVectorBatch> batch = rowReader->createRowBatch(512);
+            orc::ReaderOptions                      readerOpts;
+            std::unique_ptr<orc::Reader>            reader;
+            orc::RowReaderOptions                   rowReaderOpts;
+            std::unique_ptr<orc::RowReader>         rowReader;
+            std::unique_ptr<orc::ColumnVectorBatch> batch;
+            std::unique_ptr<orc::ColumnPrinter>     printer;
 
             std::string lineMem;
-            char        lineFile[g_buffLength];
+            char        lineFile[g_readLineLength];
 
-            std::unique_ptr<orc::ColumnPrinter> printer = createColumnPrinter(lineMem, &rowReader->getSelectedType());
+            //rowReaderOpts.include({0,1,2});
+
+            callMsr += CallMeasureFrame([&](){reader    = orc::createReader(std::unique_ptr<orc::InputStream> (inStream.release()), readerOpts);});
+            callMsr += CallMeasureFrame([&](){rowReader = reader->createRowReader(rowReaderOpts);});
+            callMsr += CallMeasureFrame([&](){batch     = rowReader->createRowBatch(512);});
+            callMsr += CallMeasureFrame([&](){printer   = createColumnPrinter(lineMem, &rowReader->getSelectedType());});
             while ((lnCmp == 0) && isNext)
             {
                 callMsr += CallMeasureFrame([&](){isNext = rowReader->next(*batch);});
@@ -601,13 +600,8 @@ bool TestMemReader(void *buff, uint64_t len, const std::string &fname)
                         lineMem.clear();
                         callMsr += CallMeasureFrame([&](){printer->printRow(i);});
 
-                        fexpected.getline(lineFile, g_buffLength);
+                        fexpected.getline(lineFile, g_readLineLength);
                         lnCmp = lineMem.compare(lineFile);
-
-                        //LOG_LINE_GLOBAL("MemTest", "line    : ", lineMem);
-                        //LOG_LINE_GLOBAL("MemTest", "expect  : ", lineFile);
-                        //LOG_LINE_GLOBAL("MemTest", "lnCmp   : ", lnCmp);
-
                     }
                 }
             }
@@ -641,18 +635,35 @@ bool TestMemReader(void *buff, uint64_t len, const std::string &fname)
 
 bool OrcInmemTest(const std::string &fname)
 {
+    bool result = true;
+
     std::string in  = fname;
     std::string out = fname;
+    std::string orc = fname;
     in  += ".in";
     out += ".out";
+    orc += ".orc";
 
-    std::unique_ptr<MemOutputStream> outStream(new MemOutputStream("MemOStream"));
+    {
+        std::unique_ptr<orc::OutputStream>   streamMem (new MemStream<char>("MemOStream"));
+        MemTestLoad("InMemInterface", in, streamMem);
+        LOG_LINE_GLOBAL ("MemTest",  "Len : ", dynamic_cast<MemStream<char>*>(streamMem.get())->Len()
+                                  ,  ", Buffer Count  : ", dynamic_cast<MemStream<char>*>(streamMem.get())->Cnt()
+                                  ,  ", Size : ", dynamic_cast<MemStream<char>*>(streamMem.get())->Size()
+                        );
 
-    MemTestLoad(in, outStream);
-    LOG_LINE_GLOBAL("MemTest", "Size : ", outStream->Size() ,", Len : ", outStream->Idx());
+        std::unique_ptr<orc::InputStream> inStreamMem  (dynamic_cast<MemStream<char> *>(streamMem.release()));
+        result &= TestMemReader("InMemInterface", out, inStreamMem);
+    }
 
-    bool result = TestMemReader(outStream->Ptr(), outStream->Idx(), out);
-    //LOG_LINE_GLOBAL("MemTest", "result = ", result?"true":"false");
+    {
+        std::unique_ptr<orc::OutputStream> outStreamFile = orc::writeLocalFile(orc);
+        MemTestLoad("FileInterface", in, outStreamFile);
+
+        std::unique_ptr<orc::InputStream> inStreamFile = orc::readFile(orc);
+        result &= TestMemReader("FileInterface", out, inStreamFile);
+        //LOG_LINE_GLOBAL("MemTest", "result = ", result?"true":"false");
+    }
 
     return result;
 }
@@ -663,11 +674,13 @@ Datum orc_inmem_test(PG_FUNCTION_ARGS)
 
     const std::string logs = GETARG_TEXT(0, g_defLogSocket);
     const std::string path = GETARG_TEXT(1, g_defTestDataPath);
+    elog(LOG, "orc_inmem_test - Log socket:%s", logs.c_str());
 
     LogLineGlbSocketName (logs.c_str());
 
-    LOG_LINE_GLOBAL("Init", "VER  0.0.3\n");
+    LOG_LINE_GLOBAL("Init", "VER  0.0.3");
     LOG_LINE_GLOBAL("orc_inmem_test", "---->");
+    LOG_LINE_GLOBAL("orc_inmem_test", "logs : ", logs.c_str());
     LOG_LINE_GLOBAL("orc_inmem_test", "Path : ", path.c_str());
 
     bool  isPass = true;
@@ -701,7 +714,72 @@ Datum orc_inmem_test(PG_FUNCTION_ARGS)
     }
 
 
-    LOG_LINE_GLOBAL("orc_inmem_test", "----<  ", isPass ? "TestMemReader SUCCEED" : "TestMemReader FAILED");
-    PG_RETURN_TEXT_P(cstring_to_text(isPass ? "TestMemReader SUCCEED" : "TestMemReader FAILED"));
+    LOG_LINE_GLOBAL("orc_inmem_test", "----<  ", isPass ? "orc_inmem_test SUCCEED" : "orc_inmem_test FAILED");
+    PG_RETURN_TEXT_P(cstring_to_text(isPass ? "orc_inmem_test SUCCEED" : "orc_inmem_test FAILED"));
 }
+
+
+
+
+void Disp(MemStream<char> *m)
+{
+    int buffLen = 3;
+
+    char buff[buffLen + 1] = "";
+    int len = m->Len();
+
+    LOG_LINE_GLOBAL("orc_memstream_test", "Size = ", m->Size(), " - Len = ", len);
+
+    int offset;
+    for(offset = 0; offset < len-buffLen; offset+=buffLen)
+    {
+        m->read(buff, buffLen, offset);
+        buff[buffLen] = '\0';
+        LOG_LINE_GLOBAL("orc_memstream_test", "data = '", buff, "'");
+    }
+
+    m->read(buff, len - offset, offset);
+    buff[len - offset] = '\0';
+    LOG_LINE_GLOBAL("orc_memstream_test", "data = '", buff, "'");
+}
+
+Datum orc_memstream_test(PG_FUNCTION_ARGS)
+{
+    elog(LOG, "orc_memstream_test - ver:0.0.5");
+
+    const std::string logs = GETARG_TEXT(0, g_defLogSocket);
+    //const std::string path = GETARG_TEXT(1, g_defTestDataPath);
+    elog(LOG, "orc_memstream_test - Log socket:%s", logs.c_str());
+
+    LogLineGlbSocketName (logs.c_str());
+    LOG_LINE_GLOBAL("Init", "");
+    LOG_LINE_GLOBAL("Init", "VER  0.0.5");
+    LOG_LINE_GLOBAL("Init", "");
+    LOG_LINE_GLOBAL("orc_memstream_test", "---->");
+
+    MemStream<char> *m = new MemStream<char>("Test");
+    Disp(m);
+
+    m->write("1234567890abcdefghi", 20);
+    Disp(m);
+
+    m->write("123", 3);
+    Disp(m);
+
+    m->write("45", 2);
+    Disp(m);
+
+    m->write("6789", 4);
+    Disp(m);
+
+    //m->read(nullptr, 100, 2);
+
+
+
+    LOG_LINE_GLOBAL("orc_memstream_test", "----<");
+
+
+    PG_RETURN_TEXT_P(cstring_to_text("orc_memstream_test FAILED"));
+}
+
 
