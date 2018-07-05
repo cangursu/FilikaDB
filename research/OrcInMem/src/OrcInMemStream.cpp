@@ -21,9 +21,6 @@ extern "C" {
 #include <sstream>
 
 
-
-
-
 /**
  *    PGMemPool : Memory Manager
  *

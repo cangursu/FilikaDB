@@ -23,12 +23,15 @@ class PGMemPool : public orc::MemoryPool
 public:
     virtual ~PGMemPool()  {}
     virtual char* malloc(uint64_t size);
-    virtual void free(char* p);
+    virtual void  free(char* p);
 
     static PGMemPool &Pool();
 };
 
 
+
+
+//static int g___idCounter = 0;
 
 
 
@@ -81,65 +84,49 @@ public:
         return 1024;
     }
 
-
     virtual void write (const void* buf, size_t length) override
     {
-        //LOG_LINE_GLOBAL("orc_memstream_test", "---->  length = ", length);
+        if (nullptr == buf) return;
 
         uint64_t lenWritten = 0;
         for( const byte_t* pbuff = static_cast<const byte_t*>(buf); length > 0; )
         {
-            //LOG_LINE_GLOBAL("orc_memstream_test", "");
-            auto &itEnd = --_listBuffer.end();
+            auto &lbuff = _listBuffer[_listSize-1];
+            lenWritten = lbuff.Appand(pbuff, length);
 
-            lenWritten = itEnd->Appand(pbuff, length);
             length -= lenWritten;
             pbuff  += lenWritten;
 
-            //LOG_LINE_GLOBAL("orc_memstream_test", "lenWritten = ", lenWritten, " length = ", length);
-
-            if (itEnd->Size() <= itEnd->Idx())
+            if (lbuff.Size() <= lbuff.Idx())
                 AddNewBuffer();
         }
-
-
-        //LOG_LINE_GLOBAL("orc_memstream_test", "---->");
     }
-
 
     virtual void read  (void* buf, uint64_t length, uint64_t offset) override
     {
+        if (nullptr == buf) return;
+
         uint64_t sze = 0;
-        uint64_t pos = 0;
         uint64_t len = 0;
+        uint64_t idx = (uint64_t)((double)offset/(double)g_defBufferSize);
+        uint64_t pos = offset % g_defBufferSize;
 
-        auto it    = _listBuffer.begin();
-        auto itCur = it;
-        auto itEnd = _listBuffer.end();
-
-        for ( ; (it != itEnd) && (offset > pos); ++it)
-        {
-            itCur = it;
-            pos += (sze = itCur->Size());
-        }
-        pos = sze + offset - pos;
-
-        it = itCur;
         U *buffer = static_cast<U*>(buf);
 
-        for ( ; (it != itEnd) && (length > 0); ++it)
+        while (length > 0 && idx < _listSize)
         {
-            itCur = it;
-            sze   = itCur->Size();
-            len   = (pos + length) > sze ? sze - pos : length;
+            Buffer<U> &item = _listBuffer[idx];
+            sze = item.Idx();
+            len   = (pos + length) > sze ? (pos > sze ? 0 : sze - pos) : length;
 
-            std::memcpy(buffer, itCur->Ptr() + pos, len);
+            std::memcpy(buffer, item.Ptr() + pos, len);
 
             pos     = 0;
             buffer += len;
             length -= len;
+            idx++;
         }
-    }
+     }
 
 
     const std::string& getName() const override
@@ -165,9 +152,9 @@ public:
         return std::move(ss.str());
     }
 
-    uint64_t Size() const  { uint64_t s = 0; for(const auto &i:_listBuffer) s+=i.Size(); return s;  }
-    uint64_t Len()  const  { uint64_t s = 0; for(const auto &i:_listBuffer) s+=i.Idx();  return s;  }
-    uint64_t Cnt()  const  { _listBuffer.size();  }
+    uint64_t Size() const { return _listSize * g_defBufferSize; }
+    uint64_t Len()  const { return ((_listSize-1) * g_defBufferSize) + _listBuffer[_listSize-1].Idx(); }
+    uint64_t Cnt()  const { _listBuffer.size();  }
 
 
 private :
@@ -178,6 +165,7 @@ private :
         public:
             virtual ~Buffer()
             {
+                //LOG_LINE_GLOBAL("buffer", " ___id = ", ___id);
                 Clear();
             }
 
@@ -185,22 +173,27 @@ private :
                 : _mpool(mpool)
                 , _size (size)
             {
+                //LOG_LINE_GLOBAL("buffer", "___id = ", ___id);
                 _ptr = _mpool.malloc(_size);
             }
 
             Buffer(const Buffer &other)
                 : _mpool (other._mpool)
                 , _size  (other._size)
+                , _idx   (other._idx)
             {
+                //LOG_LINE_GLOBAL("buffer", "___id = ", ___id, " other.___id = ", other.___id);
                 _ptr = _mpool.malloc(_size);
-                std::memcpy(_ptr, other._ptr, _size);
+                std::memcpy(_ptr, other._ptr, _idx);
             }
 
             Buffer(Buffer &&other)
                 : _mpool (other._mpool)
                 , _size  (other._size)
+                , _idx   (other._idx)
                 , _ptr   (other._ptr)
             {
+                //LOG_LINE_GLOBAL("buffer", "&& ___id = ", ___id, " other.___id = ", other.___id);
                 other._ptr  = nullptr;
                 other.Clear();
             }
@@ -248,7 +241,7 @@ private :
 
                 }
 
-                memcpy(_ptr + _idx, buff, amount);
+                std::memcpy(_ptr + _idx, buff, amount);
                 _idx += amount;
                 return amount;
             }
@@ -260,21 +253,19 @@ private :
             uint64_t         _size = 0;
             uint64_t         _idx  = 0;
             T               *_ptr  = nullptr;
+
+            //int              ___id        = ++g___idCounter;
     };
 
     size_t AddNewBuffer()
     {
-        //LOG_LINE_GLOBAL("orc_memstream_test", "---->");
         Buffer<byte_t> buff;
         _listBuffer.push_back(std::move(buff));
-
-        //LOG_LINE_GLOBAL("orc_memstream_test", "---->  _listSize = ", _listSize + 1);
         return _listSize++;
     }
 
-    std::deque <Buffer<U> >  _listBuffer;
-    size_t                   _listSize  = 0;  // prevent to call list::size();
-
+    std::deque <Buffer<U> > _listBuffer;
+    size_t                  _listSize   = 0;  // prevent to call list::size();
 };
 
 

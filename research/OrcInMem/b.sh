@@ -1,4 +1,4 @@
-
+#!/bin/sh
 
 
 
@@ -6,6 +6,7 @@ until pg_isready -q
 do
     echo .... start db ....
     pg_ctl -D ~/pgdata -l ~/pgdata/log start
+    sleep 2
 done
 
 

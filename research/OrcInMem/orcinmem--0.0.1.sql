@@ -6,7 +6,7 @@ AS '$libdir/orcinmem'
 LANGUAGE C IMMUTABLE STRICT;
 
 
-CREATE FUNCTION orc_memstream_test(text) RETURNS text
+CREATE FUNCTION orc_buffer_test(text) RETURNS text
 AS '$libdir/orcinmem'
 LANGUAGE C IMMUTABLE STRICT;
 
