@@ -21,9 +21,6 @@ extern "C" {
 #include <sstream>
 
 
-
-
-
 /**
  *    PGMemPool : Memory Manager
  *
@@ -42,13 +39,13 @@ char* PGMemPool::malloc(uint64_t size)
     {
         LOG_LINE_GLOBAL("***ERROR***", "Memory ERROR... palloc() fialed (size:", size, ")");
     }
-    //LOG_LINE_GLOBAL("Mem", "size:", size, ", p:", (int)p);
+    //LOG_LINE_GLOBAL("InMemTest", "size:", size, ", p:", (int)p);
     return static_cast<char*>(p);
 }
 
 void  PGMemPool::free(char* p)
 {
-    //LOG_LINE_GLOBAL("Mem", (int)p);
+    //LOG_LINE_GLOBAL("InMemTest", (int)p);
     if (p) pfree(p);
 }
 

@@ -37,7 +37,6 @@ namespace  Filika
 #include <sstream>
 
 
-
 EXTERN_C void   LogLineGlbSocketName(const char *path);
 inline void     LogLineGlobalFormat(std::ostringstream &)
 {
@@ -55,7 +54,21 @@ void LogLineGlobalFormat(const char *desc, int lineNo, const char *fname, const 
 {
     std::ostringstream &os = Filika::logger().Get(Filika::LSL_INFO);
 
-    os << fname << ":" << funcName << ":" << lineNo << ":" << desc << " - ";
+    os.flags(std::ios::left);
+    os.width(12);
+    os << desc << " ";
+
+    std::stringstream osTmp;
+    osTmp << fname << ":" << lineNo;
+
+    os.width(24);
+    os << osTmp.str();
+
+
+    os << " ";
+    os.width(20);
+    os << funcName << " - ";
+
     LogLineGlobalFormat(os, args ...);
     //os << std::endl;
 
