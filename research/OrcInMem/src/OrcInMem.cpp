@@ -433,8 +433,8 @@ public:
 
     static void dump (const std::string &msg, const std::vector<std::string> &data)
     {
-        LOG_LINE_GLOBAL("MemTest", "Data Dump: ", msg);
-        for (const auto &ln : data) LOG_LINE_GLOBAL("MemTest", ln);
+        LOG_LINE_GLOBAL("InMemTest", "Data Dump: ", msg);
+        for (const auto &ln : data) LOG_LINE_GLOBAL("InMemTest", ln);
     }
 
 
@@ -488,7 +488,7 @@ void MemTestLoad(const std::string &msg, const std::string &input, std::unique_p
 
     CallMeasure  callElapses;
 
-    LOG_LINE_GLOBAL("MemTest", msg, " - source:", input);
+    LOG_LINE_GLOBAL("InMemTest", msg, " - source:", input);
     FileBatchLoader  finput(input.c_str());
 
     try
@@ -549,8 +549,8 @@ void MemTestLoad(const std::string &msg, const std::string &input, std::unique_p
     }
 
 
-    LOG_LINE_GLOBAL("MemTest", "Total writer elasped time: ", callElapses.elapses,    " ms.");
-    LOG_LINE_GLOBAL("MemTest", "Total writer CPU time    : ", callElapses.elapsesCPU, " ms.");
+    LOG_LINE_GLOBAL("InMemTest", "Total writer elasped time: ", callElapses.elapses,    " ms.");
+    LOG_LINE_GLOBAL("InMemTest", "Total writer CPU time    : ", callElapses.elapsesCPU, " ms.");
 }
 
 
@@ -562,8 +562,8 @@ bool TestMemReader(const std::string &msg, const std::string &fname, std::unique
 
     try
     {
-        LOG_LINE_GLOBAL("MemTest", msg, " - source:", fname);
-        //LOG_LINE_GLOBAL("MemTest", "----> buff=", buff, ", len=", len, ", fname=", fname);
+        LOG_LINE_GLOBAL("InMemTest", msg, " - source:", fname);
+        //LOG_LINE_GLOBAL("InMemTest", "----> buff=", buff, ", len=", len, ", fname=", fname);
 
         std::ifstream fexpected(fname);
         if (!fexpected.good())
@@ -608,15 +608,15 @@ bool TestMemReader(const std::string &msg, const std::string &fname, std::unique
 
             if (fexpected.good())
             {
-                //LOG_LINE_GLOBAL("MemTest", ".out file still have data");
+                //LOG_LINE_GLOBAL("InMemTest", ".out file still have data");
                 lnCmp = 1;
             }
         }
 
-        LOG_LINE_GLOBAL("MemTest", "Total reader elasped time: ", callMsr.elapses,    " ms.");
-        LOG_LINE_GLOBAL("MemTest", "Total reader CPU     time: ", callMsr.elapsesCPU, " ms.");
+        LOG_LINE_GLOBAL("InMemTest", "Total reader elasped time: ", callMsr.elapses,    " ms.");
+        LOG_LINE_GLOBAL("InMemTest", "Total reader CPU     time: ", callMsr.elapsesCPU, " ms.");
 
-        //LOG_LINE_GLOBAL("MemTest", "----<");
+        //LOG_LINE_GLOBAL("InMemTest", "----<");
     }
     catch(std::exception &ex)
     {
@@ -650,15 +650,15 @@ bool OrcInmemTest(const std::string &fname)
 
         std::unique_ptr<orc::InputStream> inStreamFile = orc::readFile(orc);
         result &= TestMemReader("FileInterface", out, inStreamFile);
-        //LOG_LINE_GLOBAL("MemTest", "result = ", result?"true":"false");
+        //LOG_LINE_GLOBAL("InMemTest", "result = ", result?"true":"false");
     }
 
     {
         std::unique_ptr<orc::OutputStream>   streamMem (new MemStream<char>("MemOStream"));
         MemTestLoad("InMemInterface", in, streamMem);
-        LOG_LINE_GLOBAL ("MemTest",  "Len : ", dynamic_cast<MemStream<char>*>(streamMem.get())->Len()
-                                  ,  ", Buffer Count  : ", dynamic_cast<MemStream<char>*>(streamMem.get())->Cnt()
-                                  ,  ", Size : ", dynamic_cast<MemStream<char>*>(streamMem.get())->Size()
+        LOG_LINE_GLOBAL ("InMemTest",  "Len : ", dynamic_cast<MemStream<char>*>(streamMem.get())->Len()
+                                    ,  ", Buffer Count  : ", dynamic_cast<MemStream<char>*>(streamMem.get())->Cnt()
+                                    ,  ", Size : ", dynamic_cast<MemStream<char>*>(streamMem.get())->Size()
                         );
 
         std::unique_ptr<orc::InputStream> inStreamMem  (dynamic_cast<MemStream<char> *>(streamMem.release()));
@@ -681,15 +681,15 @@ Datum orc_inmem_test(PG_FUNCTION_ARGS)
     LogLineGlbSocketName (logs.c_str());
 
     LOG_LINE_GLOBAL("Init", "VER  0.0.3");
-    LOG_LINE_GLOBAL("orc_inmem_test", "---->");
-    LOG_LINE_GLOBAL("orc_inmem_test", "logs : ", logs.c_str());
-    LOG_LINE_GLOBAL("orc_inmem_test", "Path : ", path.c_str());
+    LOG_LINE_GLOBAL("InMemTest", "---->");
+    LOG_LINE_GLOBAL("InMemTest", "logs : ", logs.c_str());
+    LOG_LINE_GLOBAL("InMemTest", "Path : ", path.c_str());
 
     bool  isPass = true;
     DIR *dir = opendir(path.c_str());
     if (dir == NULL)
     {
-        LOG_LINE_GLOBAL("orc_inmem_test", "Unable to access path");
+        LOG_LINE_GLOBAL("InMemTest", "Unable to access path");
         isPass = false;
     }
     else
@@ -702,11 +702,11 @@ Datum orc_inmem_test(PG_FUNCTION_ARGS)
                 && (0 == strncmp(de->d_name + (strlen(de->d_name)-3), ".in", 8)) )
             {
                 std::string fname(de->d_name, 0, (strlen(de->d_name)-3));
-                LOG_LINE_GLOBAL("orc_inmem_test", " ");
-                LOG_LINE_GLOBAL("orc_inmem_test", "FName   = ", fname.c_str());
+                LOG_LINE_GLOBAL("InMemTest", " ");
+                LOG_LINE_GLOBAL("InMemTest", "FName   = ", fname.c_str());
 
                 isPass = OrcInmemTest(path + fname);
-                LOG_LINE_GLOBAL("orc_inmem_test", "isPass = ", isPass?"true":"false");
+                LOG_LINE_GLOBAL("InMemTest", "isPass = ", isPass?"true":"false");
             }
         }
 
@@ -716,7 +716,7 @@ Datum orc_inmem_test(PG_FUNCTION_ARGS)
     }
 
 
-    LOG_LINE_GLOBAL("orc_inmem_test", "----<  ", isPass ? "orc_inmem_test SUCCEED" : "orc_inmem_test FAILED");
+    LOG_LINE_GLOBAL("InMemTest", "----<  ", isPass ? "orc_inmem_test SUCCEED" : "orc_inmem_test FAILED");
     PG_RETURN_TEXT_P(cstring_to_text(isPass ? "orc_inmem_test SUCCEED" : "orc_inmem_test FAILED"));
 }
 
