@@ -136,7 +136,6 @@ public:
 
     void close() override
     {
-//        LOG_LINE_GLOBAL("OutputStream", " ");
         //_buffer.Clear();
     }
 
