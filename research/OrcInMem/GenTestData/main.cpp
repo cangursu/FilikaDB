@@ -37,9 +37,7 @@ int main(int argc, char** argv)
     const char *ext    = "csv";
     uint64_t    lcount = 10000;
 
-    std::cout << "GenTestData v:0.0 - Test Data generator";
-
-    std::cout << argc << " : " << argv[0] << std::endl;
+    std::cout << "GenTestData v:0.0.2 - Test Data generator : \n";
     if (argc > 1) fname = argv[1];
     std::cout << " File : " << fname << std::endl;
 
@@ -73,17 +71,24 @@ int main(int argc, char** argv)
     }
     else
     {
+        std::string valNum;
+        std::string valDouble;
+        std::string valText;
         for (l = 0; l < lcount; ++l)
         {
+            valNum    = std::to_string(l);
+            valDouble = std::to_string(double (l/10.0));
+            valText   = std::string("cln-") + std::to_string(l);
+
             ss.str(strEmpty);
             ss.clear();
-            ss << l << "," << "col" << l << "," << double (l/10.0) << std::endl;
+            ss << valNum << "," << valText << "," << valDouble << std::endl;
             str = ss.str();
             fsIn.write(str.c_str(), str.length());
 
             ss.str(strEmpty);
             ss.clear();
-            ss << "{\"col1\": " << l << ", \"col2\": " << "\"col" << l << "\", \"col3\": " << double (l/10.0) << "}";
+            ss << "{\"col1\": " << valNum << ", \"col2\": " << valText << "\", \"col3\": " << valDouble << "}";
             if (l+1 < lcount) ss << std::endl;
             str = ss.str();
             fsOut.write(str.c_str(), str.length());
