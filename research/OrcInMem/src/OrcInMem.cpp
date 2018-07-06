@@ -418,6 +418,8 @@ public:
                 _isEof = true;
                 break;
             }
+
+            //LOG_LINE_GLOBAL("InMemTestLog", "Input = ", line);
             _data.push_back(line);
         }
         return Data();
@@ -433,8 +435,8 @@ public:
 
     static void dump (const std::string &msg, const std::vector<std::string> &data)
     {
-        LOG_LINE_GLOBAL("InMemTest", "Data Dump: ", msg);
-        for (const auto &ln : data) LOG_LINE_GLOBAL("InMemTest", ln);
+        LOG_LINE_GLOBAL("InMemTestLog", "Data Dump: ", msg);
+        for (const auto &ln : data) LOG_LINE_GLOBAL("InMemTestLog", ln);
     }
 
 
@@ -488,11 +490,12 @@ void MemTestLoad(const std::string &msg, const std::string &input, std::unique_p
 
     CallMeasure  callElapses;
 
-    LOG_LINE_GLOBAL("InMemTest", msg, " - source:", input);
+    //LOG_LINE_GLOBAL("InMemTestLog", msg, " - source:", input);
     FileBatchLoader  finput(input.c_str());
 
     try
     {
+        uint64_t itemCount = 0;
         while (/*!eof*/ !finput.IsEof())
         {
             uint64_t numValues    = 0;   // num of lines read in a batch
@@ -506,7 +509,8 @@ void MemTestLoad(const std::string &msg, const std::string &input, std::unique_p
             {
                 orc::StructVectorBatch* structBatch = dynamic_cast<orc::StructVectorBatch*>(rowBatch.get());
                 structBatch->numElements = numValues;
-                for (uint64_t i = 0; i < structBatch->fields.size(); ++i)
+                uint64_t i = 0;
+                for (i = 0; i < structBatch->fields.size(); ++i)
                 {
                     const orc::Type* subType = fileType->getSubtype(i);
                     switch (subType->getKind())
@@ -532,11 +536,15 @@ void MemTestLoad(const std::string &msg, const std::string &input, std::unique_p
                             throw std::runtime_error(subType->toString() + " is not supported yet.");
                     }
                 }
+
+                itemCount += numValues;
+                //LOG_LINE_GLOBAL("InMemTestLog", itemCount, ". rowBatch =", rowBatch->toString());
                 callElapses += CallMeasureFrame([&](){writer->add(*rowBatch);});
             }
 
         }
 
+        LOG_LINE_GLOBAL("InMemTestLog", "Closing Writer (", itemCount, " items)");
         callElapses += CallMeasureFrame([&](){writer->close();});
     }
     catch(std::exception &ex)
@@ -557,7 +565,7 @@ void MemTestLoad(const std::string &msg, const std::string &input, std::unique_p
 bool TestMemReader(const std::string &msg, const std::string &fname, std::unique_ptr<orc::InputStream> &inStream)
 {
     CallMeasure  callMsr;
-    int  lnCmp   = 0;
+    int  lnCompare   = 0;
     bool isNext  = true;
 
     try
@@ -569,7 +577,7 @@ bool TestMemReader(const std::string &msg, const std::string &fname, std::unique
         if (!fexpected.good())
         {
             LOG_LINE_GLOBAL("**ERROR**", "Unable to open file ", fname);
-            lnCmp = 1;
+            lnCompare = 1;
         }
         else
         {
@@ -580,56 +588,58 @@ bool TestMemReader(const std::string &msg, const std::string &fname, std::unique
             std::unique_ptr<orc::ColumnVectorBatch> batch;
             std::unique_ptr<orc::ColumnPrinter>     printer;
 
-            std::string lineMem;
-            char        lineFile[g_readLineLength];
+            std::string lineORC;
+            char        lineOut[g_readLineLength];
 
             //rowReaderOpts.include({0,1,2});
 
             callMsr += CallMeasureFrame([&](){reader    = orc::createReader(std::unique_ptr<orc::InputStream> (inStream.release()), readerOpts);});
             callMsr += CallMeasureFrame([&](){rowReader = reader->createRowReader(rowReaderOpts);});
             callMsr += CallMeasureFrame([&](){batch     = rowReader->createRowBatch(512);});
-            callMsr += CallMeasureFrame([&](){printer   = createColumnPrinter(lineMem, &rowReader->getSelectedType());});
-            while ((lnCmp == 0) && isNext)
+            callMsr += CallMeasureFrame([&](){printer   = createColumnPrinter(lineORC, &rowReader->getSelectedType());});
+            while ((lnCompare == 0) && isNext)
             {
                 callMsr += CallMeasureFrame([&](){isNext = rowReader->next(*batch);});
                 if (isNext)
                 {
                     printer->reset(*batch);
-                    for(unsigned long i = 0; (lnCmp == 0) && (i < batch->numElements); ++i)
+                    for(unsigned long i = 0; (lnCompare == 0) && (i < batch->numElements); ++i)
                     {
-                        lineMem.clear();
+                        lineORC.clear();
                         callMsr += CallMeasureFrame([&](){printer->printRow(i);});
 
-                        fexpected.getline(lineFile, g_readLineLength);
-                        lnCmp = lineMem.compare(lineFile);
+                        fexpected.getline(lineOut, g_readLineLength);
+                        lnCompare = lineORC.compare(lineOut);
+                        //LOG_LINE_GLOBAL("InMemTestLog", "lineORC  = ", lineORC, " - lineFile = ", lineOut);
+
                     }
                 }
             }
 
             if (fexpected.good())
             {
-                //LOG_LINE_GLOBAL("InMemTest", ".out file still have data");
-                lnCmp = 1;
+                lnCompare = 1;
+                LOG_LINE_GLOBAL("ERROR", ".out file still have data");
             }
         }
 
         LOG_LINE_GLOBAL("InMemTest", "Total reader elasped time: ", callMsr.elapses,    " ms.");
         LOG_LINE_GLOBAL("InMemTest", "Total reader CPU     time: ", callMsr.elapsesCPU, " ms.");
 
-        //LOG_LINE_GLOBAL("InMemTest", "----<");
+        //LOG_LINE_GLOBAL("InMemTestLog", "----<");
     }
     catch(std::exception &ex)
     {
-        lnCmp = 1;
+        lnCompare = 1;
         LOG_LINE_GLOBAL("ERROR", "Excaption CATHED : ", ex.what());
     }
     catch(...)
     {
-        lnCmp = 1;
+        lnCompare = 1;
         LOG_LINE_GLOBAL("ERROR", ".... Something CATHED ....");
     }
 
-    return lnCmp == 0;
+    return lnCompare == 0;
 }
 
 
@@ -643,22 +653,21 @@ bool OrcInmemTest(const std::string &fname)
     in  += ".in";
     out += ".out";
     orc += ".orc";
-
+/*
     {
         std::unique_ptr<orc::OutputStream> outStreamFile = orc::writeLocalFile(orc);
         MemTestLoad("FileInterface", in, outStreamFile);
 
         std::unique_ptr<orc::InputStream> inStreamFile = orc::readFile(orc);
         result &= TestMemReader("FileInterface", out, inStreamFile);
-        //LOG_LINE_GLOBAL("InMemTest", "result = ", result?"true":"false");
     }
-
+*/
     {
         std::unique_ptr<orc::OutputStream>   streamMem (new MemStream<char>("MemOStream"));
         MemTestLoad("InMemInterface", in, streamMem);
-        LOG_LINE_GLOBAL ("InMemTest",  "Len : ", dynamic_cast<MemStream<char>*>(streamMem.get())->Len()
+        LOG_LINE_GLOBAL ("InMemTest",  "Len : "            , dynamic_cast<MemStream<char>*>(streamMem.get())->Len()
                                     ,  ", Buffer Count  : ", dynamic_cast<MemStream<char>*>(streamMem.get())->Cnt()
-                                    ,  ", Size : ", dynamic_cast<MemStream<char>*>(streamMem.get())->Size()
+                                    ,  ", Size : "         , dynamic_cast<MemStream<char>*>(streamMem.get())->Size()
                         );
 
         std::unique_ptr<orc::InputStream> inStreamMem  (dynamic_cast<MemStream<char> *>(streamMem.release()));
@@ -681,7 +690,7 @@ Datum orc_inmem_test(PG_FUNCTION_ARGS)
     LogLineGlbSocketName (logs.c_str());
 
     LOG_LINE_GLOBAL("Init", "VER  0.0.3");
-    LOG_LINE_GLOBAL("InMemTest", "---->");
+    LOG_LINE_GLOBAL("InMemTestLog", "---->");
     LOG_LINE_GLOBAL("InMemTest", "logs : ", logs.c_str());
     LOG_LINE_GLOBAL("InMemTest", "Path : ", path.c_str());
 
@@ -695,7 +704,7 @@ Datum orc_inmem_test(PG_FUNCTION_ARGS)
     else
     {
         dirent *de = nullptr;
-        while (nullptr != (de = readdir (dir)) && (true == isPass))
+        while (nullptr != (de = readdir (dir)) /*&& (true == isPass)*/)
         {
             if (   (de->d_type && DT_REG)
                 && (0 == strncmp(de->d_name, "TestData", 8))
@@ -716,7 +725,7 @@ Datum orc_inmem_test(PG_FUNCTION_ARGS)
     }
 
 
-    LOG_LINE_GLOBAL("InMemTest", "----<  ", isPass ? "orc_inmem_test SUCCEED" : "orc_inmem_test FAILED");
+    LOG_LINE_GLOBAL("InMemTestLog", "----<  ", isPass ? "orc_inmem_test SUCCEED" : "orc_inmem_test FAILED");
     PG_RETURN_TEXT_P(cstring_to_text(isPass ? "orc_inmem_test SUCCEED" : "orc_inmem_test FAILED"));
 }
 
