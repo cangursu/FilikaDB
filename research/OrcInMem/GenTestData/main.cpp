@@ -17,8 +17,7 @@
 #include <iostream>
 #include <sstream>
 #include <fstream>
-
-using namespace std;
+#include <iomanip>
 
 /*
  *
@@ -26,10 +25,29 @@ using namespace std;
 
  void PrintUsage()
  {
-     cout << "Usage : \n";
-     cout << "GenTestData FileNamePrefix lineCount\n";
-     cout << "ex : $ GenTestData TestData 10000";
+     std::cout << "Usage : \n";
+     std::cout << "GenTestData FileNamePrefix lineCount\n";
+     std::cout << "ex : $ GenTestData TestData 10000";
  }
+
+template<typename T>
+std::string tostring(const T &n)
+{
+    std::string s =  std::to_string(n);
+
+    int dotpos = s.find_first_of('.');
+    if(dotpos != std::string::npos)
+    {
+        int ipos = s.size()-1;
+        while ((s[ipos] == '0') && (ipos > dotpos))
+            --ipos;
+        if (s[ipos] == '.')
+            --ipos;
+        s.erase (ipos + 1, std::string::npos);
+    }
+    return s;
+}
+
 
 int main(int argc, char** argv)
 {
@@ -51,11 +69,9 @@ int main(int argc, char** argv)
     std::ofstream     fsIn;
     std::ofstream     fsOut;
 
-
     std::string fnameIn = fname;
     fnameIn += ".in";
     fsIn.open(fnameIn.c_str());
-
 
     std::string fnameOut = fname;
     fnameOut += ".out";
@@ -74,11 +90,15 @@ int main(int argc, char** argv)
         std::string valNum;
         std::string valDouble;
         std::string valText;
+
+
+
         for (l = 0; l < lcount; ++l)
         {
             valNum    = std::to_string(l);
-            valDouble = std::to_string(double (l/10.0));
             valText   = std::string("cln-") + std::to_string(l);
+
+            valDouble = tostring<double>(double (l/10.0));
 
             ss.str(strEmpty);
             ss.clear();
@@ -88,7 +108,7 @@ int main(int argc, char** argv)
 
             ss.str(strEmpty);
             ss.clear();
-            ss << "{\"col1\": " << valNum << ", \"col2\": " << valText << "\", \"col3\": " << valDouble << "}";
+            ss << "{\"col1\": " << valNum << ", \"col2\": \"" << valText << "\", \"col3\": " << valDouble << "}";
             if (l+1 < lcount) ss << std::endl;
             str = ss.str();
             fsOut.write(str.c_str(), str.length());

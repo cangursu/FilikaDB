@@ -7,7 +7,7 @@
 #include "OrcInMemGlobals.h"
 
 
-const int   g_defBufferSize    = 256 * 1024;
+//const int   g_defBufferSize    = 256 * 1024;
 const int   g_readLineLength   = 8192;
 const int   g_naturalWriteSize = 512;
 

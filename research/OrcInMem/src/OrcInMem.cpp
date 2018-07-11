@@ -490,7 +490,7 @@ void MemTestLoad(const std::string &msg, const std::string &input, std::unique_p
 
     CallMeasure  callElapses;
 
-    //LOG_LINE_GLOBAL("InMemTestLog", msg, " - source:", input);
+    LOG_LINE_GLOBAL("InMemTestLog", msg, " - source:", input);
     FileBatchLoader  finput(input.c_str());
 
     try
@@ -557,12 +557,11 @@ void MemTestLoad(const std::string &msg, const std::string &input, std::unique_p
     }
 
 
-    LOG_LINE_GLOBAL("InMemTest", "Total writer elasped time: ", callElapses.elapses,    " ms.");
-    LOG_LINE_GLOBAL("InMemTest", "Total writer CPU time    : ", callElapses.elapsesCPU, " ms.");
+    LOG_LINE_GLOBAL("InMemMeasure", msg, " - Total Load Elasped time: ", callElapses.elapses, " ms. - CPU time : ", callElapses.elapsesCPU, " ms.");
 }
 
 
-bool TestMemReader(const std::string &msg, const std::string &fname, std::unique_ptr<orc::InputStream> &inStream)
+bool MemTestReader(const std::string &msg, const std::string &fname, std::unique_ptr<orc::InputStream> &inStream)
 {
     CallMeasure  callMsr;
     int  lnCompare   = 0;
@@ -616,22 +615,26 @@ bool TestMemReader(const std::string &msg, const std::string &fname, std::unique
                 }
             }
 
-            if (fexpected.good())
+            if (lnCompare != 0)
+            {
+                LOG_LINE_GLOBAL("ERROR", "data comparison failed...");
+                LOG_LINE_GLOBAL("ERROR", "lineORC  = ", lineORC);
+                LOG_LINE_GLOBAL("ERROR", "lineFile = ", lineOut);
+            }
+            else if (fexpected.good())
             {
                 lnCompare = 1;
                 LOG_LINE_GLOBAL("ERROR", ".out file still have data");
             }
         }
 
-        LOG_LINE_GLOBAL("InMemTest", "Total reader elasped time: ", callMsr.elapses,    " ms.");
-        LOG_LINE_GLOBAL("InMemTest", "Total reader CPU     time: ", callMsr.elapsesCPU, " ms.");
-
+        LOG_LINE_GLOBAL("InMemMeasure", msg, " - Total Read Elasped time: ", callMsr.elapses, " ms. - CPU time : ", callMsr.elapsesCPU, " ms.");
         //LOG_LINE_GLOBAL("InMemTestLog", "----<");
     }
     catch(std::exception &ex)
     {
         lnCompare = 1;
-        LOG_LINE_GLOBAL("ERROR", "Excaption CATHED : ", ex.what());
+        LOG_LINE_GLOBAL("ERROR", "Exception CATHED : ", ex.what());
     }
     catch(...)
     {
@@ -653,25 +656,25 @@ bool OrcInmemTest(const std::string &fname)
     in  += ".in";
     out += ".out";
     orc += ".orc";
-/*
+
     {
         std::unique_ptr<orc::OutputStream> outStreamFile = orc::writeLocalFile(orc);
         MemTestLoad("FileInterface", in, outStreamFile);
 
         std::unique_ptr<orc::InputStream> inStreamFile = orc::readFile(orc);
-        result &= TestMemReader("FileInterface", out, inStreamFile);
+        result &= MemTestReader("FileInterface", out, inStreamFile);
     }
-*/
+
     {
-        std::unique_ptr<orc::OutputStream>   streamMem (new MemStream<char>("MemOStream"));
+        std::unique_ptr<orc::OutputStream>   streamMem (new OrcMemStream<char>("MemOStream"));
         MemTestLoad("InMemInterface", in, streamMem);
-        LOG_LINE_GLOBAL ("InMemTest",  "Len : "            , dynamic_cast<MemStream<char>*>(streamMem.get())->Len()
-                                    ,  ", Buffer Count  : ", dynamic_cast<MemStream<char>*>(streamMem.get())->Cnt()
-                                    ,  ", Size : "         , dynamic_cast<MemStream<char>*>(streamMem.get())->Size()
+        LOG_LINE_GLOBAL ("InMemTest",  "Len : "            , dynamic_cast<OrcMemStream<char>*>(streamMem.get())->Len()
+                                    ,  ", Buffer Count  : ", dynamic_cast<OrcMemStream<char>*>(streamMem.get())->Cnt()
+                                    ,  ", Size : "         , dynamic_cast<OrcMemStream<char>*>(streamMem.get())->Size()
                         );
 
-        std::unique_ptr<orc::InputStream> inStreamMem  (dynamic_cast<MemStream<char> *>(streamMem.release()));
-        result &= TestMemReader("InMemInterface", out, inStreamMem);
+        std::unique_ptr<orc::InputStream> inStreamMem  (dynamic_cast<OrcMemStream<char> *>(streamMem.release()));
+        result &= MemTestReader("InMemInterface", out, inStreamMem);
     }
 
 
@@ -786,7 +789,7 @@ Datum orc_buffer_test(PG_FUNCTION_ARGS)
     int resTest = true;
     int isPass  = true;
 
-    MemStream<char> *m = new MemStream<char>("Test");
+    OrcMemStream<char> *m = new OrcMemStream<char>("Test");
 
     const char *data[] =
     {

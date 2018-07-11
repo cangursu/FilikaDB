@@ -15,7 +15,7 @@
 #define __ORC_INMEM_GLOBALS_H__
 
 
-extern const int   g_defBufferSize   ;
+//extern const int   g_defBufferSize   ;
 extern const int   g_readLineLength  ;
 extern const int   g_naturalWriteSize;
 

@@ -54,19 +54,23 @@ void LogLineGlobalFormat(const char *desc, int lineNo, const char *fname, const 
 {
     std::ostringstream &os = Filika::logger().Get(Filika::LSL_INFO);
 
+    const int widthDesc  = 12;
+    const int widthFName = 24;
+    const int widthFunc  = 20;
+
     os.flags(std::ios::left);
-    os.width(12);
+    os.width(widthDesc);
     os << desc << " ";
 
     std::stringstream osTmp;
     osTmp << fname << ":" << lineNo;
 
-    os.width(24);
+    os.width(widthFName);
     os << osTmp.str();
 
 
     os << " ";
-    os.width(20);
+    os.width(widthFunc);
     os << funcName << " - ";
 
     LogLineGlobalFormat(os, args ...);
