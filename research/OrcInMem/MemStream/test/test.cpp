@@ -6,7 +6,7 @@
 #include <iostream>
 
 
-bool CheckBufferWrite(MemStream<char> *m, const char *data)
+bool CheckBufferWrite(MemStream<std::uint8_t> *m, const char *data)
 {
     size_t len = std::strlen(data);
     m->write(data, len);
@@ -28,7 +28,7 @@ int main(int argc, char** argv)
     int resTest = true;
     int isPass  = true;
 
-    MemStream<char> m;
+    MemStream<std::uint8_t> m;
 
     const char *data[] =
     {

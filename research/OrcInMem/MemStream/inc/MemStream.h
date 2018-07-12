@@ -6,7 +6,7 @@
 
 #include "MemStreamGlobals.h"
 
-#include <stdint.h>
+//#include <stdint.h>
 #include <cstring>
 #include <string>
 #include <sstream>
@@ -25,15 +25,15 @@
 class MemoryPool
 {
     public:
-        virtual char* malloc(uint64_t size) = 0;
-        virtual void  free  (char* p)       = 0;
+        virtual char* malloc(std::uint64_t size) = 0;
+        virtual void  free  (char* p)            = 0;
 };
 
 class MemoryPoolDefault : public MemoryPool
 {
     public:
-        virtual char* malloc(uint64_t size)  { return new char[size];  }
-        virtual void  free  (char* p)        { delete [] p;            }
+        virtual char* malloc(std::uint64_t size)  { return new char[size];  }
+        virtual void  free  (char* p)             { delete [] p;            }
 };
 
 
@@ -71,7 +71,7 @@ public:
     {
         if (nullptr == buf) return;
 
-        uint64_t lenWritten = 0;
+        std::uint64_t lenWritten = 0;
         for( const byte_t* pbuff = static_cast<const byte_t*>(buf); length > 0; )
         {
             auto &lbuff = _listBuffer[_listSize-1];
@@ -87,14 +87,16 @@ public:
         }
     }
 
-    void read  (void* buf, uint64_t length, uint64_t offset)
+    std::uint64_t read (void* buf, std::uint64_t length, std::uint64_t offset)
     {
-        if (nullptr == buf) return;
+        if (nullptr == buf) return 0L;
 
-        uint64_t sze = 0;
-        uint64_t len = 0;
-        uint64_t idx = (uint64_t)((double)offset/(double)g_defBufferSize);
-        uint64_t pos = offset % g_defBufferSize;
+        std::uint64_t readed = 0;
+
+        std::uint64_t sze = 0;
+        std::uint64_t len = 0;
+        std::uint64_t idx = (std::uint64_t)((double)offset/(double)g_defBufferSize);
+        std::uint64_t pos = offset % g_defBufferSize;
 
         U *buffer = static_cast<U*>(buf);
 
@@ -106,11 +108,14 @@ public:
 
             std::memcpy(buffer, item.Ptr() + pos, len);  //TODO: std::memcpy sould call from MemPool
 
+
             pos     = 0;
+            readed += len;
             buffer += len;
             length -= len;
             idx++;
         }
+        return readed;
      }
 
     void close()
@@ -130,9 +135,9 @@ public:
         return std::move(ss.str());
     }
 
-    uint64_t Size() const { return _listSize * g_defBufferSize; }
-    uint64_t Len()  const { return ((_listSize-1) * g_defBufferSize) + _listBuffer[_listSize-1].Idx(); }
-    uint64_t Cnt()  const { _listBuffer.size();  }
+    std::uint64_t Size() const { return _listSize * g_defBufferSize; }
+    std::uint64_t Len()  const { return ((_listSize-1) * g_defBufferSize) + _listBuffer[_listSize-1].Idx(); }
+    std::uint64_t Cnt()  const { _listBuffer.size();  }
 
 
 private :
@@ -146,12 +151,12 @@ private :
                 Clear();
             }
 
-            Buffer(MemoryPool &mpool = g_poolDefault, uint64_t size = g_defBufferSize)
+            Buffer(MemoryPool &mpool = g_poolDefault, std::uint64_t size = g_defBufferSize)
                 : _mpool(mpool)
                 , _size (size)
             {
                 //LOG_LINE_GLOBAL("buffer", "___id = ", ___id);
-                _ptr = _mpool.malloc(_size);
+                _ptr = (T*)_mpool.malloc(_size);
             }
 
             Buffer(const Buffer &other)
@@ -175,14 +180,14 @@ private :
                 other.Clear();
             }
 
-            uint64_t Size() const  { return _size;        }
-            uint64_t Idx()  const  { return _idx;         }
-            T *      Ptr()  const  { return _ptr;         }
-            T *      Pos()  const  { return _ptr + _idx;  }
+            std::uint64_t Size() const  { return _size;        }
+            std::uint64_t Idx()  const  { return _idx;         }
+            T *           Ptr()  const  { return _ptr;         }
+            T *           Pos()  const  { return _ptr + _idx;  }
 
-            void Resize(uint64_t addSize)
+            void Resize(std::uint64_t addSize)
             {
-                uint64_t size = _size;
+                std::uint64_t size = _size;
                 if ((_idx + addSize) > size)
                 {
                     while ((_idx + addSize) > size)
@@ -192,21 +197,21 @@ private :
                     memcpy(_ptr, ptr, _idx);
                     _size = size;
 
-                    _mpool.free(ptr);
+                    _mpool.free((char *)ptr);
                 }
             }
 
             void Clear()
             {
-                if (_ptr) _mpool.free(_ptr);
+                if (_ptr) _mpool.free(reinterpret_cast<char *>(_ptr));
                 _ptr  = nullptr;
                 _size = 0;
                 _idx  = 0;
             }
 
-            uint64_t Appand(const byte_t *buff, uint64_t len, bool doResize = false)
+            std::uint64_t Appand(const byte_t *buff, std::uint64_t len, bool doResize = false)
             {
-                uint64_t  amount = len * sizeof(T);
+                std::uint64_t  amount = len * sizeof(T);
                 if (doResize)
                 {
                     Resize(amount);
@@ -225,16 +230,14 @@ private :
 
             MemoryPool      &_mpool;
 
-            uint64_t         _size = 0;
-            uint64_t         _idx  = 0;
+            std::uint64_t    _size = 0;
+            std::uint64_t    _idx  = 0;
             T               *_ptr  = nullptr;
-
-            //int              ___id        = ++g___idCounter;
     };
 
     size_t AddNewBuffer()
     {
-        Buffer<byte_t> buff;
+        Buffer<U> buff;
         _listBuffer.push_back(std::move(buff));
         return _listSize++;
     }
