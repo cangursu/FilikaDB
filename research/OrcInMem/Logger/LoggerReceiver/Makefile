@@ -6,10 +6,12 @@ CFLAGS= -O3 -w -Wall -fPIC -std=c++17
 LDFLAGS=
 #LDLIBS=../HElib/src/fhe.a ../ntl-10.3.0/src/ntl.a -lgmp -lpthread
 LDLIBS=
-INCLUDE_PATH=-I.. -I../inc
+INCLUDE_PATH=-I.. -I../inc -I../../MemStream/inc -I../../MemStreamRemote/inc
 
 SOURCES=$(wildcard *.cpp)
 SOURCES+=$(wildcard ../src/*.cpp)
+SOURCES+=$(wildcard ../../MemStream/src/*.cpp)
+SOURCES+=$(wildcard ../../MemStreamRemote/src/*.cpp)
 
 OBJECTS=$(SOURCES:.cpp=.o)
 DEPENDS=$(SOURCES:.cpp=.d)

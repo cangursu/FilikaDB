@@ -1,7 +1,7 @@
 
 
 #include "OrcInMem.h"
-#include "OrcInMemStream.h"
+#include "OrcStreamInMem.h"
 #include "OrcInMemTime.h"
 #include "LoggerGlobal.h"
 #include "OrcInMemGlobals.h"

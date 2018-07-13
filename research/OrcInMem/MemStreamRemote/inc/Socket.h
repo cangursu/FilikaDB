@@ -84,7 +84,7 @@ class SocketServer : public Socket
         int epoll() const  { return _epoll; }
 
     private :
-        class MapFd
+        class FdMap
         {
             public  :
                 bool erase(int fd, Socket &s)
@@ -109,14 +109,16 @@ class SocketServer : public Socket
                 {
                     auto it = _map.find(fd);
                     if (it != _map.cend()) return it->second;
-                    return Socket();
+                    return std::move(Socket());
                 }
                 std::uint64_t size () { return _size; }
             private :
                 std::unordered_map<int, Socket> _map;
                 std::uint64_t                   _size = 0;
         } _clientList;
-        int                             _epoll = -1;
+
+
+        int   _epoll = -1;
 };
 
 
@@ -125,7 +127,7 @@ class SocketClient : public Socket
     public:
         SocketResult Connect (const std::string &host, int port);
         SocketResult Send    (void *data, std::uint64_t len);
-        SocketResult Send    (MemStream<std::uint8_t> &&);
+        SocketResult Send    (MemStream<std::uint8_t> &&)   ;
 
     public:
         // Events

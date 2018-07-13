@@ -42,6 +42,16 @@
 
 
 
+#include "SocketDomain.h"
+
+#include <sstream>
+#include <string>
+#include <stdio.h>
+
+
+
+
+
 
 #define SOCK_PATH_DEFAULT "unix_sock.server"
 
@@ -54,41 +64,12 @@ namespace  Filika
         FR_ERROR   = -1
     };
 
-    class SockDomain
-    {
-        public:
-
-        SockDomain() {}
-        SockDomain(SockDomain &)  = delete;
-        SockDomain(SockDomain &&) = delete;
-        SockDomain(const char *path);
-        virtual ~SockDomain() ;
-
-        int init();
-        int init(const char *path);
-        int initServer();
-        int release() ;
-
-        ssize_t recvFrom(void *pdata, size_t len) ;
-        ssize_t sendTo(const void *pdata, size_t len);
-
-    private:
-        int _sock = -1;
-        sockaddr_un _addr{AF_UNIX, SOCK_PATH_DEFAULT};
-    };
-
-
-
-
 
 
 
 #ifndef __LOG_H__
 #define __LOG_H__
 
-#include <sstream>
-#include <string>
-#include <stdio.h>
 
 
 inline std::string NowTime();
@@ -231,7 +212,7 @@ class FILELOG_DECLSPEC LSockLogServer : public LogStream,
                                         public SockDomain
 {
     public :
-        LSockLogServer()
+        LSockLogServer() : SockDomain(SOCK_PATH_DEFAULT)
         {
             if( 0 != initServer()) std::cerr << "Unable To initialize Log Server\n";
         }
@@ -260,7 +241,7 @@ class FILELOG_DECLSPEC LSockLog : public LogStream,
                                   public SockDomain
 {
     public :
-        LSockLog()
+        LSockLog() : SockDomain(SOCK_PATH_DEFAULT)
         {
             init();
         }
@@ -319,5 +300,5 @@ inline std::string NowTime()
 
 #endif //__LOG_H__
 
-} //::Filika 
+} //::Filika
 #endif // __LOGGER_H__

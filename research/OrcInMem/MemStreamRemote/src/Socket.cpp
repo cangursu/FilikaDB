@@ -325,7 +325,7 @@ SocketResult SocketClient::Send(void *data, std::uint64_t len)
     return res;
 }
 
-SocketResult SocketClient::Send(MemStream<std::uint8_t> &&stream)
+SocketResult SocketClient::Send(MemStream<std::uint8_t> &&stream) 
 {
     SocketResult result = SocketResult::SUCCESS;
 

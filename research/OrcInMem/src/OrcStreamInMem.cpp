@@ -1,12 +1,10 @@
 
-
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #include "postgres.h"
-#include "utils/builtins.h"
+//#include "utils/builtins.h"
 
 #ifdef __cplusplus
 }
@@ -14,11 +12,9 @@ extern "C" {
 
 
 
-
-#include "OrcInMemStream.h"
+#include "OrcStreamInMem.h"
 #include "LoggerGlobal.h"
 
-#include <sstream>
 
 
 /**

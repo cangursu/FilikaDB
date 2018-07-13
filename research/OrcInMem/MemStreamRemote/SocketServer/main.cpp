@@ -40,7 +40,7 @@ class EchoServer : public SocketServer
             if (SocketResult::SUCCESS == sock.NameInfo(addr, host, serv))
             {
                 std::cout << "Accepted connection on host = " << host  << " port = " << serv << std::endl;
-                std::cout << "Client count = " << ClientCount() << std::endl;
+                ClientCount();
             }
         }
         virtual void OnRecv(const Socket &sock, MemStream<uint8_t> &&stream)
@@ -58,7 +58,8 @@ class EchoServer : public SocketServer
         }
         virtual void OnDisconnect  (const Socket &sock)
         {
-            std::cout << "Disconnected Client.  " << ClientCount() << std::endl;
+            std::cout << "Client Disconnected. \n;";
+            ClientCount();
         }
         virtual void OnErrorClient(SocketResult res)
         {
@@ -68,6 +69,11 @@ class EchoServer : public SocketServer
         {
             std::cout << "ErrorServer : " << SocketResultText(res) << std::endl;
         };
+
+        void ClientCount()
+        {
+            std::cout << "Client count = " << SocketServer::ClientCount() << std::endl;
+        }
 };
 
 

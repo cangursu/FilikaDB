@@ -3,10 +3,10 @@
 #ifndef __EXT_ORC15_MEM_STREAM_H__
 #define __EXT_ORC15_MEM_STREAM_H__
 
+#include "orc/OrcFile.hh"
 
 #include "MemStream.h"
 #include "MemStreamGlobals.h"
-#include "orc/OrcFile.hh"
 #include "OrcInMemGlobals.h"
 #include "LoggerGlobal.h"
 
