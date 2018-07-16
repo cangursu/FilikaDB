@@ -21,8 +21,8 @@
 
 SockDomain::SockDomain(const char *path)
 {
-    ____addr.sun_family = AF_UNIX;
-    strcpy(____addr.sun_path, path);
+    _addr.sun_family = AF_UNIX;
+    strcpy(_addr.sun_path, path);
 }
 
 SockDomain::~SockDomain()
@@ -39,8 +39,8 @@ int SockDomain::init()
 
 int SockDomain::init(const char *path)
 {
-    ____addr.sun_family = AF_UNIX;
-    strcpy(____addr.sun_path, path);
+    _addr.sun_family = AF_UNIX;
+    strcpy(_addr.sun_path, path);
     return init();
 }
 
@@ -52,8 +52,8 @@ int SockDomain::initServer()
 
     if (init() == 0)
     {
-        unlink(____addr.sun_path);
-        rc = bind(_sock, (struct sockaddr *) &____addr, sizeof (____addr));
+        unlink(_addr.sun_path);
+        rc = bind(_sock, (struct sockaddr *) &_addr, sizeof (_addr));
     }
 
     return rc;
@@ -83,7 +83,7 @@ ssize_t SockDomain::recvFrom(void *pdata, size_t lenData)
 
 ssize_t  SockDomain::sendTo(const void *pdata, size_t len)
 {
-    ssize_t bytes = sendto(_sock, pdata, len, 0, (struct sockaddr *) &____addr, sizeof (____addr));
+    ssize_t bytes = sendto(_sock, pdata, len, 0, (struct sockaddr *) &_addr, sizeof (_addr));
     if (bytes == -1) release();
     return bytes;
 }

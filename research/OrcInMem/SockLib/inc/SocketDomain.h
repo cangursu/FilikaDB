@@ -37,7 +37,7 @@ class SockDomain
 
 private:
     int             _sock = -1;
-    sockaddr_un     ____addr/*{AF_UNIX, SOCK_PATH_DEFAULT}*/;
+    sockaddr_un     _addr/*{AF_UNIX, SOCK_PATH_DEFAULT}*/;
 };
 
 
