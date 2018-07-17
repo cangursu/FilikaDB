@@ -23,7 +23,7 @@ CFLAGS= -g -O0 -w -Wall -fPIC -std=c++17  \
 LDFLAGS=
 #LDLIBS=../HElib/src/fhe.a ../ntl-10.3.0/src/ntl.a -lgmp -lpthread
 LDLIBS=-lstdc++fs
-INCLUDE_PATH=-I.. -I../inc -I../MemStream/inc  -I../SockLib/inc -I../3rdparty/rapidjson/include
+INCLUDE_PATH=-I.. -I../inc -I../MemStream/inc  -I../SockLib/inc -I../3rdparty/rapidjson.1/include
 
 SOURCES=$(wildcard *.cpp)
 SOURCES+=$(wildcard ../src/*.cpp)
