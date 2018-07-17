@@ -2,6 +2,7 @@
 
 #include "OrcInMem.h"
 #include "OrcStreamInMem.h"
+#include "OrcMemStreamRemoteSender.h"
 #include "OrcInMemTime.h"
 #include "LoggerGlobal.h"
 #include "OrcInMemGlobals.h"
@@ -18,6 +19,7 @@ PG_MODULE_MAGIC;
 
 PG_FUNCTION_INFO_V1(orc_inmem_test);
 PG_FUNCTION_INFO_V1(orc_buffer_test);
+PG_FUNCTION_INFO_V1(orc_buffer_remote_test);
 
 #ifdef __cplusplus
 }
@@ -776,7 +778,8 @@ Datum orc_buffer_test(PG_FUNCTION_ARGS)
 {
     elog(LOG, "orc_buffer_test - ver:0.0.5");
 
-    const std::string logs = GETARG_TEXT(0, g_defLogSocket);
+    const std::string logs = GETARG_TEXT(0, g_defLogSocket);  
+    
     //const std::string path = GETARG_TEXT(1, g_defTestDataPath);
     elog(LOG, "orc_buffer_test - Log socket:%s", logs.c_str());
 
@@ -815,3 +818,30 @@ Datum orc_buffer_test(PG_FUNCTION_ARGS)
 }
 
 
+
+
+Datum orc_buffer_remote_test(PG_FUNCTION_ARGS)
+{
+    elog(LOG, "orc_buffer_remote_test - ver:0.0.0");
+    
+    const std::string logs = GETARG_TEXT(0, g_defLogSocket);
+    const std::string remt = GETARG_TEXT(1, g_defRemoteSocket);
+
+        
+    elog(LOG, "orc_buffer_remote_test - Log socket:%s", logs.c_str());
+    
+    LogLineGlbSocketName (logs.c_str());
+    LOG_LINE_GLOBAL("Init", "");
+    LOG_LINE_GLOBAL("Init", "VER  0.0.0");
+    LOG_LINE_GLOBAL("Init", "");
+    
+    
+    OrcMemStreamRemoteSender mem(/*remt*/);
+    
+    
+    
+    
+    const char *resStr = "orc_buffer_remote_test FAILED";
+    LOG_LINE_GLOBAL("buffer", "----<  ", resStr);
+    PG_RETURN_TEXT_P(cstring_to_text(resStr));
+}

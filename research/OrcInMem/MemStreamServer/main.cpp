@@ -193,7 +193,7 @@ int main(int argc, char** argv)
         PrintConfig(args);
     }
 
-/*
+
     SourceChannel src(args._sourceChannel.c_str());
     std::string logitem;
     while (true)
@@ -201,5 +201,5 @@ int main(int argc, char** argv)
         src.recv(logitem);
         std::cout << logitem << std::endl;
     }
-*/
+
 }

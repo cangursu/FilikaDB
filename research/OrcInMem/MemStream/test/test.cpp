@@ -2,6 +2,7 @@
 
 
 #include "MemStream.h"
+#include "StreamPacket.h"
 
 #include <iostream>
 
@@ -19,10 +20,7 @@ bool CheckBufferWrite(MemStream<std::uint8_t> *m, const char *data)
     return std::strncmp(buff, data, len) == 0;
 }
 
-
-
-
-int main(int argc, char** argv)
+void Test_MemStream()
 {
     std::cout << "MemStream Test Suit\n";
     int resTest = true;
@@ -49,6 +47,30 @@ int main(int argc, char** argv)
 
 
     std::cout << "******* Test " << (isPass ? "SUCCEED" : "FAILED") << " *******\n";
+}
+
+
+
+
+
+void Test_StreamPacket()
+{
+    std::cout << "StreamPacket Test Suit\n";
+
+    StreamPacket pck;
+    const char *data = "denemem";
+    pck.Create(data, strlen(data) * sizeof(char));
+    pck.Check();
+
+    data = "kenemem";
+    pck.Create(data, strlen(data) * sizeof(char));
+    pck.Check();
+}
+
+
+int main(int argc, char** argv)
+{
+    Test_StreamPacket();
 }
 
 

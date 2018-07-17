@@ -22,6 +22,7 @@ extern const int   g_naturalWriteSize;
 extern const char  g_delimiter       ;
 
 extern const char* g_defLogSocket    ;
+extern const char* g_defRemoteSocket ;
 extern const char* g_defTestDataPath ;
 
 #endif /* __ORC_INMEM_GLOBALS_H__ */

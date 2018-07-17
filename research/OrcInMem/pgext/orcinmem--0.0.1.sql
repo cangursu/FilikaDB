@@ -11,3 +11,7 @@ AS '$libdir/orcinmem'
 LANGUAGE C IMMUTABLE STRICT;
 
 
+CREATE FUNCTION orc_buffer_remote_test(text, text) RETURNS text
+AS '$libdir/orcinmem'
+LANGUAGE C IMMUTABLE STRICT;
+

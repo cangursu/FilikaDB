@@ -14,5 +14,6 @@ const int   g_naturalWriteSize = 512;
 const char  g_delimiter        = ',';
 
 const char* g_defLogSocket     = "/home/postgres/sock_orcinmem";
+const char* g_defRemoteSocket  = "/home/postgres/sock_remote_buffer";
 const char* g_defTestDataPath  = "/home/postgres/projects/filikadb/research/OrcInMem/test/sql/data/";
 
