@@ -7,6 +7,6 @@
 #include "MemStreamGlobals.h"
 
 
-const int   g_defBufferSize    = 8;//256 * 1024;
+const int   g_defBufferSize    = 256 * 1024;
 
 

@@ -6,6 +6,7 @@
 
 #include <cstdint>
 #include <cstring>
+#include <unistd.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <netdb.h>
@@ -325,7 +326,7 @@ SocketResult SocketClient::Send(void *data, std::uint64_t len)
     return res;
 }
 
-SocketResult SocketClient::Send(MemStream<std::uint8_t> &&stream) 
+SocketResult SocketClient::Send(MemStream<std::uint8_t> &&stream)
 {
     SocketResult result = SocketResult::SUCCESS;
 

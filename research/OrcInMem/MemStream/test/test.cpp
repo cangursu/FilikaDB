@@ -57,14 +57,56 @@ void Test_StreamPacket()
 {
     std::cout << "StreamPacket Test Suit\n";
 
-    StreamPacket pck;
+    StreamPacket          pck;
+    StreamPacket::byte_t  buff[g_lenMaxPayload];
+
+
+    // -----------------
+    // -- 1. test
     const char *data = "denemem";
-    pck.Create(data, strlen(data) * sizeof(char));
-    pck.Check();
+    int         len  = strlen(data) * sizeof(char);
+
+    pck.Create(data, len);
+    if (false == pck.Check())
+        std::cout << "********* Test_StreamPacket FAILED *********\n";
+
+    pck.Payload(buff, len);
+    std::cout << "data = " << data << " - payload = " << std::string((char *)buff, len) << std::endl;
+    if (std::memcmp(buff, data, len))
+        std::cout << "********* Test_StreamPacket FAILED *********\n";
+
+
+    // -----------------
+    // -- 2. test
 
     data = "kenemem";
-    pck.Create(data, strlen(data) * sizeof(char));
-    pck.Check();
+    len  = strlen(data) * sizeof(char);
+
+    pck.Create(data, len);
+    if (false == pck.Check()) std::cout << "********* Test_StreamPacket FAILED *********\n";
+
+    pck.Payload(buff, len);
+    std::cout << "data = " << data << " - payload = " << std::string((char *)buff, len) << std::endl;
+    if (std::memcmp(buff, data, len)) std::cout << "********* Test_StreamPacket FAILED *********\n";
+
+    // -----------------
+    // -- 2. test
+//    pck._buff[11] = 'X';
+//    if (true == pck.Check()) std::cout << "********* Test_StreamPacket FAILED *********\n";
+
+    // -----------------
+    // -- 3. test
+    char data2[len = g_lenMaxPayload];
+    for (int i = 0; i < len;++i) data2[i] = (char)i;
+
+    pck.Create(data2, len);
+    if (false == pck.Check()) std::cout << "********* Test_StreamPacket FAILED *********\n";
+    pck.Payload(buff, len);
+    if (std::memcmp(buff, data2, len)) std::cout << "********* Test_StreamPacket FAILED *********\n";
+
+
+
+    std::cout << "StreamPacket Test Suit DONE\n";
 }
 
 

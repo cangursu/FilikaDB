@@ -16,6 +16,8 @@ OBJS         += $(patsubst %.cpp,%.o,$(wildcard src/*.cpp))
 OBJS         += $(patsubst %.cpp,%.o,$(wildcard ../Logger/src/*.cpp))
 OBJS         += $(patsubst %.cpp,%.o,$(wildcard ../MemStream/src/*.cpp))
 OBJS         += $(patsubst %.cpp,%.o,$(wildcard ../SockLib/src/*.cpp))
+OBJS         += $(patsubst %.cpp,%.o,$(wildcard ../3rdparty/crc32/*.cpp))
+
 
 # final shared library to be build from multiple source files (OBJS)
 MODULE_big    = $(EXTENSION)
@@ -27,9 +29,10 @@ INC_DIR_ORC   = /home/postgres/projects/orc/build/_CPack_Packages/Linux/TGZ/ORC-
 INC_DIR_LOG   = ../Logger/inc/
 INC_DIR_MEM   = ../MemStream/inc/
 INC_DIR_SCK   = ../SockLib/inc/
+INC_DIR_CRC   = ../3rdparty/crc32
 
 
-INC_DIRS      = $(INC_DIR_ORC) $(INC_DIR_LOG) $(INC_DIR_MEM) $(INC_DIR_SCK)
+INC_DIRS      = $(INC_DIR_ORC) $(INC_DIR_LOG) $(INC_DIR_MEM) $(INC_DIR_SCK) $(INC_DIR_CRC)
 LIB_DIRS      = $(LIB_DIR_ORC)
 
 CUSTOM_CC = g++

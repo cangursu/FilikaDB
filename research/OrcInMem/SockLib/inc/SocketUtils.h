@@ -8,7 +8,9 @@
 #define __SOCKET_UTILITIES_H__
 
 
-#include "Socket.h"
+#include "SocketResult.h"
+#include "ParseResult.h"
+
 
 #include <cstdint>
 #include <string>
@@ -17,7 +19,8 @@
 const char *    EPollEventsText     (std::uint32_t eid);
 std::string     EPollEvents         (std::uint32_t eid);
 
-const char *    SocketResultText    (SocketResult val);
+const char *    SocketResultText    (const SocketResult &val);
+const char *    ParseResultText     (const ParseResult  &val);
 
 
 #endif //__SOCKET_UTILITIES_H__

@@ -12,8 +12,9 @@
  */
 
 
-#include "Socket.h"
-#include "SocketDomain.h"
+//#include "Socket.h"
+#include "SourceChannel.h"
+
 #include "rapidjson/document.h"
 
 
@@ -24,10 +25,7 @@
 #include <getopt.h>
 
 
-class MemStreamReqReciever : public SockDomain
-{
 
-};
 
 struct AppArgs
 {
@@ -95,10 +93,14 @@ bool AppArgsValidate(int argc, char** argv, AppArgs &args)
     {
         result = true;
 
-        rapidjson::Document conf;
-        if (ConfigLoad(args._confFile.c_str(), conf))
+        rapidjson::Document    conf;
+        rapidjson::ParseResult res;
+
+        res = ConfigLoad(args._confFile.c_str(), conf);
+        if (res.IsError() == false)
         {
-            if (conf["StreamServerConfiguration"].IsObject())
+            if (conf.HasMember("StreamServerConfiguration") &&
+                conf["StreamServerConfiguration"].IsObject()    )
             {
                 rapidjson::Value &obj = conf["StreamServerConfiguration"];
 
@@ -111,7 +113,7 @@ bool AppArgsValidate(int argc, char** argv, AppArgs &args)
         }
         else
         {
-            //std::cerr << GetParseError_En(ok.Code()) << " - Line:" << ok.Offset();
+            std::cerr << "Err : " << res.Code() << " - Line:" << res.Offset();
             std::cerr << "Config format error...\n";
         }
     }
@@ -152,31 +154,12 @@ bool AppArgsProcess(int argc, char** argv, AppArgs &args)
     return result ? AppArgsValidate(argc, argv, args) : result;
 }
 
-class SourceChannel : public SockDomain
-{
-public:
-    SourceChannel(const char *sockName) : SockDomain(sockName)
-    {
-
-    }
 
 
-    SocketResult recv(std::string &item)
-    {
-        static __thread  char buff[1024];
-
-        SocketResult res = SocketResult::ERROR;
-        int len = recvFrom(buff, 1024);
-        if (len > 0 && len < 1024)
-        {
-            res = SocketResult::SUCCESS;
-            item.assign(buff, len);
-        }
-        return res;
-    }
 
 
-};
+
+
 
 int main(int argc, char** argv)
 {
@@ -194,12 +177,7 @@ int main(int argc, char** argv)
     }
 
 
-    SourceChannel src(args._sourceChannel.c_str());
-    std::string logitem;
-    while (true)
-    {
-        src.recv(logitem);
-        std::cout << logitem << std::endl;
-    }
-
+    /*std::thread th = */SourceChannel::listenAsyc(args._sourceChannel.c_str());
+    //th.join();
 }
+

@@ -33,3 +33,7 @@ $(EXEC): $(OBJECTS)
 
 clean:
 	rm -f $(OBJECTS) $(EXEC) $(DEPENDS)
+
+
+.PHONY: print-%
+print-%: ; @echo $* = $($*)

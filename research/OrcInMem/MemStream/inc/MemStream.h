@@ -47,14 +47,14 @@ extern MemoryPoolDefault g_poolDefault;
 
 
 
-typedef char byte_t;
+//typedef char byte_t;
 
 
 template <class U>
 class MemStream
 {
 public:
- //   using byte_t = char;//uint8_t;
+    using byte_t = uint8_t;
 
 public:
     MemStream()

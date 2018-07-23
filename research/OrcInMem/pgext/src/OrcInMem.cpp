@@ -778,8 +778,8 @@ Datum orc_buffer_test(PG_FUNCTION_ARGS)
 {
     elog(LOG, "orc_buffer_test - ver:0.0.5");
 
-    const std::string logs = GETARG_TEXT(0, g_defLogSocket);  
-    
+    const std::string logs = GETARG_TEXT(0, g_defLogSocket);
+
     //const std::string path = GETARG_TEXT(1, g_defTestDataPath);
     elog(LOG, "orc_buffer_test - Log socket:%s", logs.c_str());
 
@@ -823,25 +823,47 @@ Datum orc_buffer_test(PG_FUNCTION_ARGS)
 Datum orc_buffer_remote_test(PG_FUNCTION_ARGS)
 {
     elog(LOG, "orc_buffer_remote_test - ver:0.0.0");
-    
+
     const std::string logs = GETARG_TEXT(0, g_defLogSocket);
     const std::string remt = GETARG_TEXT(1, g_defRemoteSocket);
 
-        
+
     elog(LOG, "orc_buffer_remote_test - Log socket:%s", logs.c_str());
-    
+
     LogLineGlbSocketName (logs.c_str());
     LOG_LINE_GLOBAL("Init", "");
     LOG_LINE_GLOBAL("Init", "VER  0.0.0");
     LOG_LINE_GLOBAL("Init", "");
-    
-    
-    OrcMemStreamRemoteSender mem(/*remt*/);
-    
-    
-    
-    
+
+
+
+    OrcMemStreamRemoteSender mem("OrcRemote", "/home/postgres/pgext_domain_sock");
+
+    int rc = mem.init();
+    if (rc == 0)
+    {
+        const char *data = "denemem";
+        int         len  = strlen(data);
+        mem.write(data, len);
+
+        data = "hebelemem";
+        len  = strlen(data);
+        mem.write(data, len);
+        data = "debelemem";
+        len  = strlen(data);
+        mem.write(data, len);
+
+  //      char buff[len + 1] = "";
+  //      mem.read(buff, len, 0);
+    }
+    else
+    {
+        LOG_LINE_GLOBAL("remote", "Sender Init failed. ", rc);
+    }
+
+
     const char *resStr = "orc_buffer_remote_test FAILED";
-    LOG_LINE_GLOBAL("buffer", "----<  ", resStr);
+    LOG_LINE_GLOBAL("remote", "----<  ", resStr);
     PG_RETURN_TEXT_P(cstring_to_text(resStr));
 }
+

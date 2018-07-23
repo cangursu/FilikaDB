@@ -21,37 +21,66 @@
 #include <string>
 
 
+#include <iostream>
 
-#define _K      (1024)
-#define _4K     (4*_K)
-#define _16K   (16*_K)
+
+
+
+#define _1K     (1024)
+#define _4K     (4*_1K)
+#define _16K   (16*_1K)
+
+const std::uint32_t  g_posMID         = 0;
+const std::uint32_t  g_lenMID         = 4;
+const std::uint32_t  g_posPLen        = g_posMID + g_lenMID;
+const std::uint32_t  g_lenPLen        = 4;
+const std::uint32_t  g_posPayload     = g_posPLen + g_lenPLen;
+const std::uint32_t  g_lenCRC         = 4;
+
+const std::uint32_t  g_lenMaxBuffer   = _16K;
+const std::uint32_t  g_lenMaxPayload  = g_lenMaxBuffer - (g_lenCRC + g_lenPLen + g_lenMID);
+
 
 class StreamPacket
 {
+public:
     using  byte_t = std::uint8_t;
 public:
     StreamPacket();
-    StreamPacket(const StreamPacket& orig);
-    StreamPacket(StreamPacket&& orig);
+    StreamPacket(const byte_t *payload, std::uint32_t len) { Create(payload, len); }
+    StreamPacket(const void   *payload, std::uint32_t len) { Create(payload, len); }
+    StreamPacket(const StreamPacket& orig) = default;
+    StreamPacket(StreamPacket&& orig)      = default;
     virtual ~StreamPacket();
 
     void            Reset();
     bool            Check();
     std::uint32_t   Crc(const void *data, std::uint32_t len);
 
-    SocketResult    Create(const byte_t *payload, std::uint32_t len);
-    SocketResult    Create(const void   *payload, std::uint32_t len)  { return Create((byte_t *)payload, len); }
+    std::uint32_t   Create (const byte_t *payload, std::uint32_t len);
+    std::uint32_t   Create (const void   *payload, std::uint32_t len)   { return Create((byte_t *)payload, len); }
+    std::uint32_t   Payload(byte_t       *buff   , std::uint32_t len);
+
+    std::uint32_t   Buffer (byte_t **buff)                              { *buff = _buff; return _buffLen;  }
+    std::uint32_t   Buffer (byte_t const **buff) const                  { *buff = _buff; return _buffLen;  }
+
+    void            BufferLen (std::uint32_t len)                       { _buffLen = len; }
 
 private:
 
-    byte_t _buff[_16K];
+    byte_t          _buff[_16K];
+    std::uint32_t   _buffLen = 0;
 
-    static const std::int32_t  s_lenMaxPayload;
-    static const std::int32_t  s_lenMID       ;
-    static const std::int32_t  s_lenWidth     ;
-    static const std::int32_t  s_lenCRC       ;
+public:
+    /*
+    static const std::uint32_t  s_lenMaxPayload;
+    static const std::uint32_t  s_lenMaxBuffer ;
+    static const std::uint32_t  s_lenMID       ;
+    static const std::uint32_t  s_lenDLen      ;
+    static const std::uint32_t  s_lenCRC       ;
+    */
 
-    static const std::string   s_mid          ;
+    static const std::string    s_mid          ;
 
 };
 

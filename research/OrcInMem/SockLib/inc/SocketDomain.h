@@ -21,9 +21,9 @@ class SockDomain
 {
     public:
 
-    SockDomain()              = delete;
-    SockDomain(SockDomain &)  = delete;
-    SockDomain(SockDomain &&) = delete;
+    SockDomain()                    = default;
+    SockDomain(const SockDomain &)  = default; //= delete;
+    SockDomain(SockDomain &&)       = delete;
     SockDomain(const char *path);
     virtual ~SockDomain() ;
 

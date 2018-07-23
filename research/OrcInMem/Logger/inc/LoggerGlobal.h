@@ -34,6 +34,7 @@ namespace  Filika
 };
 
 
+#include <cstring>
 #include <sstream>
 
 
@@ -63,15 +64,16 @@ void LogLineGlobalFormat(const char *desc, int lineNo, const char *fname, const 
     os << desc << " ";
 
     std::stringstream osTmp;
-    osTmp << fname << ":" << lineNo;
+    std::string       strTmp = ":" + std::to_string(lineNo);
+    int               widthFNamePart = std::strlen(fname) < widthFName - strTmp.size() ? std::strlen(fname) : widthFName - strTmp.size();
+    osTmp << std::string(fname, widthFNamePart) << strTmp;
 
     os.width(widthFName);
     os << osTmp.str();
 
-
     os << " ";
     os.width(widthFunc);
-    os << funcName << " - ";
+    os << std::string(funcName, std::strlen(funcName) < widthFunc ? std::strlen(funcName) : widthFunc) << " - ";
 
     LogLineGlobalFormat(os, args ...);
     //os << std::endl;

@@ -49,3 +49,7 @@ $(EXEC): $(OBJECTS)
 # Remove executable file and all object files
 clean:
 	rm -f $(OBJECTS) $(EXEC) $(DEPENDS)
+
+
+.PHONY: print-%
+print-%: ; @echo $* = $($*)

@@ -15,6 +15,7 @@ enum class SocketResult : std::int16_t
     ERROR_READ    = -5,
     ERROR_EPOLL   = -6,
     ERROR_LEN     = -7,
+    ERROR_AGAIN   = -8,
 };
 
 

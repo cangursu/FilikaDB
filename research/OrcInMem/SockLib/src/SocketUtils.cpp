@@ -49,7 +49,7 @@ const char *EPollEventsText(std::uint32_t eid)
 }
 
 
-const char *SocketResultText(SocketResult val)
+const char *SocketResultText(const SocketResult &val)
 {
     switch(val)
     {
@@ -63,3 +63,17 @@ const char *SocketResultText(SocketResult val)
     }
     return "NA";
 };
+
+
+const char *ParseResultText(const ParseResult &val)
+{
+    switch (val)
+    {
+        case ParseResult::ERROR    : return "ERROR"     ;
+        case ParseResult::CONTINUE : return "CONTINUE"  ;
+        case ParseResult::NEXT     : return "NEXT"      ;
+        case ParseResult::FINISH   : return "FINISH"    ;
+    }
+    return "NA";
+};
+
