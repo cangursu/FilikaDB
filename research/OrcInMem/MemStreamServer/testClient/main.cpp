@@ -37,9 +37,9 @@ bool send(SockDomain &sock, const StreamPacket &pack)
 }
 
 
-void SendIndividual(SockDomain &sock)
+void SendMultipleIndividual(SockDomain &sock)
 {
-    char  buff[32] = "Individual-";
+    char  buff[32] = "MulIndividual-";
     for (int i = 0; i < 100; ++i)
     {
         strcpy(buff+11, std::to_string(i).c_str());
@@ -47,15 +47,15 @@ void SendIndividual(SockDomain &sock)
     }
 }
 
-void SendBulk(SockDomain &sock)
+void SendBulkIndividual(SockDomain &sock)
 {
-    std::string           prefix = "Bulk-";
+    std::string           prefix = "BulkIndividual-";
     StreamPacket::byte_t  buff2[4096];
     StreamPacket::byte_t *pBuff = nullptr;
     int  len    = 0;
     int  lenPck = 0;
 
-    for (int i = 0; i < 20; ++i)
+    for (int i = 0; i < 100; ++i)
     {
         std::string data = prefix +  std::to_string(i);
         StreamPacket packet(data.c_str(), data.size());
@@ -69,7 +69,7 @@ void SendBulk(SockDomain &sock)
     send(sock, buff2, len);
 }
 
-void SendDirt(SockDomain &sock)
+void SendBulkDirt(SockDomain &sock)
 {
     std::string           prefix = "Dirt-";
     StreamPacket::byte_t  buff[4096];
@@ -97,7 +97,7 @@ void SendDirt(SockDomain &sock)
     send(sock, buff, len);
 }
 
-void SendCorrupt(SockDomain &sock)
+void SendBulkCorrupt(SockDomain &sock)
 {
     std::string           prefix = "Corrupt-";
     StreamPacket::byte_t  buff2[4096];
@@ -134,15 +134,13 @@ int main(int argc, char** argv)
         return 0;
     }
 
-
-
+/*
     {
         //Invidiual
         send(sock, std::move(StreamPacket("12345", 5)));
-//        send(sock, std::move(StreamPacket("67890", 5)));
-//        send(sock, std::move(StreamPacket("abcde", 5)));
+        send(sock, std::move(StreamPacket("67890", 5)));
+        send(sock, std::move(StreamPacket("abcde", 5)));
     }
-
 
     {
         //Combined Individual
@@ -161,7 +159,6 @@ int main(int argc, char** argv)
         send(sock, data, lenBuffer1 + lenBuffer2);
     }
 
-
     {
         //Fragmanted
         StreamPacket pck("67890", 5);
@@ -179,7 +176,6 @@ int main(int argc, char** argv)
         std::memcpy(part2, bufferPrt+lenPart1, lenPart2);
         send(sock, part2, lenPart2);
     }
-
 
     {
         //Dirt
@@ -201,6 +197,7 @@ int main(int argc, char** argv)
 
         send(sock, data, lenBuffer+8);
     }
+
     {
         //Corrupt
         StreamPacket pck("hijklmnopqrstuvwxyz", 19);
@@ -210,22 +207,19 @@ int main(int argc, char** argv)
         bufferPrt[12] = '.';
         send(sock, pck);
     }
-
+*/
 /*
     for(int i = 0; i < 50; ++i)
     {
-        SendIndividual(sock);
-        SendBulk(sock);
-        SendDirt(sock);
-        //SendCorrupt(sock);
+        //SendMultipleIndividual(sock);
+        //SendBulkIndividual(sock);
+        //SendBulkDirt(sock);
+
+        //SendBulkCorrupt(sock);
+        //send(sock, std::move(StreamPacket("12345", 5)));
     }
 */
-/*
-    for(int i = 0; i < 7; ++i)
-        SendCorrupt(sock);
-*/
-
-
+    SendBulkIndividual(sock);
     return 0;
 }
 

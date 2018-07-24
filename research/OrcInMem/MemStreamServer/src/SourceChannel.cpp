@@ -142,7 +142,7 @@ SocketResult SourceChannel::recv(StreamPacket &packet)
             lenBuff  = recvFrom(buff, maxBuffLen);
             //LOG_LINE_GLOBAL("SServerClient", "recvFrom ---<   buff:", std::string(buff, lenBuff));
         }
-        if (lenBuff > 0 && lenBuff < maxBuffLen)
+        if (lenBuff > 0 && lenBuff < maxBuffLen + 1)
         {
             for (; (posBuff < lenBuff) && parsFunc->_fp && (result == SocketResult::ERROR_AGAIN); ++posBuff)
             {
