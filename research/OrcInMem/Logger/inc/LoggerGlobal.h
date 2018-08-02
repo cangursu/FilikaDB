@@ -30,6 +30,7 @@
 #include "Logger.h"
 namespace  Filika
 {
+    const char *SocketFile();
     LSockLog &logger();
 };
 
@@ -55,6 +56,9 @@ void LogLineGlobalFormat(const char *desc, int lineNo, const char *fname, const 
 {
     std::ostringstream &os = Filika::logger().Get(Filika::LSL_INFO);
 
+    //Filika::LSockLog logger(Filika::SocketFile());
+    //std::ostringstream &os = logger.Get(Filika::LSL_INFO);
+
     const int widthDesc  = 12;
     const int widthFName = 24;
     const int widthFunc  = 20;
@@ -76,9 +80,12 @@ void LogLineGlobalFormat(const char *desc, int lineNo, const char *fname, const 
     os << std::string(funcName, std::strlen(funcName) < widthFunc ? std::strlen(funcName) : widthFunc) << " - ";
 
     LogLineGlobalFormat(os, args ...);
-    //os << std::endl;
 
-    Filika::logger().send();
+    //logger.send();
+    if (Filika::FILIKA_RESULT::FR_ERROR == Filika::logger().send())
+    {
+        std::cerr << "ERROR - Log : Unable to send log\n";
+    }
 }
 
 

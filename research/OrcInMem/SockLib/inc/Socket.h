@@ -13,113 +13,42 @@
 #include "SocketResult.h"
 
 
-//#include <sys/types.h>
-#include <sys/socket.h>
 #include <string>
-#include <unordered_map>
-
+#include <netdb.h>
+#include <cstring>
 
 
 class Socket
 {
-    public  :
-        Socket(int s = -1);
+    public :
+        Socket(int s);
+        Socket()                = default;
         Socket(const Socket &s) = delete;
         Socket(Socket &&s);
         ~Socket();
 
         Socket& operator=(Socket &&s);
 
-        SocketResult Init();
-        void         Release();
+        SocketResult    Init();
+        SocketResult    InitServer();
+        void            Release();
+        SocketResult    Connect();
 
-        SocketResult SetNonBlock();
-        SocketResult NameInfo(const sockaddr &addr, std::string &host, std::string &serv) const;
+        void            Port(uint16_t port)   { _port    = port; }
+        void            Adress(const char *s) { _address = s;    }
+        std::string     PrmDesc()             { return std::move(_address + ":" + std::to_string(_port));}
 
-    protected :
-        int fd() const { return _fdSock; }
+        SocketResult    SetNonBlock();
+
+protected :
+        int fd() const { return _sock; }
     private :
-        int _fdSock = -1;
+        int             _sock    = -1;
+        uint16_t        _port    = -1;
+        std::string     _address = "127.0.0.1";
 
 };
 
-
-class SocketServer : public Socket
-{
-    public:
-        SocketResult Init();
-        SocketResult Release();
-        SocketResult ListenLoop();
-
-        void Accept();
-        void Recv(int fd);
-        void Disconnect(int fd);
-
-        std::uint64_t ClientCount() { return _clientList.size(); }
-
-
-    public:
-        // Events
-        virtual void OnAccept      (const Socket &, const sockaddr &)           = 0;
-        virtual void OnRecv        (const Socket &, MemStream<std::uint8_t> &&) = 0;
-        virtual void OnDisconnect  (const Socket &)                             = 0;
-        virtual void OnErrorClient (SocketResult)                               = 0;
-        virtual void OnErrorServer (SocketResult)                               = 0;
-
-    protected :
-        int epoll() const  { return _epoll; }
-
-    private :
-        class FdMap
-        {
-            public  :
-                bool erase(int fd, Socket &s)
-                {
-                    auto it = _map.find(fd);
-                    if (it != _map.end())
-                    {
-                        s = std::move(it->second);
-                        _map.erase(it);
-                        _size--;
-                        return true;
-                    }
-                    return false;
-                }
-                bool set(int fd, Socket &&s)
-                {
-                    _map[fd] = std::move(s);
-                    _size++;
-                    return true;
-                }
-                const Socket &get(int fd)
-                {
-                    auto it = _map.find(fd);
-                    if (it != _map.cend()) return it->second;
-                    return std::move(Socket());
-                }
-                std::uint64_t size () { return _size; }
-            private :
-                std::unordered_map<int, Socket> _map;
-                std::uint64_t                   _size = 0;
-        } _clientList;
-
-
-        int   _epoll = -1;
-};
-
-
-class SocketClient : public Socket
-{
-    public:
-        SocketResult Connect (const std::string &host, int port);
-        SocketResult Send    (void *data, std::uint64_t len);
-        SocketResult Send    (MemStream<std::uint8_t> &&)   ;
-
-    public:
-        // Events
-        virtual void OnRecv        (const Socket &, MemStream<std::uint8_t> &&) = 0;
-        virtual void OnErrorClient (SocketResult)                               = 0;
-};
 
 
 #endif // __SOCKET_H__

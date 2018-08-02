@@ -27,7 +27,7 @@ typedef  std::uint32_t         msize_t;
 typedef  ParseResult (SourceChannel::*parser_t)(byte_t, msize_t, msize_t);
 
 
-class SourceChannel : public SockDomain
+class SourceChannel : public SocketDomain
 {
 
     //using byte_t   = StreamPacket::byte_t;
@@ -46,7 +46,7 @@ public:
 
     SocketResult recvPacket(StreamPacket &packet);
 
-    static /*std::thread&& */ void listenAsyc(const char *sourceChannelName);
+    static /*std::thread&& */ void listenAsyc(const char *sourceChannelName, bool async = false);
 
 
     msize_t _posBuffBeginPack = 0;
@@ -60,11 +60,11 @@ public:
     {
         static __thread  char buff[1024];
 
-        SocketResult res = SocketResult::ERROR;
+        SocketResult res = SocketResult::SR_ERROR;
         int len = recvFrom(buff, 1024);
         if (len > 0 && len < 1024)
         {
-            res = SocketResult::SUCCESS;
+            res = SocketResult::SR_SUCCESS;
             item.assign(buff, len);
         }
         return res;

@@ -1,5 +1,4 @@
 
-
 GIT_VERSION := $(shell git --no-pager describe --tags --always)
 GIT_COMMIT  := $(shell git rev-parse --verify HEAD)
 GIT_DATE    := "$(shell git --no-pager show --date=iso --format="%ad" --name-only | head -n 1)"
@@ -11,38 +10,36 @@ ifneq ($(strip $(shell git status --porcelain 2>/dev/null)),)
 endif
 
 
+
 CC=g++
 
 #CFLAGS= -ggdb -w -Wall -fPIC -std=c++11
-#CFLAGS= -g -O3 -w -Wall -fPIC -std=c++17
-CFLAGS= -ggdb -O0 -w -Wall -fPIC -std=c++17  \
+#CFLAGS= -O3 -w -Wall -fPIC -std=c++17
+CFLAGS= -g -O0 -w -Wall -fPIC -std=c++17  \
         -DGIT_VERSION=\"$(GIT_VERSION)\"  \
         -DGIT_COMMIT=\"$(GIT_COMMIT)\"    \
         -DGIT_DATE=\"$(GIT_DATE)\"        \
         -DBUILD_DATE=\"$(BUILD_DATE)\"
+
 LDFLAGS=
 #LDLIBS=../HElib/src/fhe.a ../ntl-10.3.0/src/ntl.a -lgmp -lpthread
-LDLIBS=-lstdc++fs  -lpthread
-INCLUDE_PATH=-I..                               \
-             -I../inc                           \
-             -I../../SockLib/inc                \
-             -I../../MemStream/inc              \
-             -I../../Logger/inc                 \
-             -I../3rdparty/rapidjson.1/include  \
-             -I../../3rdparty/crc32             \
+LDLIBS=-lpthread
+INCLUDE_PATH=	-I.. -I../inc               \
+		-I../../MemStream/inc	    \
+		-I../../MemStreamServer/inc \
+		-I../../Logger/inc	    \
+		-I../../3rdparty/crc32	    \
+
 
 SOURCES=$(wildcard *.cpp)
-SOURCES+=$(wildcard ../src/SourceChannel.cpp)
-SOURCES+=$(wildcard ../../SockLib/src/*.cpp)
+SOURCES+=$(wildcard ../src/*.cpp)
 SOURCES+=$(wildcard ../../MemStream/src/*.cpp)
-SOURCES+=$(wildcard ../../Logger/src/*.cpp)
 SOURCES+=$(wildcard ../../3rdparty/crc32/*.cpp)
-
 
 OBJECTS=$(SOURCES:.cpp=.o)
 DEPENDS=$(SOURCES:.cpp=.d)
 
-EXEC=StreamServerServer
+EXEC=DomainClient
 
 all: $(EXEC)
 

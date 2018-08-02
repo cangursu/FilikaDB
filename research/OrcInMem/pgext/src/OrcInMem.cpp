@@ -6,6 +6,7 @@
 #include "OrcInMemTime.h"
 #include "LoggerGlobal.h"
 #include "OrcInMemGlobals.h"
+#include "SocketUtils.h"
 
 
 #ifdef __cplusplus
@@ -839,8 +840,8 @@ Datum orc_buffer_remote_test(PG_FUNCTION_ARGS)
 
     OrcMemStreamRemoteSender mem("OrcRemote", "/home/postgres/pgext_domain_sock");
 
-    int rc = mem.init();
-    if (rc == 0)
+    SocketResult rc = mem.init();
+    if (rc == SocketResult::SR_SUCCESS)
     {
         const char *data = "denemem";
         int         len  = strlen(data);
@@ -858,7 +859,7 @@ Datum orc_buffer_remote_test(PG_FUNCTION_ARGS)
     }
     else
     {
-        LOG_LINE_GLOBAL("remote", "Sender Init failed. ", rc);
+        LOG_LINE_GLOBAL("remote", "Sender Init failed. ", SocketResultText(rc));
     }
 
 

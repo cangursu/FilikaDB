@@ -34,11 +34,11 @@ OrcMemStreamRemoteSender::~OrcMemStreamRemoteSender()
     //Assert(true);
 }
 
-int OrcMemStreamRemoteSender::init()
+SocketResult OrcMemStreamRemoteSender::init()
 {
-    int res = _sock.init(_serverChannel.c_str());
+    SocketResult res = _sock.Init(_serverChannel.c_str());
     //    LOG_LINE_GLOBAL("remote", "res = ", res);
-    if (0 == res)
+    if (SocketResult::SR_SUCCESS == res)
     {
     }
     return res;
@@ -118,8 +118,11 @@ bool OrcMemStreamRemoteSender::StreamCSock::send(const StreamPacket &pack)
 
     LOG_LINE_GLOBAL("remote", "l = ", l, " b = ", b);
 
+    /*
     ssize_t res = (l > 0) ? sendTo(b, l) : 0;
     return ((res > 0) && (res == (ssize_t)l));
+    */
+    return false;
 }
 /*
 bool OrcMemStreamRemoteSender::StreamCSock::send(const char *data, int len)

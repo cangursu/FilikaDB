@@ -20,16 +20,16 @@
 
 
 SourceChannel::SourceChannel(const char *sourceChannelName)
-        : SockDomain(sourceChannelName)
+        : SocketDomain(sourceChannelName)
 {
 }
 
-/*std::thread&& */void SourceChannel::listenAsyc(const char *sourceChannelName)
+/*std::thread&& */void SourceChannel::listenAsyc(const char *sourceChannelName, bool async /*= false*/)
 {
-    SourceChannel sss(sourceChannelName);
-    std::thread th(sss);
+    //SourceChannel sss(sourceChannelName);
+    std::thread th( (SourceChannel(sourceChannelName)) );
     // ...................................
-    th.join();
+    if (false == async) th.join();
 
     //return std::move(th);
 }
@@ -110,9 +110,10 @@ SocketResult SourceChannel::recv(StreamPacket &packet)
 
     const int                maxBuffLen = 1024;
     static __thread  char    buff[maxBuffLen];
-    static __thread  msize_t lenBuff   = 0;
-    static __thread  msize_t posBuff   = 0;
-    static __thread  msize_t posPacket = 0;
+    static __thread  msize_t lenBuff    = 0;
+    static __thread  msize_t posBuff    = 0;
+    static __thread  msize_t posPacket  = 0;
+
 
     struct parserFunc
     {
@@ -127,24 +128,22 @@ SocketResult SourceChannel::recv(StreamPacket &packet)
     static __thread  parserFunc *parsFunc = parserTable;
 
 
-
-
-    SocketResult result = SocketResult::ERROR_AGAIN;
+    SocketResult result = SocketResult::SR_ERROR_AGAIN;
 
     byte_t *packetData = nullptr;
     packet.Buffer(&packetData);
 
-    while(result == SocketResult::ERROR_AGAIN)
+    while(result == SocketResult::SR_ERROR_AGAIN)
     {
         if (lenBuff == 0) //Buffer Consumed or empty
         {
             //LOG_LINE_GLOBAL("SServerClient", "recvFrom --->");
-            lenBuff  = recvFrom(buff, maxBuffLen);
+            lenBuff  = Read(buff, maxBuffLen);
             //LOG_LINE_GLOBAL("SServerClient", "recvFrom ---<   buff:", std::string(buff, lenBuff));
         }
         if (lenBuff > 0 && lenBuff < maxBuffLen + 1)
         {
-            for (; (posBuff < lenBuff) && parsFunc->_fp && (result == SocketResult::ERROR_AGAIN); ++posBuff)
+            for (; (posBuff < lenBuff) && parsFunc->_fp && (result == SocketResult::SR_ERROR_AGAIN); ++posBuff)
             {
                 ParseResult res = (this->*(parsFunc->_fp))(packetData[posPacket] = buff[posBuff], posBuff, posPacket);
                 LOG_LINE_GLOBAL("SServerClient" , "_fp:",        parsFunc->_name
@@ -179,7 +178,7 @@ SocketResult SourceChannel::recv(StreamPacket &packet)
                         if (true == packet.Check())
                         {
                             LOG_LINE_GLOBAL("SServerClient", "*****PACKET RECIEVED*****");
-                            result = SocketResult::SUCCESS;
+                            result = SocketResult::SR_SUCCESS;
                         }
                         else
                         {
@@ -201,167 +200,37 @@ SocketResult SourceChannel::recv(StreamPacket &packet)
     LOG_LINE_GLOBAL("SServerClient", "---<");
     return result;
 }
-/*
-SocketResult SourceChannel::recvPacket(StreamPacket &packet)
-{
-    SocketResult res = SocketResult::ERROR;
-
-    static __thread  char   buff[1024];
-    static __thread  int    posBuff = 0;
-    static __thread  int    lenBuff = 0;
-
-    char                    buffTmp[StreamPacket::s_lenDLen];
-    int                     posTmp   = 0;
-
-    byte_t                 *data = nullptr;
-
-    int                     posData  = 0;
-    int                     posBegin = posBuff;
-    std::uint32_t           lenData  = 0L;
-
-    packet.Buffer(&data);
-    //std::cout << "enter outer loop\n";
-
-    while(true)
-    {
-        //std::cout << "enter loop : posBuff=" << posBuff << " lenBuff=" << lenBuff << std::endl;
-        if (posBuff >= lenBuff)
-        {
-            //std::cout << "recvFrom -->\n";
-            lenBuff  = recvFrom(buff, 1024);
-            posBuff  = 0;
-            posBegin = 0;
-            std::cout << "recvFrom --<  lenBuff=" << lenBuff << std::endl;
-        }
-        if (lenBuff > 0 && lenBuff < 1024)
-        {
-            std::cout << "enter inner loop 1 : posBuff=" << posBuff << " lenBuff=" << lenBuff << " posData=" << posData << std::endl;
-            for(nullptr; posBuff < lenBuff; ++posBuff, ++posData)
-            {
-                StreamPacket::byte_t byte = buff[posBuff];
-                data[posData] = byte;
-                std::cout << "enter inner loop 2 : byte=" << byte <<  "   (posBuff=" << posBuff << ", posData=" << posData << ")\n";
-
-
-                if (posData == 0)
-                    posBegin = posBuff;
-
-                if (posData < StreamPacket::s_lenMID)
-                {
-                    if (byte == StreamPacket::s_mid[posData])
-                    {
-                    }
-                    else
-                    {
-                        posData = -1;
-                        posBuff = posBegin;
-                    }
-                }
-                else if (posData < StreamPacket::s_lenMID + StreamPacket::s_lenDLen)
-                {
-                    buffTmp[posTmp++] = byte;
-                }
-                else if (posData == StreamPacket::s_lenMID + StreamPacket::s_lenDLen)
-                {
-                    std::memcpy(&lenData, buffTmp, StreamPacket::s_lenDLen);
-                    if (lenData > StreamPacket::s_lenMaxPayload)
-                    {
-                        posData = -1;
-                        posBuff = posBegin;
-                    }
-                }
-                else if (posData < StreamPacket::s_lenMID + StreamPacket::s_lenDLen + lenData)
-                {
-                }
-                else if (posData < StreamPacket::s_lenMID + StreamPacket::s_lenDLen + lenData + StreamPacket::s_lenCRC)
-                {
-                    if (posData + 1 == (StreamPacket::s_lenMID + StreamPacket::s_lenDLen + lenData + StreamPacket::s_lenCRC))
-                    {
-                        break;
-                    }
-                }
-            }
 
 
 
-            //std::cout << "posBuff=" << posBuff << " lenBuff=" << lenBuff << std::endl;
-            if ((posBuff == lenBuff) || (posBuff + 1 == lenBuff))
-            {
-                //std::cout << "Reset Loop\n";
-                posBuff = 0;
-                lenBuff = 0;
-                std::memset(buff, 0, 8);
-            }
-            else if (posBuff < lenBuff)
-            {
-                //std::cout << "Push back Loop\n";
-                posBuff++;
-            }
-
-            std::cout << "posData=" << posData << " all=" << StreamPacket::s_lenMID + StreamPacket::s_lenDLen + lenData + StreamPacket::s_lenCRC << std::endl;
-            if (posData + 1 == StreamPacket::s_lenMID + StreamPacket::s_lenDLen + lenData + StreamPacket::s_lenCRC)
-            {
-                std::cout << "Packet got --- " << "posData=" << posData << "\n";
-                packet.BufferLen(posData);
-                std::cout << "Packet got-2\n";
-
-                if (true == packet.Check())
-                {
-                    std::cout << "Packet got-3\n";
-                    //std::cout << "Packet recvd\n";
-                    return SocketResult::SUCCESS;
-                }
-                else
-                {
-                    posData = 0;
-                    posBuff = posBegin + 1;
-
-                    std::cout << "Check Failure\n";
-                }
-            }
-        }
-    }
-
-    return res;
-}
-*/
-
-
-/*
-    SocketResult recv(std::string &item)
-    {
-        static __thread  char buff[1024];
-
-        SocketResult res = SocketResult::ERROR;
-        int len = recvFrom(buff, 1024);
-        if (len > 0 && len < 1024)
-        {
-            res = SocketResult::SUCCESS;
-            item.assign(buff, len);
-        }
-        return res;
-    }
-*/
 void SourceChannel::operator()()
 {
     LOG_LINE_GLOBAL("SServerClient", "Source Listener Thread Entered");
     std::uint64_t count = 0;
-    if (0 != initServer())
+    if (SocketResult::SR_SUCCESS != InitServer())
     {
         std::cerr << "Unable To initialize DomainSocket Server (" << strerror(errno) << ". - " << errno << ")\n";
     }
     else
     {
+
         while (true)
         {
-            StreamPacket pck;
-            recvPacket(pck);
+            SocketDomain client = SocketDomain::Accept();
 
-            byte_t by[g_lenMaxPayload];
-            int len = pck.Payload(by, g_lenMaxPayload);
-            std::cout << count++ << ". : ("  << len << ") " << std::string((char*)by, len) << std::endl;
+   //         if (sockClient != -1)
+            {
+                StreamPacket pck;
+                recvPacket(pck);
+
+                byte_t by[g_lenMaxPayload];
+                int len = pck.Payload(by, g_lenMaxPayload);
+                std::cout << count++ << ". : ("  << len << ") " << std::string((char*)by, len) << std::endl;
+            }
         }
     }
 
     LOG_LINE_GLOBAL("SServerClient", "Source Listener Thread Quited");
 }
+
+

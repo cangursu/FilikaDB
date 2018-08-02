@@ -10,6 +10,34 @@
 #include <sstream>
 #include <cstring>
 #include <sys/epoll.h>
+#include <netdb.h>
+
+
+
+bool NameInfo(const sockaddr &addr, std::string &host, std::string &serv) /*const*/
+{
+    bool res = false;
+
+    socklen_t in_len = sizeof(addr);
+    char bufHost[NI_MAXHOST];
+    char bufServ[NI_MAXSERV];
+
+    if (getnameinfo(&addr, in_len,
+                    bufHost, NI_MAXHOST,
+                    bufServ, NI_MAXSERV,
+                    NI_NUMERICHOST | NI_NUMERICHOST) == 0)
+    {
+        res = true;
+        host = bufHost;
+        serv = bufServ;
+    }
+
+    return res;
+}
+
+
+
+
 
 
 std::string EPollEvents(std::uint32_t eid)
@@ -53,13 +81,16 @@ const char *SocketResultText(const SocketResult &val)
 {
     switch(val)
     {
-        case SocketResult::SUCCESS       : return "SUCCESS"       ;
-        case SocketResult::ERROR         : return "ERROR"         ;
-        case SocketResult::ERROR_BIND    : return "ERROR_BIND"    ;
-        case SocketResult::ERROR_CONNECT : return "ERROR_CONNECT" ;
-        case SocketResult::ERROR_SEND    : return "ERROR_SEND"    ;
-        case SocketResult::ERROR_READ    : return "ERROR_READ"    ;
-        case SocketResult::ERROR_EPOLL   : return "ERROR_EPOLL"   ;
+        case SocketResult::SR_SUCCESS         : return "SUCCESS"        ;
+        case SocketResult::SR_ERROR           : return "ERROR"          ;
+        case SocketResult::SR_ERROR_BIND      : return "ERROR_BIND"     ;
+        case SocketResult::SR_ERROR_CONNECT   : return "ERROR_CONNECT"  ;
+        case SocketResult::SR_ERROR_SEND      : return "ERROR_SEND"     ;
+        case SocketResult::SR_ERROR_READ      : return "ERROR_READ"     ;
+        case SocketResult::SR_ERROR_EPOLL     : return "ERROR_EPOLL"    ;
+        case SocketResult::SR_ERROR_LEN       : return "ERROR_LEN"      ;
+        case SocketResult::SR_ERROR_AGAIN     : return "ERROR_AGAIN"    ;
+        case SocketResult::SR_ERROR_REUSEADDR : return "ERROR_REUSEADDR";
     }
     return "NA";
 };

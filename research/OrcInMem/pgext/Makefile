@@ -28,11 +28,12 @@ LIB_DIR_ORC   = /home/postgres/projects/orc/build/_CPack_Packages/Linux/TGZ/ORC-
 INC_DIR_ORC   = /home/postgres/projects/orc/build/_CPack_Packages/Linux/TGZ/ORC-1.5.2-Linux/include
 INC_DIR_LOG   = ../Logger/inc/
 INC_DIR_MEM   = ../MemStream/inc/
+INC_DIR_SRV   = ../MemStreamServer/inc/
 INC_DIR_SCK   = ../SockLib/inc/
 INC_DIR_CRC   = ../3rdparty/crc32
 
 
-INC_DIRS      = $(INC_DIR_ORC) $(INC_DIR_LOG) $(INC_DIR_MEM) $(INC_DIR_SCK) $(INC_DIR_CRC)
+INC_DIRS      = $(INC_DIR_ORC) $(INC_DIR_LOG) $(INC_DIR_MEM)  $(INC_DIR_SRV) $(INC_DIR_SCK) $(INC_DIR_CRC)
 LIB_DIRS      = $(LIB_DIR_ORC)
 
 CUSTOM_CC = g++

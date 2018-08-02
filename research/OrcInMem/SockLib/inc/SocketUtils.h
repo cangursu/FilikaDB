@@ -14,6 +14,10 @@
 
 #include <cstdint>
 #include <string>
+#include <sys/socket.h>
+
+
+bool            NameInfo            (const sockaddr &addr, std::string &host, std::string &serv);
 
 
 const char *    EPollEventsText     (std::uint32_t eid);
@@ -21,6 +25,8 @@ std::string     EPollEvents         (std::uint32_t eid);
 
 const char *    SocketResultText    (const SocketResult &val);
 const char *    ParseResultText     (const ParseResult  &val);
+
+
 
 
 #endif //__SOCKET_UTILITIES_H__

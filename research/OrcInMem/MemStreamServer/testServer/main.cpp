@@ -24,10 +24,13 @@ int main(int argc, char** argv)
 {
     std::cout << "StreamServerClient v0\n";
 
-    LogLineGlbSocketName("/home/postgres/sock_memserver");
+    const char *slog = "/home/postgres/.sock_memserverlog";
+    std::cout << "Using LogServer : " << slog << std::endl;
+    LogLineGlbSocketName(slog);
     LOG_LINE_GLOBAL("SServerClient", "ver 0.0.0.0");
 
-    /*std::thread th = */SourceChannel::listenAsyc("/home/postgres/pgext_domain_sock");
+
+    /*std::thread th = */SourceChannel::listenAsyc("/home/postgres/.pgext_domain_sock");
     //th.join();
 
     return 0;

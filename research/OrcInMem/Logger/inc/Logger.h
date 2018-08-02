@@ -15,16 +15,10 @@
 #ifndef __LOGGER_H__
 #define __LOGGER_H__
 
-
-#include <sys/socket.h>
-#include <sys/un.h>
+#include "SocketDomain.h"
 
 #include <iostream>
-#include <string>
 #include <sstream>
-#include <cstdarg>
-
-
 
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
@@ -42,18 +36,15 @@
 
 
 
-#include "SocketDomain.h"
-
-#include <sstream>
-#include <string>
-#include <stdio.h>
 
 
 
 
 
 
-#define SOCK_PATH_DEFAULT "unix_sock.server"
+
+
+
 
 
 namespace  Filika
@@ -114,6 +105,9 @@ private:
 
 inline std::ostringstream& LogStream::Get(TLogStreamLevel level /*= LSL_INFO*/)
 {
+    _os.str(std::move(std::string()));
+    _os .clear();
+
     _os << NowTime() << " " << ToString(level) << " - ";
     return _os;
 }
@@ -208,17 +202,13 @@ class FILELOG_DECLSPEC FILELog : public LogStream<Output2FILE> {};
 */
 
 
+/*
 class FILELOG_DECLSPEC LSockLogServer : public LogStream,
-                                        public SockDomain
+                                        public SocketDomain
 {
     public :
-        LSockLogServer() : SockDomain(SOCK_PATH_DEFAULT)
+        LSockLogServer(const char *path = SOCK_PATH_DEFAULT): SocketDomain(path)
         {
-            if( 0 != initServer()) std::cerr << "Unable To initialize Log Server\n";
-        }
-        LSockLogServer(const char *path): SockDomain(path)
-        {
-            if( 0 != initServer()) std::cerr << "Unable To initialize Log Server\n";
         }
 
         FILIKA_RESULT recv(std::string &item)
@@ -226,7 +216,7 @@ class FILELOG_DECLSPEC LSockLogServer : public LogStream,
             static __thread  char buff[1024];
 
             FILIKA_RESULT res = FILIKA_RESULT::FR_ERROR;
-            int len = recvFrom(buff, 1024);
+            int len = Read(buff, 1024);
             if (len > 0 && len < 1024)
             {
                 res = FILIKA_RESULT::FR_SUCCESS;
@@ -234,20 +224,32 @@ class FILELOG_DECLSPEC LSockLogServer : public LogStream,
             }
             return res;
         }
-
 };
+*/
+
+
 
 class FILELOG_DECLSPEC LSockLog : public LogStream,
-                                  public SockDomain
+                                  public SocketDomain
 {
     public :
-        LSockLog() : SockDomain(SOCK_PATH_DEFAULT)
+        LSockLog(const char *path = SOCK_PATH_DEFAULT, bool doConnect = true) : SocketDomain(path), _doConnect(doConnect)
         {
-            init();
-        }
-        LSockLog(const char *path) : SockDomain(path)
-        {
-            init();
+            if (SocketResult::SR_SUCCESS != Init())
+            {
+                std::cerr << "ERROR : Unable to connect init log\n";
+            }
+            else
+            {
+                if (_doConnect)
+                {
+                    if (SocketResult::SR_SUCCESS != Connect())
+                    {
+                        std::cerr << "ERROR : Unable to connect Connect Log Server (" << path << ")\n";
+                        Release();
+                    }
+                }
+            }
         }
         ~LSockLog()
         {
@@ -258,24 +260,34 @@ class FILELOG_DECLSPEC LSockLog : public LogStream,
             std::string s = _os.str();
             size_t  len   = s.length();
             ssize_t res   = 0;
+
             if (len > 0)
             {
-                /*ssize_t res   = */sendTo(s.c_str(), len);
+                if (true  == Good())
+                {
+                    if (_doConnect  || (SocketResult::SR_SUCCESS == Connect()))
+                         res   = Write(s.c_str(), len + 1 );
+                    else
+                        std::cerr << "Unable to connect (" << errno << ") " << strerror(errno) << std::endl;
+                }
             }
-
             Reset();
 
-            return ( (res == -1) || (res != (ssize_t)len)) ? FILIKA_RESULT::FR_ERROR : FILIKA_RESULT::FR_SUCCESS;
+            return ( (res == -1) || (res != (ssize_t)(len+1))) ? FILIKA_RESULT::FR_ERROR : FILIKA_RESULT::FR_SUCCESS;
         }
+
+        bool _doConnect;
+
 };
+
 
 #define __FILEN__    (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
 #define LOG_LINE(lgr) lgr.Get(__LINE__, __func__)
 
 /*
 #define LSOCK_LOG(level) \
-    if (level > FILELOG_MAX_LEVEL && level > Filika::LogStream<Filika::SockDomain>::LogLevel() )  ;  \
-    else Filika::LogStream<Filika::SockDomain>().Get(level)
+    if (level > FILELOG_MAX_LEVEL && level > Filika::LogStream<Filika::SocketDomain>::LogLevel() )  ;  \
+    else Filika::LogStream<Filika::SocketDomain>().Get(level)
 */
 
 

@@ -7,15 +7,16 @@
 
 enum class SocketResult : std::int16_t
 {
-    SUCCESS       =  0,
-    ERROR         = -1,
-    ERROR_BIND    = -2,
-    ERROR_CONNECT = -3,
-    ERROR_SEND    = -4,
-    ERROR_READ    = -5,
-    ERROR_EPOLL   = -6,
-    ERROR_LEN     = -7,
-    ERROR_AGAIN   = -8,
+    SR_SUCCESS         =  0,
+    SR_ERROR           = -1,
+    SR_ERROR_BIND      = -2,
+    SR_ERROR_CONNECT   = -3,
+    SR_ERROR_SEND      = -4,
+    SR_ERROR_READ      = -5,
+    SR_ERROR_EPOLL     = -6,
+    SR_ERROR_LEN       = -7,
+    SR_ERROR_AGAIN     = -8,
+    SR_ERROR_REUSEADDR = -9,
 };
 
 

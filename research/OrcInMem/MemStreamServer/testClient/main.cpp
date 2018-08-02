@@ -21,23 +21,23 @@
 
 
 
-bool send(SockDomain &sock, void *data, std::uint32_t len)
+bool send(SocketDomain &sock, void *data, std::uint32_t len)
 {
-    ssize_t res = (len > 0) ? sock.sendTo(data, len) : 0;
+    ssize_t res = (len > 0) ? sock.Write(data, len) : 0;
     return ((res > 0) && (res == (ssize_t)len));
 }
 
-bool send(SockDomain &sock, const StreamPacket &pack)
+bool send(SocketDomain &sock, const StreamPacket &pack)
 {
     const StreamPacket::byte_t *b;
     std::uint32_t l = pack.Buffer(&b);
 
-    ssize_t res = (l > 0) ? sock.sendTo(b, l) : 0;
+    ssize_t res = (l > 0) ? sock.Write(b, l) : 0;
     return ((res > 0) && (res == (ssize_t)l));
 }
 
 
-void SendMultipleIndividual(SockDomain &sock)
+void SendMultipleIndividual(SocketDomain &sock)
 {
     char  buff[32] = "MulIndividual-";
     for (int i = 0; i < 100; ++i)
@@ -47,7 +47,7 @@ void SendMultipleIndividual(SockDomain &sock)
     }
 }
 
-void SendBulkIndividual(SockDomain &sock)
+void SendBulkIndividual(SocketDomain &sock)
 {
     std::string           prefix = "BulkIndividual-";
     StreamPacket::byte_t  buff2[4096];
@@ -69,7 +69,7 @@ void SendBulkIndividual(SockDomain &sock)
     send(sock, buff2, len);
 }
 
-void SendBulkDirt(SockDomain &sock)
+void SendBulkDirt(SocketDomain &sock)
 {
     std::string           prefix = "Dirt-";
     StreamPacket::byte_t  buff[4096];
@@ -97,7 +97,7 @@ void SendBulkDirt(SockDomain &sock)
     send(sock, buff, len);
 }
 
-void SendBulkCorrupt(SockDomain &sock)
+void SendBulkCorrupt(SocketDomain &sock)
 {
     std::string           prefix = "Corrupt-";
     StreamPacket::byte_t  buff2[4096];
@@ -122,26 +122,37 @@ void SendBulkCorrupt(SockDomain &sock)
 }
 
 
-int main(int argc, char** argv)
-{
-    std::cout << "StreamServerClient v0.0.0.2\n";
 
-    SockDomain sock;
-    int res = sock.init("/home/postgres/pgext_domain_sock");
-    if (0 != res)
+
+int main(int , char** )
+{
+    char *sname = "/home/postgres/.pgext_domain_sock";
+
+    std::cout << "StreamServerClient v0.0.0.2\n";
+    std::cout << "Using domain Socket : " << sname << std::endl;
+
+    SocketDomain sock;
+    if (SocketResult::SR_SUCCESS != sock.Init(sname))
     {
-        std::cerr << "ERROR: Unable to init SockDomain \n";
+        std::cerr << "ERROR: Unable to init SocketDomain \n";
         return 0;
     }
 
-/*
+    if (SocketResult::SR_SUCCESS != sock.Connect())
+    {
+        std::cerr << "ERROR: Unable to Connect SocketDomain \n";
+        return 0;
+    }
+
+
+
     {
         //Invidiual
         send(sock, std::move(StreamPacket("12345", 5)));
-        send(sock, std::move(StreamPacket("67890", 5)));
-        send(sock, std::move(StreamPacket("abcde", 5)));
+//        send(sock, std::move(StreamPacket("67890", 5)));
+//        send(sock, std::move(StreamPacket("abcde", 5)));
     }
-
+/*
     {
         //Combined Individual
         StreamPacket pck1("1x345", 5);
@@ -158,7 +169,8 @@ int main(int argc, char** argv)
 
         send(sock, data, lenBuffer1 + lenBuffer2);
     }
-
+*/
+/*
     {
         //Fragmanted
         StreamPacket pck("67890", 5);
@@ -176,7 +188,8 @@ int main(int argc, char** argv)
         std::memcpy(part2, bufferPrt+lenPart1, lenPart2);
         send(sock, part2, lenPart2);
     }
-
+*/
+/*
     {
         //Dirt
         StreamPacket pck("abcdefg", 7);
@@ -197,7 +210,8 @@ int main(int argc, char** argv)
 
         send(sock, data, lenBuffer+8);
     }
-
+*/
+/*
     {
         //Corrupt
         StreamPacket pck("hijklmnopqrstuvwxyz", 19);
@@ -219,7 +233,7 @@ int main(int argc, char** argv)
         //send(sock, std::move(StreamPacket("12345", 5)));
     }
 */
-    SendBulkIndividual(sock);
+    //SendBulkIndividual(sock);
     return 0;
 }
 

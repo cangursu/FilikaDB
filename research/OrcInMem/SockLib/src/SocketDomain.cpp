@@ -12,78 +12,141 @@
  */
 
 #include "SocketDomain.h"
+#include "SocketResult.h"
 
-
-#include <sys/socket.h>
+#include <cstring>
 #include <unistd.h>
+#include <iostream>
+#include <fcntl.h>
 
 
 
-SockDomain::SockDomain(const char *path)
+
+SocketDomain::SocketDomain(const char *path)
 {
+//    std::cout << "SocketDomain::SocketDomain sock:" << _sock << std::endl;
     _addr.sun_family = AF_UNIX;
     strcpy(_addr.sun_path, path);
 }
 
-SockDomain::~SockDomain()
+SocketDomain::SocketDomain(SocketDomain &&val)
 {
-    release();
+//    std::cout << "SocketDomain::SocketDomain sock:" << _sock << std::endl;
+    _sock = val._sock;
+    _addr = val._addr;
+    val._sock = -1;
 }
 
-int SockDomain::init()
+
+SocketDomain::~SocketDomain()
 {
-    release();
-    _sock = socket(AF_UNIX, SOCK_DGRAM, 0);
-    return _sock == -1 ? -1 : 0;
+//    std::cout << "SocketDomain::~SocketDomain sock:" << _sock << "  mooved:" << mooved <<  std::endl;
+    Release();
 }
 
-int SockDomain::init(const char *path)
+SocketDomain& SocketDomain::operator=(SocketDomain &&s)
 {
+    _sock = s._sock;
+    s._sock = -1;
+    return *this;
+}
+
+SocketResult SocketDomain::Init()
+{
+//    std::cout << "SocketDomain::Init sock:" << _sock << std::endl;
+    Release();
+    return ((_sock = ::socket(AF_UNIX, SOCK_STREAM, 0)) == -1) ? SocketResult::SR_ERROR : SocketResult::SR_SUCCESS;
+    //return _sock != -1 ;
+}
+
+SocketResult SocketDomain::Init(const char *path)
+{
+//    std::cout << "SocketDomain::Init sock:" << _sock << std::endl;
+    SocketResult res = Init();
+
     _addr.sun_family = AF_UNIX;
     strcpy(_addr.sun_path, path);
-    return init();
+
+    return res;
 }
 
-
-int SockDomain::initServer()
+SocketResult SocketDomain::InitServer(const char *path /*= nullptr*/)
 {
-    int rc = 0;
-    release();
+//    std::cout << "SocketDomain::InitServer sock:" << _sock << std::endl;
+    SocketResult res = SocketResult::SR_ERROR;
 
-    if (init() == 0)
+    if (SocketResult::SR_SUCCESS == Init())
     {
+        _addr.sun_family = AF_UNIX;
+        if (path) std::strcpy(_addr.sun_path, path);
+
         unlink(_addr.sun_path);
-        rc = bind(_sock, (struct sockaddr *) &_addr, sizeof (_addr));
+        if (0 == ::bind(_sock, (struct sockaddr *) &_addr, sizeof (_addr)))
+        {
+            if (0 == ::listen(_sock, 150))
+                res = SocketResult::SR_SUCCESS;
+        }
     }
 
-    return rc;
+    return res;
 }
 
-int SockDomain::release()
+
+int SocketDomain::Release()
 {
+//    std::cout << "SocketDomain::Release sock:" << _sock << std::endl;
     int rc = 0;
     if (_sock != -1)
     {
-        rc = close(_sock);
+        rc = ::close(_sock);
         _sock = -1;
     }
     return rc;
 }
 
-ssize_t SockDomain::recvFrom(void *pdata, size_t lenData)
+SocketResult SocketDomain::SetNonBlock()
 {
-    sockaddr_un peer_sock;
-    socklen_t lenAddr = sizeof (peer_sock);
+    SocketResult res = SocketResult::SR_ERROR;
 
-    ssize_t bytes = recvfrom(_sock, pdata, lenData, 0, (struct sockaddr *) &peer_sock, &lenAddr);
-    if (bytes == -1) release();
+    int flags = fcntl(_sock, F_GETFL, 0);
+    if (-1 == flags)
+    {
+        perror("fcntl");
+        return SocketResult::SR_ERROR;
+    }
+
+    flags |= O_NONBLOCK;
+    if (-1 == fcntl(_sock, F_SETFL, flags))
+    {
+        perror("fcntl");
+        return SocketResult::SR_ERROR;
+    }
+
+    return SocketResult::SR_SUCCESS;
+}
+
+
+ssize_t SocketDomain::Read(void *pdata, size_t lenData)
+{
+//    std::cout << "SocketDomain::Resd sock:" << _sock << std::endl;
+    ssize_t bytes = ::read(_sock, pdata, lenData);
+    if (bytes == -1)
+    {
+        std::cerr << "ERROR : read - (" << errno << ") " << strerror(errno) << std::endl;
+        Release();
+    }
 
     return bytes;
 }
 
-ssize_t  SockDomain::sendTo(const void *pdata, size_t len)
+ssize_t  SocketDomain::Write(const void *pdata, size_t len)
 {
-    ssize_t bytes = sendto(_sock, pdata, len, 0, (struct sockaddr *) &_addr, sizeof (_addr));
-    if (bytes == -1) release();
+//    std::cout << "SocketDomain::Write sock:" << _sock << std::endl;
+    ssize_t bytes = ::write(_sock, pdata, len);
+    if (bytes == -1)
+    {
+        std::cerr << "ERROR : write - (" << errno << ") " << strerror(errno) << std::endl;
+        Release();
+    }
     return bytes;
 }

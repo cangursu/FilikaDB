@@ -43,14 +43,14 @@ public:
     virtual const std::string& getName() const;
     virtual void               close();
 
-    int                        init();
+    SocketResult               init();
     bool                       validateName();
     std::uint32_t              reqID();
     StreamPacket               packet();
 private:
 
 
-    class StreamCSock : public SockDomain
+    class StreamCSock : public SocketDomain
     {
     public :
         bool send(const StreamPacket &pack);
