@@ -17,7 +17,7 @@
  */
 int main(int argc, char** argv)
 {
-    const char *sFile = (argc > 1) ? argv[1] : SOCK_PATH_DEFAULT;
+    const char *sFile = (argc > 1) ? argv[1] : "/home/postgres/sock_orcinmem" /*SOCK_PATH_DEFAULT*/;
     std::cout << "Filika Logger Sender Entered : " << sFile << std::endl;
 /*
     {
@@ -49,13 +49,14 @@ int main(int argc, char** argv)
 */
 
    /*
-    Filika::LogStream<Filika::SockDomain> lg(sFile);
+    Filika::LogStream<Filika::SocketDomain> lg(sFile);
     lg.get() << "Kello\n";
    */
 
 
     //LSOCK_LOG(Filika::TLogStreamLevel::LSL_INFO) << "Mello";
 
+    /*
     {
         Filika::LSockLog lg(sFile);
         lg.Get() << "Deneme .... " << std::endl;
@@ -66,21 +67,29 @@ int main(int argc, char** argv)
 
         LOG_LINE(lg) << "Bu da başka deneme";
     }
-
+    */
 
     {
         LogLineGlbSocketName(sFile);
-        LOG_LINE_GLOBAL("desc olayi", "test -> ", "olayı");
+        LOG_LINE_GLOBAL("desc olayi", "Test- -> ", 1111, " <- olayı");
+        //LOG_LINE_GLOBAL("desc olayi", "Test- -> ", 2222, " <- olayı");
+    }
+    /*
+    {
+        LOG_LINE_GLOBAL("desc olayi", "Test- -> ", 3333, " <- olayı");
     }
     {
-        LOG_LINE_GLOBAL("desc olayi", "Mest -> ", "olayı");
+        LOG_LINE_GLOBAL("desc olayi", "Test- -> ", 4444, " <- olayı");
     }
     {
-        LOG_LINE_GLOBAL("desc olayi", "Pest -> ", "olayı");
+        LOG_LINE_GLOBAL("desc olayi", "Test- -> ", 5555, " <- olayı");
     }
+    for (int i = 0; i < 100; ++i)
     {
-        LOG_LINE_GLOBAL("desc olayi", "Rest -> ", "olayı");
+        LOG_LINE_GLOBAL("desc olayi", "Glabal Log = ", std::to_string(i), " . ");
     }
+*/
+
 
     std::cout << "Filika Logger Sender: Quited\n";
     return 0;

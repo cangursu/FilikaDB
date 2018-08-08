@@ -30,10 +30,12 @@
 #include "Logger.h"
 namespace  Filika
 {
+    const char *SocketFile();
     LSockLog &logger();
 };
 
 
+#include <cstring>
 #include <sstream>
 
 
@@ -54,25 +56,36 @@ void LogLineGlobalFormat(const char *desc, int lineNo, const char *fname, const 
 {
     std::ostringstream &os = Filika::logger().Get(Filika::LSL_INFO);
 
+    //Filika::LSockLog logger(Filika::SocketFile());
+    //std::ostringstream &os = logger.Get(Filika::LSL_INFO);
+
+    const int widthDesc  = 12;
+    const int widthFName = 24;
+    const int widthFunc  = 20;
+
     os.flags(std::ios::left);
-    os.width(12);
+    os.width(widthDesc);
     os << desc << " ";
 
     std::stringstream osTmp;
-    osTmp << fname << ":" << lineNo;
+    std::string       strTmp = ":" + std::to_string(lineNo);
+    int               widthFNamePart = std::strlen(fname) < widthFName - strTmp.size() ? std::strlen(fname) : widthFName - strTmp.size();
+    osTmp << std::string(fname, widthFNamePart) << strTmp;
 
-    os.width(24);
+    os.width(widthFName);
     os << osTmp.str();
 
-
     os << " ";
-    os.width(20);
-    os << funcName << " - ";
+    os.width(widthFunc);
+    os << std::string(funcName, std::strlen(funcName) < widthFunc ? std::strlen(funcName) : widthFunc) << " - ";
 
     LogLineGlobalFormat(os, args ...);
-    //os << std::endl;
 
-    Filika::logger().send();
+    //logger.send();
+    if (Filika::FILIKA_RESULT::FR_ERROR == Filika::logger().send())
+    {
+        std::cerr << "ERROR - Log : Unable to send log\n";
+    }
 }
 
 

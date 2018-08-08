@@ -16,6 +16,7 @@ namespace  Filika
         sfile = path;
     }
 
+    const char *SocketFile() {return sfile;}
 
     LSockLog &logger()
     {

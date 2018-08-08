@@ -1,6 +1,6 @@
 #!/bin/sh
 
-for ((number = 10; number < 10001; number *= 10))
+for ((number = 10; number < 10000001; number *= 10))
 {
-    ./GenTestData "TestData$number" $number
+    ./GenTestData "$1TestData$number" $number
 }
