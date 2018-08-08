@@ -838,7 +838,7 @@ Datum orc_buffer_remote_test(PG_FUNCTION_ARGS)
 
 
 
-    OrcMemStreamRemoteSender mem("OrcRemote", "/home/postgres/pgext_domain_sock");
+    OrcMemStreamRemoteSender mem("OrcRemote", "/home/postgres/.sock_pgext_domain");
 
     SocketResult rc = mem.init();
     if (rc == SocketResult::SR_SUCCESS)

@@ -233,8 +233,13 @@ class FILELOG_DECLSPEC LSockLog : public LogStream,
                                   public SocketDomain
 {
     public :
-        LSockLog(const char *path = SOCK_PATH_DEFAULT, bool doConnect = true) : SocketDomain(path), _doConnect(doConnect)
+        LSockLog(const char *path = SOCK_PATH_DEFAULT, bool doConnect = true)
+                : SocketDomain("SockLog")
+                , _doConnect(doConnect)
         {
+            SocketPath(path);
+            Name("SockLog");
+
             if (SocketResult::SR_SUCCESS != Init())
             {
                 std::cerr << "ERROR : Unable to connect init log\n";
@@ -263,7 +268,7 @@ class FILELOG_DECLSPEC LSockLog : public LogStream,
 
             if (len > 0)
             {
-                if (true  == Good())
+                if (true  == IsGood())
                 {
                     if (_doConnect  || (SocketResult::SR_SUCCESS == Connect()))
                          res   = Write(s.c_str(), len + 1 );

@@ -26,6 +26,8 @@ template <typename TSocket>
 class SocketClient : public TSocket
 {
     public:
+        SocketClient(const char *name) : TSocket(name) {}
+
         SocketResult Connect ();
         SocketResult Send    (const void *data, std::uint64_t len);
         SocketResult Send    (MemStream<std::uint8_t> &&)   ;

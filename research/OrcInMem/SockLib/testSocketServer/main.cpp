@@ -31,12 +31,19 @@
 #include <iostream>
 
 
-template <typename TSck>
-class EchoServer : public SocketServer<TSck>
+template <typename TSckSrv, typename TSckCln>
+class EchoServer : public SocketServer<TSckSrv, TSckCln>
 {
     public:
 
-        virtual void OnAccept(const TSck &sock, const sockaddr &addr)
+        EchoServer(const char *name)
+            : SocketServer<TSckSrv, TSckCln>(name)
+        {
+        }
+
+
+
+        virtual void OnAccept(const TSckCln &sock, const sockaddr &addr)
         {
             std::string host, serv;
             if (/*SocketResult::SR_SUCCESS*/true == NameInfo(addr, host, serv))
@@ -45,7 +52,7 @@ class EchoServer : public SocketServer<TSck>
                 ClientCount();
             }
         }
-        virtual void OnRecv(const TSck &sock, MemStream<uint8_t> &&stream)
+        virtual void OnRecv(const TSckCln &sock, MemStream<uint8_t> &&stream)
         {
             const int buffLen = 128;
             char buff[buffLen];
@@ -58,7 +65,7 @@ class EchoServer : public SocketServer<TSck>
             }
             std::cout << std::endl;
         }
-        virtual void OnDisconnect  (const TSck &sock)
+        virtual void OnDisconnect  (const TSckCln &sock)
         {
             std::cout << "Client Disconnected. \n";
             ClientCount();
@@ -74,14 +81,14 @@ class EchoServer : public SocketServer<TSck>
 
         void ClientCount()
         {
-            std::cout << "Client count = " << SocketServer<TSck>::ClientCount() << std::endl;
+            std::cout << "Client count = " << SocketServer<TSckSrv, TSckCln>::ClientCount() << std::endl;
         }
 };
 
 int main()
 {
 
-    EchoServer<Socket> srv;
+    EchoServer<Socket, Socket> srv("EchoServer");
 
 
     //srv.SocketPath("/home/postgres/.sock_rawtest");

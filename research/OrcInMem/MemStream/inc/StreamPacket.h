@@ -26,8 +26,8 @@
 
 
 
-#define _1K     (1024)
-#define _4K     (4*_1K)
+#define  _1K   (1024)
+#define  _4K   (4*_1K)
 #define _16K   (16*_1K)
 
 const std::uint32_t  g_posMID         = 0;
@@ -57,28 +57,24 @@ public:
     bool            Check();
     std::uint32_t   Crc(const void *data, std::uint32_t len);
 
-    std::uint32_t   Create (const byte_t *payload, std::uint32_t len);
-    std::uint32_t   Create (const void   *payload, std::uint32_t len)   { return Create((byte_t *)payload, len); }
-    std::uint32_t   Payload(byte_t       *buff   , std::uint32_t len);
+    std::uint32_t   Create     (const byte_t *payload, std::uint32_t len);
+    std::uint32_t   Create     (const void   *payload, std::uint32_t len)   { return Create((byte_t *)payload, len); }
+    std::uint32_t   Payload    (byte_t       *buff   , std::uint32_t len);
+    std::uint32_t   PayloadPart(byte_t       *buff   , std::uint32_t len, std::uint32_t offset);
+    std::uint32_t   PayloadLen ();
 
     std::uint32_t   Buffer (byte_t **buff)                              { *buff = _buff; return _buffLen;  }
     std::uint32_t   Buffer (byte_t const **buff) const                  { *buff = _buff; return _buffLen;  }
 
-    void            BufferLen (std::uint32_t len)                       { _buffLen = len; }
+    void            BufferLen (std::uint32_t len)                       { _buffLen = len;  }
+    std::uint32_t   BufferLen () const                                  { return _buffLen; }
 
 private:
 
-    byte_t          _buff[_16K];
+    byte_t          _buff[g_lenMaxBuffer];
     std::uint32_t   _buffLen = 0;
 
 public:
-    /*
-    static const std::uint32_t  s_lenMaxPayload;
-    static const std::uint32_t  s_lenMaxBuffer ;
-    static const std::uint32_t  s_lenMID       ;
-    static const std::uint32_t  s_lenDLen      ;
-    static const std::uint32_t  s_lenCRC       ;
-    */
 
     static const std::string    s_mid          ;
 

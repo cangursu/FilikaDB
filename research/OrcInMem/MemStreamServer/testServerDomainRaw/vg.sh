@@ -10,4 +10,4 @@ valgrind    --tool=memcheck         \
             --num-callers=20        \
             --track-fds=yes         \
             -v                      \
-         ./StreamServer
+         ./StreamServerServer

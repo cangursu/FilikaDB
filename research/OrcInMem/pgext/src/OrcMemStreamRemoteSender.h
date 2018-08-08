@@ -29,7 +29,7 @@ class OrcMemStreamRemoteSender
         using byte_t = StreamPacket::byte_t;
 public:
     OrcMemStreamRemoteSender(const std::string &name = "OrcMem",
-                             const std::string &memserChan = "/home/postgres/pgext_domain_sock");
+                             const std::string &memserChan = "/home/postgres/.sock_pgext_domain");
     OrcMemStreamRemoteSender(const OrcMemStreamRemoteSender& orig) = delete;
     OrcMemStreamRemoteSender(OrcMemStreamRemoteSender&& orig)      = delete;
     virtual ~OrcMemStreamRemoteSender();

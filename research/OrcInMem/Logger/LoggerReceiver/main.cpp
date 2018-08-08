@@ -28,7 +28,8 @@ int main(int argc, char** argv)
     const char *sfile = (argc > 1) ? argv[1] : SOCK_PATH_DEFAULT;
     std::cout << "Filika Logger Receiver Entered : " << sfile << std::endl;
 
-    SocketDomain  server(sfile);
+    SocketDomain  server("LoggerReceiever");
+    server.SocketPath(sfile);
 
     if (SocketResult::SR_SUCCESS != server.InitServer())
     {

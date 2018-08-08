@@ -15,7 +15,7 @@ CC=g++
 
 #CFLAGS= -ggdb -w -Wall -fPIC -std=c++11
 #CFLAGS= -g -O3 -w -Wall -fPIC -std=c++17
-CFLAGS= -ggdb -O0 -w -Wall -fPIC -std=c++17  \
+CFLAGS= -ggdb -O0 -w -Wall -fPIC -std=c++17 -rdynamic  \
         -DGIT_VERSION=\"$(GIT_VERSION)\"  \
         -DGIT_COMMIT=\"$(GIT_COMMIT)\"    \
         -DGIT_DATE=\"$(GIT_DATE)\"        \
@@ -33,6 +33,7 @@ INCLUDE_PATH=-I..                               \
 
 SOURCES=$(wildcard *.cpp)
 SOURCES+=$(wildcard ../src/SourceChannel.cpp)
+SOURCES+=$(wildcard ../src/Packet.cpp)
 SOURCES+=$(wildcard ../../SockLib/src/*.cpp)
 SOURCES+=$(wildcard ../../MemStream/src/*.cpp)
 SOURCES+=$(wildcard ../../Logger/src/*.cpp)

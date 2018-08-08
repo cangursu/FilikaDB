@@ -32,14 +32,15 @@ class SocketDomain
 {
 public:
 
-    SocketDomain(int fd) : _sock(fd)    {    }
+    SocketDomain(int fd, const char *name /*= "NA"*/);
+    SocketDomain(const char *name = "NA");
     SocketDomain(const SocketDomain &val) = delete;
     SocketDomain(SocketDomain &&val);
-    SocketDomain(const char *path = "");
 
     virtual ~SocketDomain() ;
 
     SocketDomain& operator=(SocketDomain &&s);
+    SocketDomain& operator=(const SocketDomain &val) = delete;
 
     SocketResult Init();
     SocketResult Init(const char *path);
@@ -49,15 +50,16 @@ public:
     int          Release() ;
 
     // Parameters
+    void         Name(const char *name)            { _name = name; }
     void         SocketPath(const char *spath)     { strcpy(_addr.sun_path, spath);  _addr.sun_family = AF_UNIX; }
     std::string  PrmDesc()                         { return std::move(std::string(_addr.sun_path)); }
     SocketResult SetNonBlock();
 
-    bool         Good     ()    { return _sock != -1;                                                      }
+    bool         IsGood   ()    { return _sock != -1;                                                      }
     SocketResult Connect  ()    { return (::connect(_sock, (struct sockaddr*) &_addr, sizeof (_addr)) == 0) ? SocketResult::SR_SUCCESS : SocketResult::SR_ERROR; }
-    SocketDomain Accept   ()    { return std::move(SocketDomain(::accept(_sock, NULL, NULL)));               }
+    SocketDomain Accept   ()    { return std::move(SocketDomain(::accept(_sock, NULL, NULL), "client"));               }
     int          AcceptFd ()    { return ::accept(_sock, NULL, NULL);                                      }
-    ssize_t      Read     (void *pdata, size_t len) ;
+    ssize_t      Read     (void *pdata, size_t len);
     ssize_t      Write    (const void *pdata, size_t len);
 
 
@@ -66,6 +68,8 @@ protected :
 private:
     int             _sock = -1;
     sockaddr_un     _addr{AF_UNIX, SOCK_PATH_DEFAULT};
+
+    std::string     _name = "NA";
 };
 
 

@@ -30,6 +30,8 @@ template <typename TSock>
 class EchoClient : public SocketClient<TSock>
 {
     public:
+        EchoClient(const char *name) : SocketClient<TSock>(name) {}
+
         virtual void OnRecv(const TSock &, MemStream<std::uint8_t> &&)
         {
             std::cout << "OnRecv : " << std::endl;
@@ -44,43 +46,45 @@ class EchoClient : public SocketClient<TSock>
 int main()
 {
     std::cout << "Domain Socket Client Test Suit V0.0\n";
-    const void *data = "Test";
+ 
+    const void *data  = "Test";
+    const char *sname = "/home/postgres/.sock_rawtest";
 
-    EchoClient<SocketDomain> sock;
-    EchoClient<SocketDomain> sock___XXX___;
-    sock.SocketPath("/home/postgres/.sock_rawtest");
-    sock___XXX___.SocketPath("/home/postgres/.sock_rawtest");
+    EchoClient<SocketDomain> sock1("EchoClient1");
+    EchoClient<SocketDomain> sock2("EchoClient2");
+    sock1.SocketPath(sname);
+    sock2.SocketPath(sname);
 
-    if (SocketResult::SR_SUCCESS != sock___XXX___.Init())
+    if (SocketResult::SR_SUCCESS != sock2.Init())
     {
         std::cerr << "ERROR : Unable to init SocketClient - (" << errno <<  ") " << strerror(errno) << std::endl;
         return -1;
     }
-    if (SocketResult::SR_SUCCESS != sock.Init())
+    if (SocketResult::SR_SUCCESS != sock1.Init())
     {
         std::cerr << "ERROR : Unable to init SocketClient - (" << errno <<  ") " << strerror(errno) << std::endl;
         return -1;
     }
 
 
-    if (SocketResult::SR_SUCCESS != sock___XXX___.Connect())
+    if (SocketResult::SR_SUCCESS != sock2.Connect())
     {
         std::cerr << "ERROR : Unable to Connect SocketClient - (" << errno <<  ") " << strerror(errno) << std::endl;
         return -2;
     }
-    if (SocketResult::SR_SUCCESS != sock.Connect())
+    if (SocketResult::SR_SUCCESS != sock1.Connect())
     {
         std::cerr << "ERROR : Unable to Connect SocketClient - (" << errno <<  ") " << strerror(errno) << std::endl;
         return -2;
     }
 
 
-    if (SocketResult::SR_SUCCESS != sock___XXX___.Send(data, strlen((char*)data)))
+    if (SocketResult::SR_SUCCESS != sock2.Send(data, strlen((char*)data)))
     {
         std::cerr << "ERROR : Unable to Send data\n";
         return -3;
     }
-    if (SocketResult::SR_SUCCESS != sock.Send(data, strlen((char*)data)))
+    if (SocketResult::SR_SUCCESS != sock1.Send(data, strlen((char*)data)))
     {
         std::cerr << "ERROR : Unable to Send data\n";
         return -3;

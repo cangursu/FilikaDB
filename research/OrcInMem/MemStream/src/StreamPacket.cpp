@@ -50,6 +50,7 @@ StreamPacket::~StreamPacket()
 void StreamPacket::Reset()
 {
     std::memset(_buff, 0, g_lenMID + g_lenPLen);
+    _buffLen = 0;
 }
 
 std::uint32_t StreamPacket::Crc(const void *data, std::uint32_t len)
@@ -120,6 +121,26 @@ std::uint32_t StreamPacket::Create(const byte_t *payload, std::uint32_t len)
     return _buffLen = (ptWalk - _buff);
 }
 
+std::uint32_t StreamPacket::PayloadPart(byte_t *buff, std::uint32_t lenBuff, std::uint32_t offset)
+{
+    if (false == Check()) return false;
+
+    std::uint32_t         len    = 0;
+    StreamPacket::byte_t *ptWalk = _buff  + g_lenMID;
+
+    std::memcpy((void*)&len, (void*)ptWalk, g_lenPLen);
+    ptWalk += g_lenPLen;
+
+    if (len - offset > lenBuff)
+        len = lenBuff;
+    ptWalk += offset;
+
+    std::memcpy(buff, ptWalk, len);
+    ptWalk += len;
+
+    return len;
+}
+
 std::uint32_t StreamPacket::Payload(byte_t *buff, std::uint32_t lenBuff)
 {
     if (false == Check()) return false;
@@ -137,3 +158,14 @@ std::uint32_t StreamPacket::Payload(byte_t *buff, std::uint32_t lenBuff)
 
     return len;
 }
+
+std::uint32_t StreamPacket::PayloadLen()
+{
+    std::uint32_t         len    = 0;
+    StreamPacket::byte_t *ptWalk = _buff  + g_lenMID;
+
+    std::memcpy((void*)&len, (void*)ptWalk, g_lenPLen);
+    return len;
+}
+
+

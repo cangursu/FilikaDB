@@ -30,7 +30,7 @@ int main(int argc, char** argv)
     LOG_LINE_GLOBAL("SServerClient", "ver 0.0.0.0");
 
 
-    /*std::thread th = */SourceChannel::listenAsyc("/home/postgres/.pgext_domain_sock");
+    /*std::thread th = */SourceChannelServer::listenAsyc("/home/postgres/.sock_pgext_domain");
     //th.join();
 
     return 0;

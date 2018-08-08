@@ -7,14 +7,19 @@
 #include <unistd.h>
 
 
-
-Socket::Socket(int s)
-    : _sock(s)
+Socket::Socket(const char *name /*= "NA"*/)
+    : _name (name)
+{
+}
+Socket::Socket(int s, const char *name)
+    : _sock (s)
+    , _name (name)
 {
 }
 
 Socket::Socket(Socket &&s)
     : _sock (s._sock)
+    , _name (s._name)
 {
     s._sock = -1;
 }
@@ -27,6 +32,8 @@ Socket::~Socket()
 Socket& Socket::operator=(Socket &&s)
 {
     _sock = s._sock;
+    _name = s._name;
+
     s._sock = -1;
     return *this;
 }
@@ -38,7 +45,7 @@ SocketResult Socket::Init ()
     SocketResult res = SocketResult::SR_SUCCESS;
     if ((_sock = socket(AF_INET, SOCK_STREAM, 0)) == -1)
     {
-        perror("Socket");
+        std::cerr << "ERROR : Socket\n";
         res = SocketResult::SR_ERROR;
     }
 

@@ -21,8 +21,8 @@
 class Socket
 {
     public :
-        Socket(int s);
-        Socket()                = default;
+        Socket(int s, const char *name);
+        Socket(const char *name = "NA");
         Socket(const Socket &s) = delete;
         Socket(Socket &&s);
         ~Socket();
@@ -42,11 +42,12 @@ class Socket
 
 protected :
         int fd() const { return _sock; }
-    private :
+private :
         int             _sock    = -1;
         uint16_t        _port    = -1;
         std::string     _address = "127.0.0.1";
 
+        std::string     _name    = "NA";
 };
 
 

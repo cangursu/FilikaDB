@@ -87,7 +87,7 @@ public:
         }
     }
 
-    std::uint64_t read (void* buf, std::uint64_t length, std::uint64_t offset)
+    std::uint64_t read (void* buf, std::uint64_t length, std::uint64_t offset) const
     {
         if (nullptr == buf) return 0L;
 
@@ -102,7 +102,7 @@ public:
 
         while (length > 0 && idx < _listSize)
         {
-            Buffer<U> &item = _listBuffer[idx];
+            const Buffer<U> &item = _listBuffer[idx];
             sze = item.Idx();
             len   = (pos + length) > sze ? (pos > sze ? 0 : sze - pos) : length;
 
