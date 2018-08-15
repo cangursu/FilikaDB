@@ -15,6 +15,7 @@
 #define __ORC_MEM_STREAM_REMOTE_SENDER_H__
 
 #include "SocketDomain.h"
+#include "SourceChannel.h"
 #include "LoggerGlobal.h"
 #include "StreamPacket.h"
 
@@ -25,8 +26,10 @@
 class OrcMemStreamRemoteSender
     : public orc::OutputStream
     , public orc::InputStream
+    , public SocketServer<SocketDomain, SocketClientPacket>
 {
         using byte_t = StreamPacket::byte_t;
+        using SockSrv = SocketServer<SocketDomain, SocketClientPacket>;
 public:
     OrcMemStreamRemoteSender(const std::string &name = "OrcMem",
                              const std::string &memserChan = "/home/postgres/.sock_pgext_domain");
@@ -47,18 +50,30 @@ public:
     bool                       validateName();
     std::uint32_t              reqID();
     StreamPacket               packet();
+
+    virtual void OnAccept      (const SocketClientPacket &, const sockaddr &)
+    {
+        LOG_LINE_GLOBAL("remote", "XXXXXXXXXXXXXXXXXXXXXXX");
+    }
+    virtual void OnRecv        (SocketClientPacket &,       MemStream<std::uint8_t> &&)
+    {
+        LOG_LINE_GLOBAL("remote", "XXXXXXXXXXXXXXXXXXXXXXX");
+    }
+    virtual void OnDisconnect  (const SocketClientPacket &)
+    {
+        LOG_LINE_GLOBAL("remote", "XXXXXXXXXXXXXXXXXXXXXXX");
+    }
+    virtual void OnErrorClient (SocketResult)
+    {
+        LOG_LINE_GLOBAL("remote", "XXXXXXXXXXXXXXXXXXXXXXX");
+    }
+    virtual void OnErrorServer (SocketResult)
+    {
+        LOG_LINE_GLOBAL("remote", "XXXXXXXXXXXXXXXXXXXXXXX");
+    }
+
 private:
 
-
-    class StreamCSock : public SocketDomain
-    {
-    public :
-        bool send(const StreamPacket &pack);
-        //bool send(const char *data, int len);
-    };
-
-
-    StreamCSock _sock;
     std::string _name;
     std::string _serverChannel;
 };

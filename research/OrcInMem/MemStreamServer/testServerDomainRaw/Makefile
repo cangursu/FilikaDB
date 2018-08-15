@@ -32,7 +32,7 @@ INCLUDE_PATH=-I..                               \
              -I../../3rdparty/crc32             \
 
 SOURCES=$(wildcard *.cpp)
-SOURCES+=$(wildcard ../src/SourceChannel.cpp)
+SOURCES+=$(wildcard ../src/*.cpp)
 SOURCES+=$(wildcard ../../SockLib/src/*.cpp)
 SOURCES+=$(wildcard ../../MemStream/src/*.cpp)
 SOURCES+=$(wildcard ../../Logger/src/*.cpp)

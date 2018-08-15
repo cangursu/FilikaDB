@@ -15,7 +15,7 @@ CC=g++
 
 #CFLAGS= -ggdb -w -Wall -fPIC -std=c++11
 #CFLAGS= -g -O3 -w -Wall -fPIC -std=c++17
-CFLAGS= -ggdb -O0 -w -Wall -fPIC -std=c++17 -rdynamic  \
+CFLAGS= -g -O0 -w -Wall -fPIC -std=c++17  \
         -DGIT_VERSION=\"$(GIT_VERSION)\"  \
         -DGIT_COMMIT=\"$(GIT_COMMIT)\"    \
         -DGIT_DATE=\"$(GIT_DATE)\"        \
@@ -23,16 +23,9 @@ CFLAGS= -ggdb -O0 -w -Wall -fPIC -std=c++17 -rdynamic  \
 LDFLAGS=
 #LDLIBS=../HElib/src/fhe.a ../ntl-10.3.0/src/ntl.a -lgmp -lpthread
 LDLIBS=-lstdc++fs  -lpthread
-INCLUDE_PATH=-I..                               \
-             -I../inc                           \
-             -I../../SockLib/inc                \
-             -I../../MemStream/inc              \
-             -I../../Logger/inc                 \
-             -I../3rdparty/rapidjson.1/include  \
-             -I../../3rdparty/crc32             \
+INCLUDE_PATH=-I.. -I../inc -I../../SockLib/inc -I../../MemStream/inc -I../../Logger/inc -I../3rdparty/rapidjson.1/include -I../../3rdparty/crc32
 
-SOURCES=$(wildcard *.cpp)
-SOURCES+=$(wildcard ../src/*.cpp)
+SOURCES= $(wildcard *.cpp)
 SOURCES+=$(wildcard ../../SockLib/src/*.cpp)
 SOURCES+=$(wildcard ../../MemStream/src/*.cpp)
 SOURCES+=$(wildcard ../../Logger/src/*.cpp)
@@ -42,7 +35,7 @@ SOURCES+=$(wildcard ../../3rdparty/crc32/*.cpp)
 OBJECTS=$(SOURCES:.cpp=.o)
 DEPENDS=$(SOURCES:.cpp=.d)
 
-EXEC=StreamServerTestServer
+EXEC=StreamServerClientLog
 
 all: $(EXEC)
 

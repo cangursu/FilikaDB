@@ -23,13 +23,14 @@ CFLAGS= -g -O0 -w -Wall -fPIC -std=c++17  \
 LDFLAGS=
 #LDLIBS=../HElib/src/fhe.a ../ntl-10.3.0/src/ntl.a -lgmp -lpthread
 LDLIBS=-lstdc++fs  -lpthread
-INCLUDE_PATH=-I.. -Iinc -I../MemStream/inc -I../Logger/inc -I../SockLib/inc -I../3rdparty/rapidjson.1/include -I../3rdparty/crc32
+INCLUDE_PATH=-I../inc -I../../MemStream/inc -I../../Logger/inc -I../../SockLib/inc -I../../3rdparty/rapidjson.1/include -I../../3rdparty/crc32
 
-SOURCES= $(wildcard src/*.cpp)
+SOURCES= $(wildcard ./*.cpp)
 SOURCES+=$(wildcard ../src/*.cpp)
-SOURCES+=$(wildcard ../MemStream/src/*.cpp)
-SOURCES+=$(wildcard ../SockLib/src/*.cpp)
-SOURCES+=$(wildcard ../3rdparty/crc32/*.cpp)
+SOURCES+=$(wildcard ../../MemStream/src/*.cpp)
+SOURCES+=$(wildcard ../../Logger/src/*.cpp)
+SOURCES+=$(wildcard ../../SockLib/src/*.cpp)
+SOURCES+=$(wildcard ../../3rdparty/crc32/*.cpp)
 
 OBJECTS=$(SOURCES:.cpp=.o)
 DEPENDS=$(SOURCES:.cpp=.d)

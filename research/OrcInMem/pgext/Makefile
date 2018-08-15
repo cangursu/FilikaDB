@@ -15,6 +15,7 @@ OBJS          = $(patsubst %.c,%.o,$(wildcard src/*.c))
 OBJS         += $(patsubst %.cpp,%.o,$(wildcard src/*.cpp))
 OBJS         += $(patsubst %.cpp,%.o,$(wildcard ../Logger/src/*.cpp))
 OBJS         += $(patsubst %.cpp,%.o,$(wildcard ../MemStream/src/*.cpp))
+OBJS         += $(patsubst %.cpp,%.o,$(wildcard ../MemStreamServer/src/*.cpp))
 OBJS         += $(patsubst %.cpp,%.o,$(wildcard ../SockLib/src/*.cpp))
 OBJS         += $(patsubst %.cpp,%.o,$(wildcard ../3rdparty/crc32/*.cpp))
 
