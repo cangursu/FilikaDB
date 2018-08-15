@@ -19,6 +19,7 @@
 
 bool            NameInfo            (const sockaddr &addr, std::string &host, std::string &serv);
 
+const char *    ErrnoText           (int val);
 
 const char *    EPollEventsText     (std::uint32_t eid);
 std::string     EPollEvents         (std::uint32_t eid);

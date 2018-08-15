@@ -50,15 +50,16 @@ public:
     int          Release() ;
 
     // Parameters
+    const std::string &Name()                      { return _name; }
     void         Name(const char *name)            { _name = name; }
     void         SocketPath(const char *spath)     { strcpy(_addr.sun_path, spath);  _addr.sun_family = AF_UNIX; }
     std::string  PrmDesc()                         { return std::move(std::string(_addr.sun_path)); }
     SocketResult SetNonBlock();
 
-    bool         IsGood   ()    { return _sock != -1;                                                      }
-    SocketResult Connect  ()    { return (::connect(_sock, (struct sockaddr*) &_addr, sizeof (_addr)) == 0) ? SocketResult::SR_SUCCESS : SocketResult::SR_ERROR; }
-    SocketDomain Accept   ()    { return std::move(SocketDomain(::accept(_sock, NULL, NULL), "client"));               }
-    int          AcceptFd ()    { return ::accept(_sock, NULL, NULL);                                      }
+    bool         IsGood   ()                       { return _sock != -1;                                                      }
+    SocketResult Connect  ()                       { return (::connect(_sock, (struct sockaddr*) &_addr, sizeof (_addr)) == 0) ? SocketResult::SR_SUCCESS : SocketResult::SR_ERROR_CONNECT; }
+    SocketDomain Accept   ()                       { return std::move(SocketDomain(::accept(_sock, NULL, NULL), "client"));   }
+    int          AcceptFd ()                       { return ::accept(_sock, NULL, NULL);                                      }
     ssize_t      Read     (void *pdata, size_t len);
     ssize_t      Write    (const void *pdata, size_t len);
 

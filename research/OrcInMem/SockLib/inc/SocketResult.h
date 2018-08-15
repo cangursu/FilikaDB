@@ -19,6 +19,7 @@ enum class SocketResult : std::int16_t
     SR_ERROR_LEN       =  -9,
     SR_ERROR_AGAIN     = -10,
     SR_ERROR_REUSEADDR = -11,
+    SR_ERROR_SOCKOPT   = -12,
 };
 
 

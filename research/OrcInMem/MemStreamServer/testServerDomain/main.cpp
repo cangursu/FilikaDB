@@ -12,8 +12,9 @@
  */
 
 
-#include "SourceChannel.h"
+#include "SocketServerPacket.h"
 #include "SocketServer.h"
+#include "SocketClientPacket.h"
 #include "LoggerGlobal.h"
 
 
@@ -21,116 +22,138 @@
 #include <thread>
 
 
-
-class PacketServer : public SocketServer<SocketDomain, SourceChannelClient>
+class SocketClientPacketDisp : public SocketClientPacket<SocketDomain>
 {
     public:
-        PacketServer() : SocketServer<SocketDomain, SourceChannelClient>("PacketServer")
+        SocketClientPacketDisp(const char *name = "SocketClientPacketDisp" )
+            : SocketClientPacket(name)
         {
         }
+        SocketClientPacketDisp(int fd, const char *name)
+            : SocketClientPacket(fd, name)
+        {
+        }
+        virtual void OnRecvPacket(StreamPacket &&packet)
+        {
+            DisplayPacket(packet);
 
-        virtual void OnAccept(const SourceChannelClient &sock, const sockaddr &addr)
+            SocketResult res = SendPacket(packet);  //Echoing packet
+            LOG_LINE_GLOBAL("ServerEcho", "REPLYING res = ", SocketResultText(res));
+        }
+
+        void DisplayPacket(StreamPacket packet)
+        {
+            msize_t         pyLen = packet.PayloadLen();
+            const msize_t   buffLen = 128;
+            byte_t          buff [buffLen];
+
+            for (msize_t i = 0; i < pyLen; i += buffLen)
+            {
+                if (packet.PayloadPart(buff, buffLen, i) > 0)
+                {
+                    LOG_LINE_GLOBAL("ServerEcho", "Packet:", std::string((char*)buff, pyLen));
+                    std::cout << "Packet Reveived -> " << std::string((char*)buff, pyLen) << std::endl;
+                }
+            }
+        }
+};
+
+
+class PacketServerEcho : public SocketServer<SocketDomain, SocketClientPacketDisp>
+{
+    public:
+        PacketServerEcho()
+            : SocketServer<SocketDomain, SocketClientPacketDisp>("ServerEcho")
+        {
+        }
+        virtual void OnAccept(const SocketClientPacketDisp &sock, const sockaddr &addr)
         {
             std::string host, serv;
             if (true == NameInfo(addr, host, serv))
             {
-                LOG_LINE_GLOBAL("SServerClient", "Accepted connection on host = ", host, " port = ", serv);
+                LOG_LINE_GLOBAL("ServerEcho", "Accepted connection on host = ", host, " port = ", serv);
                 ClientCount();
             }
         }
-
-        virtual void OnRecv(/*const*/ SourceChannelClient &sock, MemStream<uint8_t> &&stream)
+        virtual void OnRecv(/*const*/ SocketClientPacketDisp &sock, MemStream<uint8_t> &&stream)
         {
-            StreamPacket packet;
-
-            msize_t offsetStream = 0L;
-            msize_t offsetPacket = 0L;
-            msize_t stLen        = stream.Len();
-            msize_t pyLen        = 0L;
-            msize_t pkLen        = 0L;
-
-            const msize_t        buffLen = 128;
-            StreamPacket::byte_t buff [buffLen];
-
-            LOG_LINE_GLOBAL("SServerClient");
-
-            SocketResult res = SocketResult::SR_ERROR_AGAIN;
-            while(SocketResult::SR_ERROR_AGAIN == res)
-            {
-                auto reader = [&stream, &offsetStream] (char *buff, int len) -> int { return stream.read(buff, len, offsetStream); };
-                res = sock.recvPacket(packet, reader);
-                //res = sock.recvPacket(packet, stream, offsetStream);
-
-
-                //LOG_LINE_GLOBAL("SServerClient", "recvPAcket : ", SocketResultText(res));
-                if (res == SocketResult::SR_ERROR_AGAIN || res == SocketResult::SR_SUCCESS)
-                {
-                    pkLen = packet.BufferLen();
-                    offsetStream += pkLen;
-
-                    pyLen = packet.PayloadLen();
-                    //LOG_LINE_GLOBAL("SServerClient", "stLen:", stLen, " pkLen:", pkLen, ", pyLen:", pyLen, ", offsetStream:", offsetStream);
-
-                    for (msize_t i = 0; i < pyLen; i += buffLen)
-                    {
-                        if (packet.PayloadPart(buff, buffLen, i) > 0)
-                        {
-                            LOG_LINE_GLOBAL("SServerClient", "Packet:", std::string((char*)buff, pyLen));
-                        }
-                    }
-                }
-            }
+            sock.OnRecv(std::move(stream));
         }
 
-        virtual void OnDisconnect  (const SourceChannelClient &sock)
+        virtual void OnDisconnect  (const SocketClientPacketDisp &sock)
         {
-            LOG_LINE_GLOBAL("SServerClient", "Client Disconnected.");
+            LOG_LINE_GLOBAL("ServerEcho", "Client Disconnected.");
             ClientCount();
         }
 
         virtual void OnErrorClient(SocketResult res)
         {
-            LOG_LINE_GLOBAL("SServerClient", "ErrorClient : ", SocketResultText(res));
+            LOG_LINE_GLOBAL("ServerEcho", "ErrorClient : ", SocketResultText(res));
         }
 
         virtual void OnErrorServer(SocketResult res)
         {
-            LOG_LINE_GLOBAL("SServerClient", "ErrorServer : ", SocketResultText(res));
+            LOG_LINE_GLOBAL("ServerEcho", "ErrorServer : ", SocketResultText(res));
         };
 
         void ClientCount()
         {
-            LOG_LINE_GLOBAL("SServerClient", "Client count = ", SocketServer<SocketDomain, SourceChannelClient>::ClientCount());
+            LOG_LINE_GLOBAL("ServerEcho", "Client count = ", SocketServer<SocketDomain, SocketClientPacketDisp>::ClientCount());
         }
 };
 
 
+
+class SenderTestEcho : public SocketDomain
+{
+public:
+    SenderTestEcho() : SocketDomain("SenderTest")
+    {
+    }
+    bool init(const char *sockPath)
+    {
+        SocketDomain::SocketPath(sockPath);
+        if (SocketResult::SR_SUCCESS != SocketDomain::Init())
+        {
+            std::cerr << "ERROR: Unable to init SocketDomain \n";
+            return false;
+        }
+        if (SocketResult::SR_SUCCESS != SocketDomain::Connect())
+        {
+            std::cerr << "ERROR: Unable to Connect SocketDomain \n";
+            return false;
+        }
+    }
+};
 
 
 int main(int argc, char** argv)
 {
     std::cout << "StreamServerClient v0\n";
 
-    const char *slog = "/home/postgres/.sock_memserverlog";
+    const char *slog = "/home/postgres/.sock_domain_log";
+    const char *ssrv = "/home/postgres/.sock_domain_pgext";
+
     std::cout << "Using LogServer : " << slog << std::endl;
     LogLineGlbSocketName(slog);
-    LOG_LINE_GLOBAL("SServerClient", "ver 0.0.0.0");
+    LOG_LINE_GLOBAL("ServerEcho", "ver 0.0.0.0");
 
 
 
-    PacketServer srv;
-    srv.SocketPath("/home/postgres/.sock_pgext_domain");
+    PacketServerEcho server/*(que)*/;
+    std::cout << "Using Ech Server : " << ssrv << std::endl;
+    LOG_LINE_GLOBAL("ServerEcho", "Using Echo Server : ", ssrv);
+    server.SocketPath(ssrv);
 
-
-    if (SocketResult::SR_ERROR == srv.Init())
+    if (SocketResult::SR_ERROR == server.Init())
     {
-        perror("Unable to initialize Echo Server");
+        LOG_LINE_GLOBAL("ServerEcho", "Unable to initialize Echo Server");
+        std::cerr << "Unable to initialize Echo Server" << std::endl;
+        return -1;
     }
 
-    srv.ListenLoop();
-
-    return 0;
-
+    std::thread thSrv(   [&server](){server.LoopListen();}   );
+    if (thSrv.joinable())    thSrv.join();
 
     return 0;
 }

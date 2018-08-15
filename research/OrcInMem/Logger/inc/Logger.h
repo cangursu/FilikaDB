@@ -187,102 +187,20 @@ inline void Output2FILE::Output(const std::string& msg)
 
 
 
-/*
-class FILELOG_DECLSPEC FILELog : public LogStream<Output2FILE> {};
-//typedef Log<Output2FILE> FILELog;
-
-#ifndef FILELOG_MAX_LEVEL
-#define FILELOG_MAX_LEVEL Filika::TLogStreamLevel::LSL_DEBUG4
-#endif
-
-#define FILE_LOG(level) \
-    if (level > FILELOG_MAX_LEVEL) ;\
-    else if (level > Filika::FILELog::LogLevel() || !Filika::Output2FILE::Stream()) ; \
-    else Filika::FILELog().Get(level)
-*/
-
-
-/*
-class FILELOG_DECLSPEC LSockLogServer : public LogStream,
-                                        public SocketDomain
-{
-    public :
-        LSockLogServer(const char *path = SOCK_PATH_DEFAULT): SocketDomain(path)
-        {
-        }
-
-        FILIKA_RESULT recv(std::string &item)
-        {
-            static __thread  char buff[1024];
-
-            FILIKA_RESULT res = FILIKA_RESULT::FR_ERROR;
-            int len = Read(buff, 1024);
-            if (len > 0 && len < 1024)
-            {
-                res = FILIKA_RESULT::FR_SUCCESS;
-                item.assign(buff, len);
-            }
-            return res;
-        }
-};
-*/
-
-
-
 class FILELOG_DECLSPEC LSockLog : public LogStream,
                                   public SocketDomain
 {
     public :
-        LSockLog(const char *path = SOCK_PATH_DEFAULT, bool doConnect = true)
-                : SocketDomain("SockLog")
-                , _doConnect(doConnect)
-        {
-            SocketPath(path);
-            Name("SockLog");
+        LSockLog(const char *path = SOCK_PATH_DEFAULT, bool doConnect = true);
+        ~LSockLog();
+        
+        FILIKA_RESULT SendRaw();
+        FILIKA_RESULT SendPacket();
 
-            if (SocketResult::SR_SUCCESS != Init())
-            {
-                std::cerr << "ERROR : Unable to connect init log\n";
-            }
-            else
-            {
-                if (_doConnect)
-                {
-                    if (SocketResult::SR_SUCCESS != Connect())
-                    {
-                        std::cerr << "ERROR : Unable to connect Connect Log Server (" << path << ")\n";
-                        Release();
-                    }
-                }
-            }
-        }
-        ~LSockLog()
-        {
-            send();
-        }
-        FILIKA_RESULT send()
-        {
-            std::string s = _os.str();
-            size_t  len   = s.length();
-            ssize_t res   = 0;
-
-            if (len > 0)
-            {
-                if (true  == IsGood())
-                {
-                    if (_doConnect  || (SocketResult::SR_SUCCESS == Connect()))
-                         res   = Write(s.c_str(), len + 1 );
-                    else
-                        std::cerr << "Unable to connect (" << errno << ") " << strerror(errno) << std::endl;
-                }
-            }
-            Reset();
-
-            return ( (res == -1) || (res != (ssize_t)(len+1))) ? FILIKA_RESULT::FR_ERROR : FILIKA_RESULT::FR_SUCCESS;
-        }
+private :
 
         bool _doConnect;
-
+        FILIKA_RESULT SendRaw(const void *p, int l);
 };
 
 

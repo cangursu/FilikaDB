@@ -166,9 +166,10 @@ ssize_t SocketDomain::Read(void *pdata, size_t lenData)
 
 ssize_t  SocketDomain::Write(const void *pdata, size_t len)
 {
-    //std::cout << "SocketDomain(" << _name << ")::Write --->  sock:" << _sock << std::endl;
-
+    //std::cout << "SocketDomain(" << _name << ")::Write --->  sock:" << _sock << ", len:" << len << std::endl;
     ssize_t bytes = ::write(_sock, pdata, len);
+    //std::cout << "SocketDomain(" << _name << ")::Write ---<  bytes:" << bytes << std::endl;
+
     if (bytes == -1)
     {
         std::cerr << "SocketDomain(" << _name << ")::Write  ERROR - (" << errno << ") " << strerror(errno) << std::endl;
