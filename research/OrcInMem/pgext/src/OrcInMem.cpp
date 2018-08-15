@@ -832,24 +832,29 @@ Datum orc_buffer_remote_test(PG_FUNCTION_ARGS)
     elog(LOG, "orc_buffer_remote_test - Log socket:%s", logs.c_str());
 
     LogLineGlbSocketName (logs.c_str());
-    LOG_LINE_GLOBAL("Init", "");
+    LOG_LINE_GLOBAL("Init", "Deneme");
     LOG_LINE_GLOBAL("Init", "VER  0.0.0");
     LOG_LINE_GLOBAL("Init", "");
 
 
 
-    OrcMemStreamRemoteSender mem("OrcRemote", "/home/postgres/.sock_pgext_domain");
+    OrcMemStreamRemoteSender mem("OrcRemote", "/home/postgres/.sock_domain_pgext");
 
     SocketResult rc = mem.init();
+
+
+    const char *data;
+    int         len;
     if (rc == SocketResult::SR_SUCCESS)
     {
-        const char *data = "denemem";
-        int         len  = strlen(data);
+        data = "denemem";
+        len  = strlen(data);
         mem.write(data, len);
 
         data = "hebelemem";
         len  = strlen(data);
         mem.write(data, len);
+
         data = "debelemem";
         len  = strlen(data);
         mem.write(data, len);

@@ -12,7 +12,7 @@
  */
 
 
-#include "SourceChannel.h"
+#include "SocketServerPacket.h"
 #include "LoggerGlobal.h"
 
 
@@ -30,7 +30,7 @@ int main(int argc, char** argv)
     LOG_LINE_GLOBAL("SServerClient", "ver 0.0.0.0");
 
 
-    /*std::thread th = */SourceChannelServer::listenAsyc("/home/postgres/.sock_pgext_domain");
+    //  /*std::thread th = */SocketServerPacket::listenAsyc("/home/postgres/.sock_pgext_domain");
     //th.join();
 
     return 0;

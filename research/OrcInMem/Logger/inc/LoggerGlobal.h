@@ -51,14 +51,9 @@ void LogLineGlobalFormat(std::ostringstream &os, T t,  Args ... args)
     LogLineGlobalFormat(os, args ...);
 }
 
-template<typename ... Args>
-void LogLineGlobalFormat(const char *desc, int lineNo, const char *fname, const char *funcName, Args ... args)
+inline
+void LogLineGlobalFormatPrefix(std::ostringstream &os, const char *desc, int lineNo, const char *fname, const char *funcName)
 {
-    std::ostringstream &os = Filika::logger().Get(Filika::LSL_INFO);
-
-    //Filika::LSockLog logger(Filika::SocketFile());
-    //std::ostringstream &os = logger.Get(Filika::LSL_INFO);
-
     const int widthDesc  = 12;
     const int widthFName = 24;
     const int widthFunc  = 20;
@@ -78,17 +73,42 @@ void LogLineGlobalFormat(const char *desc, int lineNo, const char *fname, const 
     os << " ";
     os.width(widthFunc);
     os << std::string(funcName, std::strlen(funcName) < widthFunc ? std::strlen(funcName) : widthFunc) << " - ";
+}
 
+
+template<typename ... Args>
+void LogLineGlobalFormat(const char *desc, int lineNo, const char *fname, const char *funcName, Args ... args)
+{
+    std::ostringstream &os = Filika::logger().Get(Filika::LSL_INFO);
+
+    LogLineGlobalFormatPrefix(os, desc, lineNo, fname, funcName);
     LogLineGlobalFormat(os, args ...);
 
-    //logger.send();
-    if (Filika::FILIKA_RESULT::FR_ERROR == Filika::logger().send())
+    if (Filika::FILIKA_RESULT::FR_ERROR == Filika::logger().SendRaw())
     {
         std::cerr << "ERROR - Log : Unable to send log\n";
     }
 }
 
 
-#define LOG_LINE_GLOBAL(desc, ...) LogLineGlobalFormat(desc, __LINE__, __FILENC__, __func__, ## __VA_ARGS__)
+template<typename ... Args>
+void LogLineGlobalFormatPacket(const char *desc, int lineNo, const char *fname, const char *funcName, Args ... args)
+{
+    std::ostringstream &os = Filika::logger().Get(Filika::LSL_INFO);
+
+    LogLineGlobalFormatPrefix(os, desc, lineNo, fname, funcName);
+    LogLineGlobalFormat(os, args ...);
+
+    if (Filika::FILIKA_RESULT::FR_ERROR == Filika::logger().SendPacket())
+    {
+        std::cerr << "ERROR - Log : Unable to send log\n";
+    }
+}
+
+
+
+#define LOG_LINE_GLOBAL(desc, ...)      LogLineGlobalFormatPacket(desc, __LINE__, __FILENC__, __func__, ## __VA_ARGS__)
+#define LOG_LINE_GLOBAL_PACK(desc, ...) LogLineGlobalFormatPacket(desc, __LINE__, __FILENC__, __func__, ## __VA_ARGS__)
+
 
 #endif // __LOGGER_GLOBAL_H__

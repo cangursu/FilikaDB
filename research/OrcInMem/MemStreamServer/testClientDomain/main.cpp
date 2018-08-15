@@ -12,12 +12,53 @@
  */
 
 
+#include "SocketClientPacket.h"
 #include "SocketDomain.h"
+#include "SocketUtils.h"
 #include "StreamPacket.h"
 
 #include <iostream>
 #include <cstring>
 #include <unistd.h>
+#include <thread>
+
+
+class SClient : public SocketClientPacket<SocketDomain>
+{
+    public:
+        SClient(const char *name): SocketClientPacket<SocketDomain>(name) {}
+//        virtual void OnRecv        (MemStream<std::uint8_t> &&);
+        virtual void OnErrorClient (SocketResult);
+        virtual void OnRecvPacket  (StreamPacket &&packet);
+};
+
+inline void SClient::OnErrorClient (SocketResult err)
+{
+    std::cout << "ERROR : SClient::OnErrorClient - " << SocketResultText(err) << std::endl;
+}
+
+inline void SClient::OnRecvPacket  (StreamPacket &&packet)
+{
+    msize_t         pyLen = packet.PayloadLen();
+    const msize_t   buffLen = 128;
+    byte_t          buff [buffLen];
+
+    for (msize_t i = 0; i < pyLen; i += buffLen)
+    {
+        if (packet.PayloadPart(buff, buffLen, i) > 0)
+        {
+            LOG_LINE_GLOBAL("ClientEcho", "Packet:", std::string((char*)buff, pyLen));
+            std::cout << "Packet Reveived : " << std::string((char*)buff, pyLen) << std::endl;
+        }
+    }
+}
+
+
+
+
+
+
+
 
 
 
@@ -39,6 +80,7 @@ bool send(SocketDomain &sock, const StreamPacket &pack)
 
 bool send_StreamPacket(SocketDomain &sock, const char *data)
 {
+    std::cout << "Sending : " << data << std::endl;
     return send(sock, std::move(StreamPacket(data, strlen(data))));
 }
 
@@ -135,29 +177,40 @@ void SendBulkCorrupt(SocketDomain &sock)
 
 int main(int , char** )
 {
-    char *sname = "/home/postgres/.sock_pgext_domain";
+    const char *slog  = "/home/postgres/.sock_domain_log";
+    const char *sname = "/home/postgres/.sock_domain_pgext";
 
     std::cout << "StreamServerClient v0.0.0.2\n";
     std::cout << "Using domain Socket : " << sname << std::endl;
 
-    SocketDomain sock("Sender");
+
+    std::cout << "Using LogServer : " << slog << std::endl;
+    LogLineGlbSocketName(slog);
+    LOG_LINE_GLOBAL("ClientEcho", "ver 0.0.0.0");
+
+
+    SClient sock("Sender");
     if (SocketResult::SR_SUCCESS != sock.Init(sname))
     {
-        std::cerr << "ERROR: Unable to init SocketDomain \n";
+        std::cerr << "ERROR : Unable to init SocketDomain \n";
         return 0;
     }
 
     if (SocketResult::SR_SUCCESS != sock.Connect())
     {
-        std::cerr << "ERROR: Unable to Connect SocketDomain \n";
+        std::cerr << "ERROR : Unable to Connect SocketDomain \n";
         return 0;
     }
 
 
 
+    std::thread th ( [&sock] () { sock.LoopRead();} );
+
+
     {
         const char *data = nullptr;
         //Invidiual
+
 
         send_StreamPacket(sock, "TestData");
         send_StreamPacket(sock, "TestData_12345");
@@ -250,6 +303,12 @@ int main(int , char** )
     }
 */
     //SendBulkIndividual(sock);
+
+
+    sleep(3);
+    sock.LoopReadStop();
+    if (th.joinable())  th.join();
+
     return 0;
 }
 

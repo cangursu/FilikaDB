@@ -44,14 +44,20 @@ const std::uint32_t  g_lenMaxPayload  = g_lenMaxBuffer - (g_lenCRC + g_lenPLen +
 class StreamPacket
 {
 public:
-    using  byte_t = std::uint8_t;
+    using  byte_t  = std::uint8_t;
+    using  msize_t = std::uint32_t;
 public:
+    virtual ~StreamPacket();
+
     StreamPacket();
     StreamPacket(const byte_t *payload, std::uint32_t len) { Create(payload, len); }
     StreamPacket(const void   *payload, std::uint32_t len) { Create(payload, len); }
-    StreamPacket(const StreamPacket& orig) = default;
-    StreamPacket(StreamPacket&& orig)      = default;
-    virtual ~StreamPacket();
+    /*
+    StreamPacket(const StreamPacket& orig)                  = default;
+    StreamPacket(StreamPacket&& orig)                       = default;
+    StreamPacket &  operator = (const StreamPacket& orig)   = default;
+    StreamPacket && operator = (StreamPacket&& orig)        = default;
+    */
 
     void            Reset();
     bool            Check();
@@ -76,7 +82,7 @@ private:
 
 public:
 
-    static const std::string    s_mid          ;
+    static const std::string    s_mid;
 
 };
 

@@ -15,7 +15,7 @@
 #define __SOCKET_SERVER_H__
 
 #include "SocketResult.h"
-#include "SocketUtils.h"
+//#include "SocketUtils.h"
 #include "MemStream.h"
 
 
@@ -23,6 +23,8 @@
 #include <unistd.h>
 #include <sys/epoll.h>
 #include <sys/socket.h>
+#include <atomic>
+
 
 
 
@@ -42,7 +44,9 @@ class SocketServer  : public TSocketSrv
 
         SocketResult    Init();
         SocketResult    Release();
-        SocketResult    ListenLoop();
+
+        SocketResult    LoopListen();
+        void            LoopListenStop() { _exit = true; }
 
         void            Accept();
         virtual void    Recv(int fd);
@@ -104,11 +108,12 @@ class SocketServer  : public TSocketSrv
             private :
                 std::unordered_map<int, TSocketClt> _map;
                 std::uint64_t                       _size = 0;
-                TSocketClt                          _dummy;
+                //TSocketClt                          _dummy;
         } _clientList;
 
 
-        int   _epoll = -1;
+        int                 _epoll = -1;
+        std::atomic<bool>   _exit  = false;
 };
 
 
@@ -138,7 +143,7 @@ SocketResult SocketServer<TSocketSrv, TSocketClt>::Release()
 }
 
 template <typename TSocketSrv, typename TSocketClt>
-SocketResult SocketServer<TSocketSrv, TSocketClt>::ListenLoop()
+SocketResult SocketServer<TSocketSrv, TSocketClt>::LoopListen()
 {
     TSocketSrv::SetNonBlock();
 
@@ -168,39 +173,48 @@ SocketResult SocketServer<TSocketSrv, TSocketClt>::ListenLoop()
 
     epoll_event events[MAXEVENTS];
 
-    while(true)
+    std::cout << "Packet Server Listen Loop Entered\n";
+    while(_exit == false)
     {
         int n = epoll_wait(_epoll, events, MAXEVENTS, 1000);
-        for (int i = 0; i < n; i++)
+        if (n == 0)
         {
-//            std::cout << n << ". epoll_wait released (" << events[i].data.fd << ") : " << EPollEvents(events[i].events) << std::endl;
+            //Maintain Phase
+        }
+        else
+        {
+            for (int i = 0; i < n; i++)
+            {
+    //            std::cout << n << ". epoll_wait released (" << events[i].data.fd << ") : " << EPollEvents(events[i].events) << std::endl;
 
-            // ........
-            if (events[i].events & EPOLLERR)
-            {
-                if (events[i].data.fd == TSocketSrv::fd())
-                    OnErrorServer(SocketResult::SR_ERROR_EPOLL);
-                else
-                    OnErrorClient(SocketResult::SR_ERROR_EPOLL);
+                // ........
+                if (events[i].events & EPOLLERR)
+                {
+                    if (events[i].data.fd == TSocketSrv::fd())
+                        OnErrorServer(SocketResult::SR_ERROR_EPOLL);
+                    else
+                        OnErrorClient(SocketResult::SR_ERROR_EPOLL);
 
-                Disconnect(events[i].data.fd);
-            }
-            // ........
-            if (events[i].events & EPOLLIN)
-            {
-                if (events[i].data.fd == TSocketSrv::fd())
-                    Accept();
-                else
-                    Recv(events[i].data.fd);
-            }
-            // ........
-            if (  events[i].events & EPOLLRDHUP  ||
-                  events[i].events & EPOLLHUP     )
-            {
-                Disconnect(events[i].data.fd);
+                    Disconnect(events[i].data.fd);
+                }
+                // ........
+                if (events[i].events & EPOLLIN)
+                {
+                    if (events[i].data.fd == TSocketSrv::fd())
+                        Accept();
+                    else
+                        Recv(events[i].data.fd);
+                }
+                // ........
+                if (  events[i].events & EPOLLRDHUP  ||
+                      events[i].events & EPOLLHUP     )
+                {
+                    Disconnect(events[i].data.fd);
+                }
             }
         }
     }
+    std::cout << "Packet Server Listen Loop Quitted\n";
 
 }
 
@@ -266,11 +280,9 @@ void SocketServer<TSocketSrv, TSocketClt>::Recv(int fd)
                     OnRecv(*clt, std::move(stream));
                 return;
             }
-
             OnErrorClient(SocketResult::SR_ERROR_READ);
             break;
         }
-
         stream.write(buffTmp, count);
     }
 

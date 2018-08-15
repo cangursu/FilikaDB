@@ -16,26 +16,43 @@
 
 #include "SocketResult.h"
 #include "MemStream.h"
+//#include "SocketUtils.h"
 
 
 #include <string>
 #include <netdb.h>
+#include <atomic>
 
 
 template <typename TSocket>
 class SocketClient : public TSocket
 {
     public:
-        SocketClient(const char *name) : TSocket(name) {}
+        SocketClient(const char *name)          : TSocket(name) {}
+        SocketClient(int fd, const char *name)  : TSocket(fd, name) {}
+        SocketClient(const SocketClient &val) = delete;
+        SocketClient(SocketClient &&val)        : TSocket(std::move(val)) { }
+
+        SocketClient& operator=(SocketClient &&s)   { TSocket::operator =(std::move(s));}
+        SocketClient& operator=(const SocketClient &val) = delete;
+
 
         SocketResult Connect ();
         SocketResult Send    (const void *data, std::uint64_t len);
         SocketResult Send    (MemStream<std::uint8_t> &&)   ;
 
+        SocketResult LoopRead();
+        SocketResult LoopReadStop() { _exit = true; }
+
+
+
     public:
         // Events
-        virtual void OnRecv        (const TSocket&, MemStream<std::uint8_t> &&) = 0;
-        virtual void OnErrorClient (SocketResult)                               = 0;
+        virtual void OnRecv        (MemStream<std::uint8_t> &&) = 0;
+        virtual void OnErrorClient (SocketResult)               = 0;
+
+    private:
+        std::atomic<bool> _exit = false;
 };
 
 
@@ -53,11 +70,10 @@ SocketResult SocketClient<TSocket>::Send(const void *data, std::uint64_t len)
 {
     SocketResult res = SocketResult::SR_ERROR;
 
-    int fd = TSocket::fd();
-    if (fd > 0 && len > 0)
+    if (TSocket::IsGood() && len > 0)
     {
         int  i = 0;
-        if (i = ::send(fd, data, len, 0) < 0)
+        if (i = ::send(TSocket::fd(), data, len, 0) < 0)
         {
             OnErrorClient(res = SocketResult::SR_ERROR_SEND);
         }
@@ -86,6 +102,56 @@ SocketResult SocketClient<TSocket>::Send(MemStream<std::uint8_t> &&stream)
         result = Send(static_cast<void *>(buff), readed);
     }
 
+    return result;
+}
+
+
+template <typename TSocket>
+SocketResult SocketClient<TSocket>::LoopRead()
+{
+    std::cout << "Enter LoopRead - SocketClient<TSocket>::\n";
+    SocketResult result = SocketResult::SR_ERROR_AGAIN;
+    if (TSocket::IsGood())
+    {
+        timeval tv { .tv_sec = 1, .tv_usec = 0 };
+        if (0 > setsockopt(TSocket::fd(), SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv))
+        {
+            result = SocketResult::SR_ERROR_SOCKOPT;
+        }
+        else
+        {
+            const int buffLen = 512;
+            uint8_t buff[buffLen];
+            while ((_exit == false) && (result == SocketResult::SR_ERROR_AGAIN))
+            {
+                MemStream<std::uint8_t> stream;
+
+                ssize_t bytes = ::recv(TSocket::fd(), buff, buffLen, 0);
+                //std::cout << "bytes:" << bytes << std::endl;
+
+                if (bytes == 0)
+                {
+                    result = SocketResult::SR_ERROR_CONNECT;
+                }
+                else if (bytes < 0)
+                {
+                    //std::cout << "ERROR errno:" << errno << " - " << ErrnoText(errno) << std::endl;
+                    switch (errno)
+                    {
+                        case EAGAIN : result = SocketResult::SR_ERROR_AGAIN; break;
+                        default     : result = SocketResult::SR_ERROR_READ;  break;
+                    }
+                }
+                else //(bytes > 0)
+                {
+                    stream.write(buff, bytes);
+                    OnRecv(std::move(stream));
+                }
+            }
+        }
+    }
+
+    std::cout << "Leaveing LoopRead - SocketClient<TSocket>::\n";
     return result;
 }
 

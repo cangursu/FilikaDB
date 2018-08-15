@@ -24,7 +24,8 @@ extern "C"
 
 OrcMemStreamRemoteSender::OrcMemStreamRemoteSender(const std::string &name,
                                                    const std::string &serverChannel)
-    : _name (name)
+    : SocketServer<SocketDomain, SocketClientPacket>(name.c_str())
+    , _name (name)
     , _serverChannel (serverChannel)
 {
 }
@@ -36,11 +37,19 @@ OrcMemStreamRemoteSender::~OrcMemStreamRemoteSender()
 
 SocketResult OrcMemStreamRemoteSender::init()
 {
-    SocketResult res = _sock.Init(_serverChannel.c_str());
-    //    LOG_LINE_GLOBAL("remote", "res = ", res);
-    if (SocketResult::SR_SUCCESS == res)
+    SocketPath(_serverChannel.c_str());
+    SocketResult res;
+
+    if (SocketResult::SR_SUCCESS != (res = SocketDomain::Init()))
     {
+        LOG_LINE_GLOBAL("remote", "ERROR: Unable to initialize SocketDomain");
     }
+    else if (SocketResult::SR_SUCCESS != (res = SocketDomain::Connect()))
+    {
+        LOG_LINE_GLOBAL("remote", "ERROR: Unable to Connect SocketDomain - ", _serverChannel);
+        LOG_LINE_GLOBAL("remote",   _serverChannel);
+    }
+
     return res;
 }
 
@@ -85,9 +94,17 @@ void OrcMemStreamRemoteSender::read(void* buf, uint64_t length, uint64_t offset)
 
 void OrcMemStreamRemoteSender::write(const void* buf, size_t length)
 {
-    LOG_LINE_GLOBAL("remote", "xxx");
-    _sock.send(std::move(StreamPacket(buf, length)));
-    //Assert(true);
+    LOG_LINE_GLOBAL("remote", "length=", length);
+
+    StreamPacket pack(buf, length);
+    const byte_t *payload;
+    std::uint32_t len = pack.Buffer(&payload);
+
+    ssize_t res = SocketDomain::Write(payload, len);
+    if (res < len)
+    {
+        LOG_LINE_GLOBAL("remote", "ERROR: Unable to send packet res=", res, " errno:", errno);
+    }
 }
 
 const std::string& OrcMemStreamRemoteSender::getName() const
@@ -110,7 +127,7 @@ bool OrcMemStreamRemoteSender::validateName()
 
 
 
-
+/*
 bool OrcMemStreamRemoteSender::StreamCSock::send(const StreamPacket &pack)
 {
     const byte_t *b;
@@ -118,12 +135,13 @@ bool OrcMemStreamRemoteSender::StreamCSock::send(const StreamPacket &pack)
 
     LOG_LINE_GLOBAL("remote", "l = ", l, " b = ", b);
 
-    /*
+    / *
     ssize_t res = (l > 0) ? sendTo(b, l) : 0;
     return ((res > 0) && (res == (ssize_t)l));
-    */
+    * /
     return false;
 }
+*/
 /*
 bool OrcMemStreamRemoteSender::StreamCSock::send(const char *data, int len)
 {
