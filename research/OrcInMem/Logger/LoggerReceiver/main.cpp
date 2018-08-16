@@ -1,21 +1,6 @@
 
-#include "Logger.h"
-#include "SocketDomain.h"
-
-#include "Socket.h"
+#include "SocketClientPacket.h"
 #include "SocketServer.h"
-#include "SocketDomain.h"
-#include "SourceChannel.h"
-#include "SocketUtils.h"
-
-#include <iostream>
-
-
-#include <iostream>
-#include <unistd.h>
-#include <deque>
-#include <functional>
-#include <cstring>
 
 
 #define SOCK_PATH_DEFAULT "/home/postgres/.sock_domain_log"
@@ -24,6 +9,7 @@
 template <typename TSockSrv, typename TSockCln>
 class ReflectServer : public SocketServer<TSockSrv, TSockCln>
 {
+        using  msize_t = StreamPacket::msize_t; 
     public:
         ReflectServer(const char *name):SocketServer<TSockSrv, TSockCln>(name)
         {
@@ -46,10 +32,7 @@ class ReflectServer : public SocketServer<TSockSrv, TSockCln>
         {
             StreamPacket packet;
 
-            msize_t             offsetStream = 0L;
-
-            const msize_t        buffLen = 128;
-            StreamPacket::byte_t buff [buffLen];
+            msize_t offsetStream = 0L;
 
             SocketResult res = SocketResult::SR_ERROR_AGAIN;
             while(SocketResult::SR_ERROR_AGAIN == res)
@@ -66,6 +49,9 @@ class ReflectServer : public SocketServer<TSockSrv, TSockCln>
         
         void Display(StreamPacket &packet)
         {
+            const msize_t        buffLen = 128;
+            StreamPacket::byte_t buff [buffLen];
+
             msize_t pyLen = packet.PayloadLen();
             for (msize_t i = 0; i < pyLen; i += buffLen)
             {

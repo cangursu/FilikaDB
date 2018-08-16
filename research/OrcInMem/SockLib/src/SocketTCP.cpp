@@ -1,6 +1,6 @@
 
 
-#include "Socket.h"
+#include "SocketTCP.h"
 #include "SocketUtils.h"
 
 #include <fcntl.h>
@@ -8,29 +8,29 @@
 #include <iostream>
 
 
-Socket::Socket(const char *name /*= "NA"*/)
+SocketTCP::SocketTCP(const char *name /*= "NA"*/)
     : _name (name)
 {
 }
-Socket::Socket(int s, const char *name)
+SocketTCP::SocketTCP(int s, const char *name)
     : _sock (s)
     , _name (name)
 {
 }
 
-Socket::Socket(Socket &&s)
+SocketTCP::SocketTCP(SocketTCP &&s)
     : _sock (s._sock)
     , _name (s._name)
 {
     s._sock = -1;
 }
 
-Socket::~Socket()
+SocketTCP::~SocketTCP()
 {
     Release();
 }
 
-Socket& Socket::operator=(Socket &&s)
+SocketTCP& SocketTCP::operator=(SocketTCP &&s)
 {
     _sock = s._sock;
     _name = s._name;
@@ -39,7 +39,7 @@ Socket& Socket::operator=(Socket &&s)
     return *this;
 }
 
-SocketResult Socket::Init ()
+SocketResult SocketTCP::Init ()
 {
     Release();
 
@@ -53,7 +53,7 @@ SocketResult Socket::Init ()
     return res;
 }
 
-SocketResult Socket::InitServer()
+SocketResult SocketTCP::InitServer()
 {
     SocketResult res = Init();
 
@@ -80,7 +80,7 @@ SocketResult Socket::InitServer()
 }
 
 
-void Socket::Release()
+void SocketTCP::Release()
 {
     SocketResult res = SocketResult::SR_SUCCESS;
     if (-1 != _sock)
@@ -90,7 +90,7 @@ void Socket::Release()
     }
 }
 
-SocketResult Socket::Connect()
+SocketResult SocketTCP::Connect()
 {
     SocketResult res = SocketResult::SR_ERROR;
 
@@ -110,7 +110,7 @@ SocketResult Socket::Connect()
     return res;
 }
 
-SocketResult Socket::SetNonBlock()
+SocketResult SocketTCP::SetNonBlock()
 {
     SocketResult res = SocketResult::SR_ERROR;
 
