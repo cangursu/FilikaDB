@@ -24,7 +24,7 @@ extern "C"
 
 OrcMemStreamRemoteSender::OrcMemStreamRemoteSender(const std::string &name,
                                                    const std::string &serverChannel)
-    : SocketServer<SocketDomain, SocketClientPacket>(name.c_str())
+    : SocketServer<SocketDomain, SocketClientPacket<SocketDomain>>(name.c_str())
     , _name (name)
     , _serverChannel (serverChannel)
 {

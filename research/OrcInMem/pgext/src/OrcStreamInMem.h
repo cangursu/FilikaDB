@@ -6,9 +6,9 @@
 #include "orc/OrcFile.hh"
 
 #include "MemStream.h"
-#include "MemStreamGlobals.h"
-#include "OrcInMemGlobals.h"
-#include "LoggerGlobal.h"
+//#include "MemStreamGlobals.h"
+//#include "OrcInMemGlobals.h"
+//#include "LoggerGlobal.h"
 
 
 

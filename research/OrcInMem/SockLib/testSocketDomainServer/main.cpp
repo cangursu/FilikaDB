@@ -23,7 +23,7 @@
 
 
 
-#include "Socket.h"
+//#include "SocketTCP.h"
 #include "SocketServer.h"
 #include "SocketDomain.h"
 #include "SocketUtils.h"
@@ -50,7 +50,7 @@ class EchoServer : public SocketServer<TSockSrv, TSockCln>
             }
         }
 
-        virtual void OnRecv(const TSockCln &sock, MemStream<uint8_t> &&stream)
+        virtual void OnRecv(TSockCln &sock, MemStream<std::uint8_t> &&stream)
         {
             const int buffLen = 128;
             char buff[buffLen];
@@ -98,7 +98,7 @@ int main()
         perror("Unable to initialize Echo Server");
     }
 
-    srv.ListenLoop();
+    srv.LoopListen();
 
     return 0;
 }
