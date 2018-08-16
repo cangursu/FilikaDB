@@ -1,0 +1,163 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+/*
+ * File:   main.cpp
+ * Author: can.gursu
+ *
+ * Created on 16 July 2018
+ */
+
+
+#include "SocketServerPacket.h"
+#include "SocketServer.h"
+#include "SocketClientPacket.h"
+#include "LoggerGlobal.h"
+
+
+#include <iostream>
+#include <thread>
+
+
+class SocketClientPacketDisp : public SocketClientPacket<SocketDomain>
+{
+    public:
+        SocketClientPacketDisp(const char *name = "SocketClientPacketDisp" )
+            : SocketClientPacket(name)
+        {
+        }
+        SocketClientPacketDisp(int fd, const char *name)
+            : SocketClientPacket(fd, name)
+        {
+        }
+        virtual void OnRecvPacket(StreamPacket &&packet)
+        {
+            DisplayPacket(packet);
+
+            SocketResult res = SendPacket(packet);  //Echoing packet
+            LOG_LINE_GLOBAL("ServerEcho", "REPLYING res = ", SocketResultText(res));
+        }
+
+        void DisplayPacket(StreamPacket packet)
+        {
+            msize_t         pyLen = packet.PayloadLen();
+            const msize_t   buffLen = 128;
+            byte_t          buff [buffLen];
+
+            for (msize_t i = 0; i < pyLen; i += buffLen)
+            {
+                if (packet.PayloadPart(buff, buffLen, i) > 0)
+                {
+                    LOG_LINE_GLOBAL("ServerEcho", "Packet:", std::string((char*)buff, pyLen));
+                    std::cout << "Packet Reveived -> " << std::string((char*)buff, pyLen) << std::endl;
+                }
+            }
+        }
+};
+
+
+class PacketServerEcho : public SocketServer<SocketDomain, SocketClientPacketDisp>
+{
+    public:
+        PacketServerEcho()
+            : SocketServer<SocketDomain, SocketClientPacketDisp>("ServerEcho")
+        {
+        }
+        virtual void OnAccept(const SocketClientPacketDisp &sock, const sockaddr &addr)
+        {
+            std::string host, serv;
+            if (true == NameInfo(addr, host, serv))
+            {
+                LOG_LINE_GLOBAL("ServerEcho", "Accepted connection on host = ", host, " port = ", serv);
+                ClientCount();
+            }
+        }
+        virtual void OnRecv(/*const*/ SocketClientPacketDisp &sock, MemStream<uint8_t> &&stream)
+        {
+            sock.OnRecv(std::move(stream));
+        }
+
+        virtual void OnDisconnect  (const SocketClientPacketDisp &sock)
+        {
+            LOG_LINE_GLOBAL("ServerEcho", "Client Disconnected.");
+            ClientCount();
+        }
+
+        virtual void OnErrorClient(SocketResult res)
+        {
+            LOG_LINE_GLOBAL("ServerEcho", "ErrorClient : ", SocketResultText(res));
+        }
+
+        virtual void OnErrorServer(SocketResult res)
+        {
+            LOG_LINE_GLOBAL("ServerEcho", "ErrorServer : ", SocketResultText(res));
+        };
+
+        void ClientCount()
+        {
+            LOG_LINE_GLOBAL("ServerEcho", "Client count = ", SocketServer<SocketDomain, SocketClientPacketDisp>::ClientCount());
+        }
+};
+
+
+
+class SenderTestEcho : public SocketDomain
+{
+public:
+    SenderTestEcho() : SocketDomain("SenderTest")
+    {
+    }
+    bool init(const char *sockPath)
+    {
+        SocketDomain::SocketPath(sockPath);
+        if (SocketResult::SR_SUCCESS != SocketDomain::Init())
+        {
+            std::cerr << "ERROR: Unable to init SocketDomain \n";
+            return false;
+        }
+        if (SocketResult::SR_SUCCESS != SocketDomain::Connect())
+        {
+            std::cerr << "ERROR: Unable to Connect SocketDomain \n";
+            return false;
+        }
+    }
+};
+
+
+int main(int argc, char** argv)
+{
+    std::cout << "StreamServerClient v0\n";
+
+    const char *slog = "/home/postgres/.sock_domain_log";
+    const char *ssrv = "/home/postgres/.sock_domain_pgext";
+
+    std::cout << "Using LogServer : " << slog << std::endl;
+    LogLineGlbSocketName(slog);
+    LOG_LINE_GLOBAL("ServerEcho", "ver 0.0.0.0");
+
+
+
+    PacketServerEcho server/*(que)*/;
+    std::cout << "Using Ech Server : " << ssrv << std::endl;
+    LOG_LINE_GLOBAL("ServerEcho", "Using Echo Server : ", ssrv);
+    server.SocketPath(ssrv);
+
+    if (SocketResult::SR_ERROR == server.Init())
+    {
+        LOG_LINE_GLOBAL("ServerEcho", "Unable to initialize Echo Server");
+        std::cerr << "Unable to initialize Echo Server" << std::endl;
+        return -1;
+    }
+
+    std::thread thSrv(   [&server](){server.LoopListen();}   );
+    if (thSrv.joinable())    thSrv.join();
+
+    return 0;
+}
+
+
+
+

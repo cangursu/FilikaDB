@@ -23,7 +23,7 @@
 
 
 
-#include "Socket.h"
+#include "SocketTCP.h"
 #include "SocketServer.h"
 #include "SocketDomain.h"
 #include "SocketUtils.h"
@@ -52,7 +52,7 @@ class EchoServer : public SocketServer<TSckSrv, TSckCln>
                 ClientCount();
             }
         }
-        virtual void OnRecv(const TSckCln &sock, MemStream<uint8_t> &&stream)
+        virtual void OnRecv(TSckCln &sock, MemStream<uint8_t> &&stream)
         {
             const int buffLen = 128;
             char buff[buffLen];
@@ -88,7 +88,7 @@ class EchoServer : public SocketServer<TSckSrv, TSckCln>
 int main()
 {
 
-    EchoServer<Socket, Socket> srv("EchoServer");
+    EchoServer<SocketTCP, SocketTCP> srv("EchoServer");
 
 
     //srv.SocketPath("/home/postgres/.sock_rawtest");
@@ -100,7 +100,7 @@ int main()
         perror("Unable to initialize Echo Server");
     }
 
-    srv.ListenLoop();
+    srv.LoopListen();
 }
 
 

@@ -11,7 +11,7 @@
  * Created on 10 July 2018, 10:27
 */
 
-#include "Socket.h"
+#include "SocketTCP.h"
 #include "SocketDomain.h"
 #include "SocketClient.h"
 #include "SocketUtils.h"
@@ -30,7 +30,10 @@ template <typename TSock>
 class EchoClient : public SocketClient<TSock>
 {
     public:
-        virtual void OnRecv(const TSock &, MemStream<std::uint8_t> &&)
+        EchoClient() : SocketClient<TSock>("EchoClient")
+        {
+        }
+        virtual void OnRecv(MemStream<std::uint8_t> &&)
         {
         }
         virtual void OnErrorClient(SocketResult res)
@@ -92,7 +95,7 @@ int main()
     const int count = 32;
     std::vector<std::thread> ths;
 
-    EchoClient<Socket> sock[2*count];
+    EchoClient<SocketTCP> sock[2*count];
 
     for (int i = 0; i < 2*count; ++i)
     {
@@ -116,13 +119,13 @@ int main()
     std::string p1 = "abcd";
     for (int i = 0; i < count; ++i)
     {
-        ths.push_back( std::thread(thread_function<Socket>, &sock[i], p1, i) );
+        ths.push_back( std::thread(thread_function<SocketTCP>, &sock[i], p1, i) );
     }
 
     std::string p2 = "wxyz";
     for (int i = 0; i < count; ++i)
     {
-        ths.push_back( std::thread(thread_function<Socket>, &sock[i+count], p2, i+count) );
+        ths.push_back( std::thread(thread_function<SocketTCP>, &sock[i+count], p2, i+count) );
     }
 
 

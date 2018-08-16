@@ -14,10 +14,12 @@
 #ifndef __ORC_MEM_STREAM_REMOTE_SENDER_H__
 #define __ORC_MEM_STREAM_REMOTE_SENDER_H__
 
+#include "SocketServer.h"
 #include "SocketDomain.h"
-#include "SourceChannel.h"
-#include "LoggerGlobal.h"
-#include "StreamPacket.h"
+#include "SocketClientPacket.h"
+//#include "StreamPacket.h"
+//#include "LoggerGlobal.h"
+
 
 #include "orc/OrcFile.hh"
 
@@ -26,10 +28,10 @@
 class OrcMemStreamRemoteSender
     : public orc::OutputStream
     , public orc::InputStream
-    , public SocketServer<SocketDomain, SocketClientPacket>
+    , public SocketServer<SocketDomain, SocketClientPacket<SocketDomain>>
 {
-        using byte_t = StreamPacket::byte_t;
-        using SockSrv = SocketServer<SocketDomain, SocketClientPacket>;
+        using byte_t  = StreamPacket::byte_t;
+        using SockSrv = SocketServer<SocketDomain, SocketClientPacket<SocketDomain>>;
 public:
     OrcMemStreamRemoteSender(const std::string &name = "OrcMem",
                              const std::string &memserChan = "/home/postgres/.sock_pgext_domain");
@@ -51,15 +53,15 @@ public:
     std::uint32_t              reqID();
     StreamPacket               packet();
 
-    virtual void OnAccept      (const SocketClientPacket &, const sockaddr &)
+    virtual void OnAccept      (const SocketClientPacket<SocketDomain> &, const sockaddr &)
     {
         LOG_LINE_GLOBAL("remote", "XXXXXXXXXXXXXXXXXXXXXXX");
     }
-    virtual void OnRecv        (SocketClientPacket &,       MemStream<std::uint8_t> &&)
+    virtual void OnRecv        (SocketClientPacket<SocketDomain> &,       MemStream<std::uint8_t> &&)
     {
         LOG_LINE_GLOBAL("remote", "XXXXXXXXXXXXXXXXXXXXXXX");
     }
-    virtual void OnDisconnect  (const SocketClientPacket &)
+    virtual void OnDisconnect  (const SocketClientPacket<SocketDomain> &)
     {
         LOG_LINE_GLOBAL("remote", "XXXXXXXXXXXXXXXXXXXXXXX");
     }

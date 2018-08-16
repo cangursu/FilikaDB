@@ -11,7 +11,7 @@
  * Created on 10 July 2018, 10:27
 */
 
-#include "Socket.h"
+//#include "SocketTCP.h"
 #include "SocketDomain.h"
 #include "SocketClient.h"
 #include "SocketUtils.h"
@@ -32,7 +32,7 @@ class EchoClient : public SocketClient<TSock>
     public:
         EchoClient(const char *name) : SocketClient<TSock>(name) {}
 
-        virtual void OnRecv(const TSock &, MemStream<std::uint8_t> &&)
+        virtual void OnRecv(MemStream<std::uint8_t> &&)
         {
             std::cout << "OnRecv : " << std::endl;
         }
