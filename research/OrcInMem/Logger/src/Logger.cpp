@@ -15,9 +15,9 @@
 
 #include "Logger.h"
 #include "StreamPacket.h"
+#include "SocketUtils.h"
 
 #include <cstdio>
-
 #include <sys/un.h>
 #include <unistd.h>
 #include <errno.h>
@@ -30,7 +30,6 @@ namespace Filika
 
 LSockLog::LSockLog(const char *path/* = SOCK_PATH_DEFAULT*/, bool doConnect/* = true*/)
         : SocketDomain("SockLog")
-        , _doConnect(doConnect)
 {
     SocketPath(path);
     Name("SockLog");
@@ -41,7 +40,7 @@ LSockLog::LSockLog(const char *path/* = SOCK_PATH_DEFAULT*/, bool doConnect/* = 
     }
     else
     {
-        if (_doConnect)
+        if (doConnect && path && *path)
         {
             if (SocketResult::SR_SUCCESS != Connect())
             {
@@ -57,35 +56,18 @@ LSockLog::~LSockLog()
     //SendRaw();
 }
 
-FILIKA_RESULT LSockLog::SendRaw()
+SocketResult LSockLog::SendRaw()
 {
     std::string s   = _os.str();
     size_t      len = s.length();
 
     SendRaw(s.c_str(), s.length() + 1);
-    /*
-    std::string s   = _os.str();
-    size_t      len = s.length();
-    ssize_t     res = 0;
-
-    if (len > 0)
-    {
-        if (true  == IsGood())
-        {
-            if (_doConnect  || (SocketResult::SR_SUCCESS == Connect()))
-                 res   = Write(s.c_str(), len + 1 );
-            else
-                std::cerr << "Unable to connect (" << errno << ") " << strerror(errno) << std::endl;
-        }
-    }
-    Reset();
-
-    return ( (res == -1) || (res != (ssize_t)(len+1))) ? FILIKA_RESULT::FR_ERROR : FILIKA_RESULT::FR_SUCCESS;
-    */
 }
 
-FILIKA_RESULT LSockLog::SendPacket()
+SocketResult LSockLog::SendPacket()
 {
+    if (SocketPath().empty()) return SocketResult::SR_EMPTY;
+
     std::string s   = _os.str();
     StreamPacket pack(s.c_str(), s.length());
 
@@ -95,22 +77,27 @@ FILIKA_RESULT LSockLog::SendPacket()
     return SendRaw(p,l);
 }
 
-FILIKA_RESULT LSockLog::SendRaw(const void *p, int l)
+SocketResult LSockLog::SendRaw(const void *p, int l)
 {
-    ssize_t     res = 0;
-    if (l > 0)
+    if (SocketPath().empty() || (l < 1)) return SocketResult::SR_EMPTY;
+    if (nullptr == p)                    return SocketResult::SR_ERROR_PRM;
+
+    ssize_t res = 0;
+    if (!IsGood())
     {
-        if (true  == IsGood())
-        {
-            if (_doConnect  || (SocketResult::SR_SUCCESS == Connect()))
-                 res   = Write(p, l);
-            else
-                std::cerr << "Unable to connect (" << errno << ") " << strerror(errno) << std::endl;
-        }
+        if (SocketResult::SR_SUCCESS != Connect())
+            std::cerr << "ERROR : Unable to connect (" << errno << ") " << strerror(errno) << std::endl;
     }
+    if (IsGood())
+    {
+        //std::cerr << "Write  ->" << std::endl;
+        res = Write(p, l);
+        //std::cerr << "Write  -< res:" << res << std::endl;
+    }
+
     Reset();
 
-    return ( (res == -1) || (res != (ssize_t)(l))) ? FILIKA_RESULT::FR_ERROR : FILIKA_RESULT::FR_SUCCESS;
+    return ( (res == -1) || (res != (ssize_t)(l))) ? SocketResult::SR_ERROR : SocketResult::SR_SUCCESS;
 }
 
 

@@ -20,6 +20,7 @@ namespace  Filika
 
     LSockLog &logger()
     {
+        //std::cout << "logger               --> " << sfile << std::endl;
         static LSockLog _glog (sfile);
         return _glog;
     }

@@ -9,46 +9,42 @@
 //
 //
 
-//#include "MemStream.h"
-#include "SocketResult.h"
-
+#include "Socket.h"
 
 #include <string>
-#include <netdb.h>
-#include <cstring>
 
 
-class SocketTCP
+class SocketTCP : public Socket
 {
     public :
-        SocketTCP(int s, const char *name);
         SocketTCP(const char *name = "NA");
+        SocketTCP(int fd, const char *name);
         SocketTCP(const SocketTCP &s) = delete;
         SocketTCP(SocketTCP &&s);
-        ~SocketTCP();
+
+        virtual ~SocketTCP();
 
         SocketTCP& operator=(SocketTCP &&s);
+        SocketTCP& operator=(const SocketTCP &s) = delete;
 
         SocketResult    Init();
         SocketResult    InitServer();
-        void            Release();
         SocketResult    Connect();
 
-        void            Port(uint16_t port)   { _port    = port;                                          }
-        void            Adress(const char *s) { _address = s;                                             }
-        std::string     PrmDesc()             { return std::move(_address + ":" + std::to_string(_port)); }
-        bool            IsGood ()             { return _sock != -1;                                       }
+        void            Port(std::uint16_t port)    { _port    = port;                                          }
+        void            Address(const char *s)      { _address = s;                                             }
+        void            Address(const char *s,
+                                std::uint16_t p   ) { Address(s); Port(p);                                      }
+        std::string     PrmDesc()                   { return std::move(_address + ":" + std::to_string(_port)); }
 
         SocketResult    SetNonBlock();
 
-protected :
-        int fd() const { return _sock; }
-private :
-        int             _sock    = -1;
-        uint16_t        _port    = -1;
-        std::string     _address = "127.0.0.1";
+        virtual ssize_t Read  (void *pdata, size_t len);
+        virtual ssize_t Write (const void *pdata, size_t len);
 
-        std::string     _name    = "NA";
+private :
+        std::uint16_t   _port    = -1;
+        std::string     _address = "127.0.0.1";
 };
 
 

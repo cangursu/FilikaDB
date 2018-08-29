@@ -6,11 +6,46 @@
 #define SOCK_PATH_DEFAULT "/home/postgres/.sock_domain_log"
 
 
+class ReflectClient : public SocketClientPacket<SocketDomain>
+{
+public:
+    ReflectClient(const char *name = "ReflectClient") : SocketClientPacket(name)
+    {
+    }
+
+    ReflectClient(int fd, const char *name) : SocketClientPacket(fd, name)
+    {
+    }
+
+    virtual void OnRecvPacket(StreamPacket &&packet)
+    {
+        Display(packet);
+    }
+
+    void Display(StreamPacket &packet)
+    {
+        const msize_t        buffLen = 512;
+        StreamPacket::byte_t buff [buffLen];
+
+        msize_t pyLenPart = 0;
+        msize_t pyLen = packet.PayloadLen();
+        for (msize_t offset = 0; offset < pyLen; offset += buffLen)
+        {
+            if ( (pyLenPart = packet.PayloadPart(buff, buffLen, offset)) > 0)
+                std::cout << std::string((char*)buff, pyLenPart);
+        }
+        std::cout << std::endl;
+    }
+};
+
+
 template <typename TSockSrv, typename TSockCln>
 class ReflectServer : public SocketServer<TSockSrv, TSockCln>
 {
-        using  msize_t = StreamPacket::msize_t; 
+    using  msize_t = StreamPacket::msize_t;
+
     public:
+
         ReflectServer(const char *name):SocketServer<TSockSrv, TSockCln>(name)
         {
         }
@@ -18,69 +53,35 @@ class ReflectServer : public SocketServer<TSockSrv, TSockCln>
 
         virtual void OnAccept(const TSockCln &sock, const sockaddr &addr)
         {
-            /*
-            std::string host, serv;
-            if (true == NameInfo(addr, host, serv))
-            {
-                std::cout << "Accepted connection on host = " << host  << " port = " << serv << std::endl;
-                ClientCount();
-            }
-            */
+            std::cout << "Accepted connection - ";
+            ClientCount();
         }
 
         virtual void OnRecv(TSockCln &sock, MemStream<std::uint8_t> &&stream)
         {
-            StreamPacket packet;
-
-            msize_t offsetStream = 0L;
-
-            SocketResult res = SocketResult::SR_ERROR_AGAIN;
-            while(SocketResult::SR_ERROR_AGAIN == res)
-            {
-                auto reader = [&stream, &offsetStream] (char *buff, int len) -> int { return stream.read(buff, len, offsetStream); };
-                res = sock.recvPacket(packet, reader);
-
-                if (res == SocketResult::SR_ERROR_AGAIN || res == SocketResult::SR_SUCCESS)
-                {
-                    offsetStream += packet.BufferLen();;
-                }
-            }
-        }
-        
-        void Display(StreamPacket &packet)
-        {
-            const msize_t        buffLen = 128;
-            StreamPacket::byte_t buff [buffLen];
-
-            msize_t pyLen = packet.PayloadLen();
-            for (msize_t i = 0; i < pyLen; i += buffLen)
-            {
-                if (packet.PayloadPart(buff, buffLen, i) > 0)
-                {
-                    std::cout << std::string((char*)buff, pyLen) << std::endl;
-                }
-            }
+            //std::cout << stream.dump("ReflectServer::OnRecv");
+            sock.OnRecv(std::move(stream));
         }
 
         virtual void OnDisconnect  (const TSockCln &sock)
         {
-            //std::cout << "Client Disconnected. \n";
+            std::cout << "Client Disconnected - ";
             ClientCount();
         }
 
         virtual void OnErrorClient(SocketResult res)
         {
-            //std::cout << "ErrorClient : " << SocketResultText(res) << std::endl;
+            std::cout << "ErrorClient : " << SocketResultText(res) << std::endl;
         }
 
         virtual void OnErrorServer(SocketResult res)
         {
-            //std::cout << "ErrorServer : " << SocketResultText(res) << std::endl;
+            std::cout << "ErrorServer : " << SocketResultText(res) << std::endl;
         };
 
         void ClientCount()
         {
-            //std::cout << "Client count = " << SocketServer<TSockSrv, TSockCln>::ClientCount() << std::endl;
+            std::cout << "Client count = " << SocketServer<TSockSrv, TSockCln>::ClientCount() << std::endl;
         }
 };
 
@@ -88,11 +89,12 @@ class ReflectServer : public SocketServer<TSockSrv, TSockCln>
 int main(int argc, char** argv)
 {
     const char *sfile = (argc > 1) ? argv[1] : SOCK_PATH_DEFAULT;
-    std::cout << "Filika Logger Receiver Entered : " << sfile << std::endl;
+    std::cout << "Filika Logger Receiver " << std::endl;
 
     LogLineGlbSocketName(nullptr);
 
-    ReflectServer<SocketDomain, SocketClientPacket<SocketDomain>> srv("ReflectServer");
+
+    ReflectServer<SocketDomain, ReflectClient> srv("ReflectServer");
     srv.SocketPath(sfile);
 
     if (SocketResult::SR_ERROR == srv.Init())

@@ -23,7 +23,7 @@
 
 
 
-#include "SocketTCP.h"
+//#include "SocketTCP.h"
 #include "SocketServer.h"
 #include "SocketDomain.h"
 #include "SocketUtils.h"
@@ -31,28 +31,22 @@
 #include <iostream>
 
 
-template <typename TSckSrv, typename TSckCln>
-class EchoServer : public SocketServer<TSckSrv, TSckCln>
+template <typename TSockSrv, typename TSockCln>
+class EchoServer : public SocketServer<TSockSrv, TSockCln>
 {
     public:
-
-        EchoServer(const char *name)
-            : SocketServer<TSckSrv, TSckCln>(name)
+        EchoServer(const char *name):SocketServer<TSockSrv, TSockCln>(name)
         {
         }
 
 
-
-        virtual void OnAccept(const TSckCln &sock, const sockaddr &addr)
+        virtual void OnAccept(const TSockCln &sock, const sockaddr &addr)
         {
-            std::string host, serv;
-            if (/*SocketResult::SR_SUCCESS*/true == NameInfo(addr, host, serv))
-            {
-                std::cout << "Accepted connection on host = " << host  << " port = " << serv << std::endl;
-                ClientCount();
-            }
+            std::cout << "Connection Accepted  \n";
+            ClientCount();
         }
-        virtual void OnRecv(TSckCln &sock, MemStream<uint8_t> &&stream)
+
+        virtual void OnRecv(TSockCln &sock, MemStream<std::uint8_t> &&stream)
         {
             const int buffLen = 128;
             char buff[buffLen];
@@ -65,15 +59,18 @@ class EchoServer : public SocketServer<TSckSrv, TSckCln>
             }
             std::cout << std::endl;
         }
-        virtual void OnDisconnect  (const TSckCln &sock)
+
+        virtual void OnDisconnect  (const TSockCln &sock)
         {
             std::cout << "Client Disconnected. \n";
             ClientCount();
         }
+
         virtual void OnErrorClient(SocketResult res)
         {
             std::cout << "ErrorClient : " << SocketResultText(res) << std::endl;
         }
+
         virtual void OnErrorServer(SocketResult res)
         {
             std::cout << "ErrorServer : " << SocketResultText(res) << std::endl;
@@ -81,18 +78,15 @@ class EchoServer : public SocketServer<TSckSrv, TSckCln>
 
         void ClientCount()
         {
-            std::cout << "Client count = " << SocketServer<TSckSrv, TSckCln>::ClientCount() << std::endl;
+            std::cout << "Client count = " << SocketServer<TSockSrv, TSockCln>::ClientCount() << std::endl;
         }
 };
 
+
 int main()
 {
-
-    EchoServer<SocketTCP, SocketTCP> srv("EchoServer");
-
-
-    //srv.SocketPath("/home/postgres/.sock_rawtest");
-    srv.Port(5000);
+    EchoServer<SocketDomain, SocketDomain> srv("EchoServer");
+    srv.SocketPath("/home/postgres/.sock_rawtest");
 
 
     if (SocketResult::SR_ERROR == srv.Init())
@@ -101,6 +95,8 @@ int main()
     }
 
     srv.LoopListen();
+
+    return 0;
 }
 
 

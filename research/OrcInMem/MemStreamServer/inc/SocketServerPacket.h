@@ -16,13 +16,9 @@
 
 #include "SocketServer.h"
 #include "SocketClient.h"
-#include "SocketDomain.h"
 #include "SocketUtils.h"
 #include "StreamPacket.h"
-#include "ParseResult.h"
-#include "MemStream.h"
 #include "LoggerGlobal.h"
-#include "Queue.h"
 
 
 #include <thread>
@@ -53,8 +49,8 @@ class SocketServerPacket : public SocketServer <TSocketSrv, TSocketClt>
             std::cout << "Using Source : " << _prm._sourceName << std::endl;
             std::cout << "Using Logger : " << _prm._logName    << std::endl;
 
-            LOG_LINE_GLOBAL("SServerClient", SocketServer<TSocketSrv, TSocketClt>/*::TSocketSrv/ *SocketDomain*/::Name(), " - Using Source : ", _prm._sourceName);
-            LOG_LINE_GLOBAL("SServerClient", SocketServer<TSocketSrv, TSocketClt>/*::TSocketSrv/ *SocketDomain*/::Name(), " - Using Logger : ", _prm._logName);
+            LOG_LINE_GLOBAL("SServerClient", SocketServer<TSocketSrv, TSocketClt>::Name(), " - Using Source : ", _prm._sourceName);
+            LOG_LINE_GLOBAL("SServerClient", SocketServer<TSocketSrv, TSocketClt>::Name(), " - Using Logger : ", _prm._logName);
         }
 
         virtual void OnAccept(const TSocketClt &sock, const sockaddr &addr)
@@ -69,6 +65,8 @@ class SocketServerPacket : public SocketServer <TSocketSrv, TSocketClt>
 
         virtual void OnRecv(/*const*/ TSocketClt &sock, MemStream<uint8_t> &&stream)
         {
+            sock.OnRecv(std::move(stream));
+            /*
             msize_t offsetStream = 0L;
             msize_t offsetPacket = 0L;
             msize_t stLen        = stream.Len();
@@ -105,6 +103,7 @@ class SocketServerPacket : public SocketServer <TSocketSrv, TSocketClt>
                     //}
                 }
             }
+        */
         }
 
         virtual void OnDisconnect  (const TSocketClt &sock)
@@ -125,7 +124,7 @@ class SocketServerPacket : public SocketServer <TSocketSrv, TSocketClt>
 
         void ClientCount()
         {
-            LOG_LINE_GLOBAL("SServerClient", "Client count = ", SocketServer<SocketDomain, TSocketClt>::ClientCount());
+            LOG_LINE_GLOBAL("SServerClient", "Client count = ", SocketServer<TSocketSrv, TSocketClt>::ClientCount());
         }
 
     private:

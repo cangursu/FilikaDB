@@ -12,8 +12,8 @@ extern "C" {
 
 
 
-#include "OrcStreamInMem.h"
-#include "LoggerGlobal.h"
+//#include "OrcStreamInMem.h"
+//#include "LoggerGlobal.h"
 
 
 
@@ -22,6 +22,9 @@ extern "C" {
  *
  */
 
+ASDASDASDASD
+asdasdasdasd
+/*
 PGMemPool &PGMemPool::Pool()
 {
     static PGMemPool s_pool;
@@ -44,5 +47,5 @@ void  PGMemPool::free(char* p)
     //LOG_LINE_GLOBAL("InMemTest", (int)p);
     if (p) pfree(p);
 }
-
+*/
 

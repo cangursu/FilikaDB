@@ -346,6 +346,9 @@ int main(int argc, char** argv)
 
 
 // Reciever Thread
+    ASDASDASDASD
+    asdasdasdasd
+    /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
     SocketServerPacket<Queue<StreamPacket>, SocketDomain, SocketClientPacket<SocketDomain>>
             server( { ._sourceName = args._sourceChannel,
                       ._logName    = args._logChannel,
@@ -359,7 +362,7 @@ int main(int argc, char** argv)
 
 
 
- 
+
 
     // **********  CLI  **********
     int keycode;
@@ -373,6 +376,7 @@ int main(int argc, char** argv)
 
     consumer.ListenLoopStop();
     if(thcsm.joinable()) thcsm.join();
+    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
     std::cout << "thanks\n";
 }

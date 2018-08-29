@@ -21,10 +21,12 @@ extern "C"
 #include "postgres.h"
 }
 
-
+ASDASDASDASD
+asdasdasdasd
+/*
 OrcMemStreamRemoteSender::OrcMemStreamRemoteSender(const std::string &name,
                                                    const std::string &serverChannel)
-    : SocketServer<SocketDomain, SocketClientPacket<SocketDomain>>(name.c_str())
+    : SocketServer<SocketDomain, OrcMemClient>(name.c_str())
     , _name (name)
     , _serverChannel (serverChannel)
 {
@@ -40,7 +42,7 @@ SocketResult OrcMemStreamRemoteSender::init()
     SocketPath(_serverChannel.c_str());
     SocketResult res;
 
-    if (SocketResult::SR_SUCCESS != (res = SocketDomain::Init()))
+    if (SocketResult::SR_SUCCESS != (res = Init()))
     {
         LOG_LINE_GLOBAL("remote", "ERROR: Unable to initialize SocketDomain");
     }
@@ -124,6 +126,9 @@ bool OrcMemStreamRemoteSender::validateName()
     if (_name.find('|') != std::string::npos) return false;
     return true;
 }
+*/
+
+
 
 
 

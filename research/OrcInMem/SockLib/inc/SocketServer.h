@@ -15,9 +15,7 @@
 #define __SOCKET_SERVER_H__
 
 #include "SocketResult.h"
-//#include "SocketUtils.h"
 #include "MemStream.h"
-
 
 #include <unordered_map>
 #include <unistd.h>
@@ -88,7 +86,6 @@ class SocketServer  : public TSocketSrv
                     _size++;
                     return true;
                 }
-
                 TSocketClt* get(int fd)
                 {
                     auto it = _map.find(fd);
@@ -108,7 +105,6 @@ class SocketServer  : public TSocketSrv
             private :
                 std::unordered_map<int, TSocketClt> _map;
                 std::uint64_t                       _size = 0;
-                //TSocketClt                          _dummy;
         } _clientList;
 
 
@@ -167,7 +163,7 @@ SocketResult SocketServer<TSocketSrv, TSocketClt>::LoopListen()
 
     if (epoll_ctl(_epoll, EPOLL_CTL_ADD, TSocketSrv::fd(), &event) == -1)
     {
-        std::cerr << "epoll_ctl\n";
+        std::cerr << "ERROR : epoll_ctl\n";
         return SocketResult::SR_ERROR;
     }
 
@@ -187,7 +183,8 @@ SocketResult SocketServer<TSocketSrv, TSocketClt>::LoopListen()
             {
     //            std::cout << n << ". epoll_wait released (" << events[i].data.fd << ") : " << EPollEvents(events[i].events) << std::endl;
 
-                // ........
+                // ..................
+                // EPOLLERR .........
                 if (events[i].events & EPOLLERR)
                 {
                     if (events[i].data.fd == TSocketSrv::fd())
@@ -197,7 +194,9 @@ SocketResult SocketServer<TSocketSrv, TSocketClt>::LoopListen()
 
                     Disconnect(events[i].data.fd);
                 }
-                // ........
+
+                // ..................
+                // EPOLLIN .........
                 if (events[i].events & EPOLLIN)
                 {
                     if (events[i].data.fd == TSocketSrv::fd())
@@ -205,7 +204,9 @@ SocketResult SocketServer<TSocketSrv, TSocketClt>::LoopListen()
                     else
                         Recv(events[i].data.fd);
                 }
-                // ........
+
+                // .............................
+                // EPOLLRDHUP/EPOLLHUP .........
                 if (  events[i].events & EPOLLRDHUP  ||
                       events[i].events & EPOLLHUP     )
                 {

@@ -6,18 +6,23 @@
  * Created on April 19, 2018, 12:08 PM
  */
 
-#include <cstdlib>
-#include <iostream>
 
 #include "Logger.h"
 #include "LoggerGlobal.h"
+
 #include <unistd.h>
+#include <thread>
+#include <cstdlib>
+#include <iostream>
+#include <vector>
+
+
 /*
  *
  */
 int main(int argc, char** argv)
 {
-    const char *sFile = (argc > 1) ? argv[1] : "/home/postgres/sock_orcinmem" /*SOCK_PATH_DEFAULT*/;
+    const char *sFile = (argc > 1) ? argv[1] : "/home/postgres/.sock_domain_log" /*SOCK_PATH_DEFAULT*/;
     std::cout << "Filika Logger Sender Entered : " << sFile << std::endl;
 /*
     {
@@ -69,26 +74,54 @@ int main(int argc, char** argv)
     }
     */
 
+    LogLineGlbSocketName(sFile);
+
+    pid_t pid =  getpid();
+    std::string desc (std::move(std::string("TestLog:") + std::to_string(pid)));
+    const char *pdesc = desc.c_str();
+
     {
-        LogLineGlbSocketName(sFile);
-        LOG_LINE_GLOBAL("desc olayi", "Test- -> ", 1111, " <- olayı");
-        //LOG_LINE_GLOBAL("desc olayi", "Test- -> ", 2222, " <- olayı");
-    }
-    /*
-    {
-        LOG_LINE_GLOBAL("desc olayi", "Test- -> ", 3333, " <- olayı");
-    }
-    {
-        LOG_LINE_GLOBAL("desc olayi", "Test- -> ", 4444, " <- olayı");
+        LOG_LINE_GLOBAL(pdesc, "Test- -> ", 1111, " <- olayi");
+        LOG_LINE_GLOBAL(pdesc, "Test- -> ", 2222, " <- olayi");
     }
     {
-        LOG_LINE_GLOBAL("desc olayi", "Test- -> ", 5555, " <- olayı");
+        LOG_LINE_GLOBAL(pdesc, "Test- -> ", 3333, " <- olayi");
     }
-    for (int i = 0; i < 100; ++i)
     {
-        LOG_LINE_GLOBAL("desc olayi", "Glabal Log = ", std::to_string(i), " . ");
+        LOG_LINE_GLOBAL(pdesc, "Test- -> ", 4444, " <- olayi");
     }
+    {
+        LOG_LINE_GLOBAL(pdesc, "Test- -> ", 5555, " <- olayi");
+    }
+
+    for (int i = 0; i < 10000; ++i)
+    {
+        LOG_LINE_GLOBAL(pdesc, "Global Log = ", std::to_string(i), " . ");
+    }
+
+
+//    sleep(15);
+
+
+
+
+/*
+    std::vector<std::thread> thList;
+    for (int thNo = 0; thNo < 2; thNo++)
+    {
+        thList.push_back(std::thread(
+                             [thNo]()
+                             {
+                                 for (int idx = 0; idx < 1; idx++)
+                                     LOG_LINE_GLOBAL(pdesc, "thNo = ", std::to_string(thNo), ", idx = ", idx);
+                             }
+                            )
+                        );
+    }
+    for (auto &t : thList) t.join();
 */
+
+
 
 
     std::cout << "Filika Logger Sender: Quited\n";

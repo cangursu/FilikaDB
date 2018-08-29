@@ -19,6 +19,7 @@
 #include "SocketClient.h"
 #include "ParseResult.h"
 #include "LoggerGlobal.h"
+#include "SocketUtils.h"
 
 
 
@@ -80,59 +81,40 @@ public:
         return res;
     }
 
-    virtual void OnRecvPacket(StreamPacket &&packet)
-    {
-    }
+    virtual void OnRecvPacket(StreamPacket &&packet) = 0;
+//    {
+//        std::cout << "SocketClientPacket::OnRecvPacket -  Len = " << packet.PayloadLen() << std::endl;
+//    }
 
-    virtual void OnRecv        (MemStream<std::uint8_t> &&stream)
+    virtual void OnRecv(MemStream<std::uint8_t> &&stream)
     {
+        LOG_LINE_GLOBAL("ServerEcho");
+
+        std::cout << stream.dump("SocketClientPacket::OnRecv");
+
+        SocketResult res = SocketResult::SR_ERROR_AGAIN;
+        while(SocketResult::SR_ERROR_AGAIN == res)
         {
-            msize_t offsetStream = 0L;
-            msize_t offsetPacket = 0L;
-            //msize_t stLen        = stream.Len();
-            //msize_t pyLen        = 0L;
-            //msize_t pkLen        = 0L;
+            StreamPacket packet;
 
-            //const msize_t        buffLen = 128;
-            //StreamPacket::byte_t buff [buffLen];
+            auto reader = [&stream] (char *buff, int offset, int len) -> int { return stream.read(buff, len, offset); };
+            res = recvPacket(packet, reader);
 
-            LOG_LINE_GLOBAL("ServerEcho");
-
-            SocketResult res = SocketResult::SR_ERROR_AGAIN;
-            while(SocketResult::SR_ERROR_AGAIN == res)
+            switch(res)
             {
-                StreamPacket packet;
-
-                auto reader = [&stream, &offsetStream] (char *buff, int len) -> int { return stream.read(buff, len, offsetStream); };
-                res = recvPacket(packet, reader);
-
-                //LOG_LINE_GLOBAL("ServerEcho", "recvPAcket : ", SocketResultText(res));
-                if (res == SocketResult::SR_ERROR_AGAIN || res == SocketResult::SR_SUCCESS)
-                {
+                case SocketResult::SR_ERROR_AGAIN   :
+                case SocketResult::SR_SUCCESS       :
                     OnRecvPacket(std::move(packet));
-                    /*
-                    pkLen = packet.BufferLen();
-                    offsetStream += pkLen;
+                    break;
 
-                    pyLen = packet.PayloadLen();
-                    //LOG_LINE_GLOBAL("ServerEcho", "stLen:", stLen, " pkLen:", pkLen, ", pyLen:", pyLen, ", offsetStream:", offsetStream);
-                    for (msize_t i = 0; i < pyLen; i += buffLen)
-                    {
-                        if (packet.PayloadPart(buff, buffLen, i) > 0)
-                        {
-                            LOG_LINE_GLOBAL("ServerEcho", "Packet:", std::string((char*)buff, pyLen));
-                            std::cout << "PacketReveived:" << std::string((char*)buff, pyLen) << std::endl;
-                        }
-                    }
-                    */
-                }
-                else
-                {
+                case SocketResult::SR_EMPTY         :
+                    break;
+
+                default                             :
                     OnErrorClient(res);
-                }
+                    break;
             }
         }
-
     }
     virtual void OnErrorClient (SocketResult)
     {
@@ -147,7 +129,6 @@ public:
 
     ParseResult  recvScanMID         (byte_t by, msize_t posBuff, msize_t posPacket)
     {
-        //    LOG_LINE_GLOBAL("SServerClient", "---> by:", by, "(", std::hex, by, std::dec, ")", " posBuff:", posBuff, " posPacket:", posPacket);
         ParseResult res = ParseResult::ERROR;
         if ((posPacket >= g_posMID) && posPacket < g_posMID + g_lenMID)
         {
@@ -156,13 +137,11 @@ public:
             if (by == StreamPacket::s_mid[posPacket])
                 res = (posPacket == (g_posMID + g_lenMID - 1)) ? ParseResult::NEXT : ParseResult::CONTINUE;
         }
-        //    LOG_LINE_GLOBAL("SServerClient", "---< res = ", ParseResultText(res));
         return res;
     }
 
     ParseResult  recvParseDataLength (byte_t by, msize_t posBuff, msize_t posPacket)
     {
-        //    LOG_LINE_GLOBAL("SServerClient", "---> posBuff:", posBuff, " posPacket:", posPacket);
         ParseResult res = ParseResult::ERROR;
         if ((posPacket >= g_posPLen) && (posPacket < g_posPLen + g_lenPLen))
         {
@@ -173,7 +152,6 @@ public:
                 _lenghtBuffPos = 0L;
 
                 memcpy(&_lenPayload, _lenghtBuff, g_lenPLen);
-                //LOG_LINE_GLOBAL("SServerClient", "_lenPayload:", _lenPayload);
                 res = (_lenPayload > g_lenMaxBuffer) ? ParseResult::ERROR : ParseResult::NEXT;
             }
             else
@@ -185,19 +163,16 @@ public:
         {
             _lenghtBuffPos = 0;
         }
-        //    LOG_LINE_GLOBAL("SServerClient", "---< res = ", ParseResultText(res));
         return res;
     }
 
-    ParseResult  recvRest            (byte_t by, msize_t posBuff, msize_t posPacket)
+    ParseResult  recvPayload (byte_t by, msize_t posBuff, msize_t posPacket)
     {
-        //    LOG_LINE_GLOBAL("SServerClient", "---> posBuff:", posBuff, " posPacket:", posPacket, " g_posPayload:", g_posPayload, " _lenPayload:", _lenPayload);
         ParseResult res = ParseResult::ERROR;
         if ((posPacket >= g_posPayload) && (posPacket < g_posPayload + _lenPayload + g_lenCRC - 1))
             res = ParseResult::CONTINUE;
         else if (posPacket == g_posPayload + _lenPayload + g_lenCRC  - 1)
             res = ParseResult::FINISH;
-        //    LOG_LINE_GLOBAL("SServerClient", "---< res = ", ParseResultText(res));
         return res;
     }
 
@@ -207,6 +182,7 @@ public:
         const int                maxBuffLen           = 1024;
         static __thread  msize_t lenBuff              = 0;
         static __thread  msize_t posBuff              = 0;
+        static __thread  msize_t offsetBuff           = 0;
         static __thread  msize_t posPacket            = 0;
         static __thread  const   parserFunc *parsFunc = parserTable;
         static __thread  char    buff[maxBuffLen];
@@ -222,21 +198,34 @@ public:
         {
             if (lenBuff == 0) //Buffer Consumed or empty
             {
-                lenBuff = reader(buff, maxBuffLen);
+                lenBuff = reader(buff, offsetBuff, maxBuffLen);
+                offsetBuff += lenBuff;
             }
-            if (lenBuff > 0 && lenBuff < maxBuffLen + 1)
+            if (lenBuff == 0)
+            {
+                result = SocketResult::SR_EMPTY;
+                offsetBuff = 0;
+                isDone = true;
+            }
+            else if (lenBuff > 0 && lenBuff < maxBuffLen + 1)
             {
                 for (; (posBuff < lenBuff) && parsFunc->_fp && (false == isDone); ++posBuff)
                 {
+//                    std::cout << "1.  - "/* LOG_LINE_GLOBAL("SServerClient" */
+//                                                    /*,*/ << "_fp:"        /*,*/  <<  parsFunc->_name
+//                                                    /*,*/ << " by:"        /*,*/  <<  packetData[posPacket]
+//                                                    /*,*/ << "(0x"         /*,*/  <<  std::hex  /*,*/<< (int)packetData[posPacket]  /*,*/<< std::dec /*,*/<< ")"
+//                                                    /*,*/ << " posBuff:"   /*,*/  <<  posBuff
+//                                                    /*,*/ << " lenBuff:"   /*,*/  <<  lenBuff
+//                                                    /*,*/ << " posPacket:" /*,*/  <<  posPacket
+//                                                          << std::endl;
+
                     ParseResult res = (this->*(parsFunc->_fp))(packetData[posPacket] = buff[posBuff], posBuff, posPacket);
 
-    //                std::cout /* LOG_LINE_GLOBAL("SServerClient" */
-    //                                                /*,*/ << "_fp:"        /*,*/  <<  parsFunc->_name
-    //                                                /*,*/ << " by:"        /*,*/  <<  packetData[posPacket]
-    //                                                /*,*/ << "(0x"         /*,*/  <<  std::hex  /*,*/<< (int)packetData[posPacket]  /*,*/<< std::dec /*,*/<< ")"
-    //                                                /*,*/ << " posBuff:"   /*,*/  <<  posBuff
-    //                                                /*,*/ << " posPacket:" /*,*/  <<  posPacket
-    //                                                /*,*/ << " res:"       /*,*/  <<  ParseResultText(res)   /*)*/<<std::endl;
+//                    std::cout << "2.  - "/* LOG_LINE_GLOBAL("SServerClient" */
+//                                                    /*,*/ << " res:"       /*,*/  <<  ParseResultText(res)   /*)*/
+//                                                          << std::endl;
+
 
                     switch (res)
                     {
@@ -260,36 +249,30 @@ public:
                         case ParseResult::FINISH    :
                             packet.BufferLen(++posPacket);
 
-                            parsFunc  = parserTable;
-                            posPacket = 0;
-
                             if (true == packet.Check())
                             {
-                                //LOG_LINE_GLOBAL("SServerClient", "PACKET RECIEVED .....");
-                                //LOG_LINE_GLOBAL("SServerClient", "posBuff:", posBuff, " lenBuff:", lenBuff/*, " offset:", offset*/);
                                 result = SocketResult::SR_ERROR_AGAIN;
                                 isDone = true;
                             }
                             else
                             {
-                                //LOG_LINE_GLOBAL("SServerClient", "ERROR : INVALID Packet");
+                                //LOG_LINE_GLOBAL("SServerClient", "ERROR : PACKET CRC Mismatch (", parsFunc->_name, ")");
+                                std::cerr << "ERROR : PACKET CRC Mismatch (" << parsFunc->_name << ")" << std::endl;
+                                result = SocketResult::SR_ERROR_CRC;
                                 posBuff   = _posBuffBeginPack;
                             }
+
+                            parsFunc  = parserTable;
+                            posPacket = 0;
                             break;
                     }
                 }
             }
+
             if (posBuff == lenBuff)
             {
-                //LOG_LINE_GLOBAL("SServerClient", "recv buffer consumed .....");
-                //LOG_LINE_GLOBAL("SServerClient", "posBuff:", posBuff, " lenBuff:", lenBuff/*, " offset:", offset*/);
-
-                result  = lenBuff > 0 ? SocketResult::SR_SUCCESS : SocketResult::SR_ERROR_EOF;
-                //result  = SocketResult::SR_SUCCESS;
-
                 posBuff = 0L;
                 lenBuff = 0L;
-                isDone  = true;
             }
         }
         return result;
@@ -311,109 +294,11 @@ private:
         const char *_name;
     };
     parserFunc parserTable[4] {
-                                  { ._fp = &SocketClientPacket::recvScanMID,            ._name = "ScanMID"       },
-                                  { ._fp = &SocketClientPacket::recvParseDataLength,    ._name = "DataLength"    },
-                                  { ._fp = &SocketClientPacket::recvRest,               ._name = "Rest"          },
-                                  { ._fp = nullptr, "" }
+                                  { ._fp = &SocketClientPacket::recvScanMID         ,   ._name = "ScanMID"       },
+                                  { ._fp = &SocketClientPacket::recvParseDataLength ,   ._name = "DataLength"    },
+                                  { ._fp = &SocketClientPacket::recvPayload         ,   ._name = "Payload"       },
+                                  { ._fp = nullptr                                  ,   ._name = "nullptr"       }
                                };
 };
-
-
-// .....    template <typename FunctorRead>
-// .....    SocketResult SocketClientPacket::recvPacket(StreamPacket &packet, /*const MemStream<uint8_t> &stream, msize_t offset, */FunctorRead && reader)
-// .....    {
-// .....        const int                maxBuffLen           = 1024;
-// .....        static __thread  msize_t lenBuff              = 0;
-// .....        static __thread  msize_t posBuff              = 0;
-// .....        static __thread  msize_t posPacket            = 0;
-// .....        static __thread  const   parserFunc *parsFunc = parserTable;
-// .....        static __thread  char    buff[maxBuffLen];
-// .....
-// .....
-// .....        byte_t *packetData = nullptr;
-// .....        packet.Buffer(&packetData);
-// .....
-// .....
-// .....        bool         isDone = false;
-// .....        SocketResult result = SocketResult::SR_ERROR_AGAIN;
-// .....        while(false == isDone)
-// .....        {
-// .....            if (lenBuff == 0) //Buffer Consumed or empty
-// .....            {
-// .....                lenBuff = reader(buff, maxBuffLen);
-// .....            }
-// .....            if (lenBuff > 0 && lenBuff < maxBuffLen + 1)
-// .....            {
-// .....                for (; (posBuff < lenBuff) && parsFunc->_fp && (false == isDone); ++posBuff)
-// .....                {
-// .....                    ParseResult res = (this->*(parsFunc->_fp))(packetData[posPacket] = buff[posBuff], posBuff, posPacket);
-// .....
-// .....    //                std::cout /* LOG_LINE_GLOBAL("SServerClient" */
-// .....    //                                                /*,*/ << "_fp:"        /*,*/  <<  parsFunc->_name
-// .....    //                                                /*,*/ << " by:"        /*,*/  <<  packetData[posPacket]
-// .....    //                                                /*,*/ << "(0x"         /*,*/  <<  std::hex  /*,*/<< (int)packetData[posPacket]  /*,*/<< std::dec /*,*/<< ")"
-// .....    //                                                /*,*/ << " posBuff:"   /*,*/  <<  posBuff
-// .....    //                                                /*,*/ << " posPacket:" /*,*/  <<  posPacket
-// .....    //                                                /*,*/ << " res:"       /*,*/  <<  ParseResultText(res)   /*)*/<<std::endl;
-// .....
-// .....                    switch (res)
-// .....                    {
-// .....                        case ParseResult::CONTINUE  :
-// .....                            posPacket++;
-// .....                            break;
-// .....
-// .....                        case ParseResult::NEXT      :
-// .....                            posPacket++;
-// .....                            parsFunc++;
-// .....                            break;
-// .....
-// .....                        case ParseResult::ERROR     :
-// .....                            //LOG_LINE_GLOBAL("SServerClient", "ERROR : PACKET ParseError (", parsFunc->_name, ")");
-// .....                            std::cerr << "ERROR : PACKET ParseError (" << parsFunc->_name << ")" << std::endl;
-// .....                            parsFunc  = parserTable;
-// .....                            posPacket = 0;
-// .....                            posBuff   = _posBuffBeginPack;
-// .....                            break;
-// .....
-// .....                        case ParseResult::FINISH    :
-// .....                            packet.BufferLen(++posPacket);
-// .....
-// .....                            parsFunc  = parserTable;
-// .....                            posPacket = 0;
-// .....
-// .....                            if (true == packet.Check())
-// .....                            {
-// .....                                //LOG_LINE_GLOBAL("SServerClient", "PACKET RECIEVED .....");
-// .....                                //LOG_LINE_GLOBAL("SServerClient", "posBuff:", posBuff, " lenBuff:", lenBuff/*, " offset:", offset*/);
-// .....                                result = SocketResult::SR_ERROR_AGAIN;
-// .....                                isDone = true;
-// .....                            }
-// .....                            else
-// .....                            {
-// .....                                //LOG_LINE_GLOBAL("SServerClient", "ERROR : INVALID Packet");
-// .....                                posBuff   = _posBuffBeginPack;
-// .....                            }
-// .....                            break;
-// .....                    }
-// .....                }
-// .....            }
-// .....            if (posBuff == lenBuff)
-// .....            {
-// .....                //LOG_LINE_GLOBAL("SServerClient", "recv buffer consumed .....");
-// .....                //LOG_LINE_GLOBAL("SServerClient", "posBuff:", posBuff, " lenBuff:", lenBuff/*, " offset:", offset*/);
-// .....
-// .....                result  = lenBuff > 0 ? SocketResult::SR_SUCCESS : SocketResult::SR_ERROR_EOF;
-// .....                //result  = SocketResult::SR_SUCCESS;
-// .....
-// .....                posBuff = 0L;
-// .....                lenBuff = 0L;
-// .....                isDone  = true;
-// .....            }
-// .....        }
-// .....        return result;
-// .....    }
-
-
-
 
 #endif // __SOCKET_CLIENT_PACKET_H__

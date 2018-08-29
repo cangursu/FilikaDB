@@ -13,8 +13,8 @@
 
 
 #include "SocketServerPacket.h"
-#include "SocketServer.h"
 #include "SocketClientPacket.h"
+#include "SocketTCP.h"
 #include "LoggerGlobal.h"
 
 
@@ -22,14 +22,14 @@
 #include <thread>
 
 
-class SocketClientPacketDisp : public SocketClientPacket<SocketDomain>
+class PacketEchoClient  : public  SocketClientPacket<SocketTCP>
 {
     public:
-        SocketClientPacketDisp(const char *name = "SocketClientPacketDisp" )
+        PacketEchoClient(const char *name = "PacketEchoClient" )
             : SocketClientPacket(name)
         {
         }
-        SocketClientPacketDisp(int fd, const char *name)
+        PacketEchoClient(int fd, const char *name)
             : SocketClientPacket(fd, name)
         {
         }
@@ -38,7 +38,7 @@ class SocketClientPacketDisp : public SocketClientPacket<SocketDomain>
             DisplayPacket(packet);
 
             SocketResult res = SendPacket(packet);  //Echoing packet
-            LOG_LINE_GLOBAL("ServerEcho", "REPLYING res = ", SocketResultText(res));
+            std::cout << "Reflecting back -> res = " << SocketResultText(res) << std::endl;
         }
 
         void DisplayPacket(StreamPacket packet)
@@ -59,14 +59,14 @@ class SocketClientPacketDisp : public SocketClientPacket<SocketDomain>
 };
 
 
-class PacketServerEcho : public SocketServer<SocketDomain, SocketClientPacketDisp>
+class PacketEchoServer : public SocketServer<SocketTCP, PacketEchoClient>
 {
     public:
-        PacketServerEcho()
-            : SocketServer<SocketDomain, SocketClientPacketDisp>("ServerEcho")
+        PacketEchoServer()
+            : SocketServer<SocketTCP, PacketEchoClient>("ServerEcho")
         {
         }
-        virtual void OnAccept(const SocketClientPacketDisp &sock, const sockaddr &addr)
+        virtual void OnAccept(const PacketEchoClient &sock, const sockaddr &addr)
         {
             std::string host, serv;
             if (true == NameInfo(addr, host, serv))
@@ -75,12 +75,13 @@ class PacketServerEcho : public SocketServer<SocketDomain, SocketClientPacketDis
                 ClientCount();
             }
         }
-        virtual void OnRecv(/*const*/ SocketClientPacketDisp &sock, MemStream<uint8_t> &&stream)
+        virtual void OnRecv(PacketEchoClient &sock, MemStream<uint8_t> &&stream)
         {
+            LOG_LINE_GLOBAL("ServerEcho", "PacketEchoServer : OnRecv - lenght:", stream.Len());
             sock.OnRecv(std::move(stream));
         }
 
-        virtual void OnDisconnect  (const SocketClientPacketDisp &sock)
+        virtual void OnDisconnect  (const PacketEchoClient &sock)
         {
             LOG_LINE_GLOBAL("ServerEcho", "Client Disconnected.");
             ClientCount();
@@ -88,22 +89,24 @@ class PacketServerEcho : public SocketServer<SocketDomain, SocketClientPacketDis
 
         virtual void OnErrorClient(SocketResult res)
         {
+            std::cout << "ErrorServer : " << SocketResultText(res) << std::endl;
             LOG_LINE_GLOBAL("ServerEcho", "ErrorClient : ", SocketResultText(res));
         }
 
         virtual void OnErrorServer(SocketResult res)
         {
+            std::cout << "ErrorServer : " << SocketResultText(res) << std::endl;
             LOG_LINE_GLOBAL("ServerEcho", "ErrorServer : ", SocketResultText(res));
         };
 
         void ClientCount()
         {
-            LOG_LINE_GLOBAL("ServerEcho", "Client count = ", SocketServer<SocketDomain, SocketClientPacketDisp>::ClientCount());
+            LOG_LINE_GLOBAL("ServerEcho", "Client count = ", SocketServer<SocketTCP, PacketEchoClient>::ClientCount());
         }
 };
 
 
-
+/*
 class SenderTestEcho : public SocketDomain
 {
 public:
@@ -113,7 +116,7 @@ public:
     bool init(const char *sockPath)
     {
         SocketDomain::SocketPath(sockPath);
-        if (SocketResult::SR_SUCCESS != SocketDomain::Init())
+        if (SocketResult::SR_SUCCESS != Init())
         {
             std::cerr << "ERROR: Unable to init SocketDomain \n";
             return false;
@@ -125,25 +128,27 @@ public:
         }
     }
 };
-
+*/
 
 int main(int argc, char** argv)
 {
     std::cout << "StreamServerClient v0\n";
 
     const char *slog = "/home/postgres/.sock_domain_log";
-    const char *ssrv = "/home/postgres/.sock_domain_pgext";
+    const char *ssrv = "127.0.0.1";
+    int         psrv = 5001;
 
-    std::cout << "Using LogServer : " << slog << std::endl;
+    std::cout << "Using Log Server  : " << slog << std::endl;
     LogLineGlbSocketName(slog);
     LOG_LINE_GLOBAL("ServerEcho", "ver 0.0.0.0");
 
 
 
-    PacketServerEcho server/*(que)*/;
-    std::cout << "Using Ech Server : " << ssrv << std::endl;
-    LOG_LINE_GLOBAL("ServerEcho", "Using Echo Server : ", ssrv);
-    server.SocketPath(ssrv);
+    PacketEchoServer server/*(que)*/;
+    std::cout << "Using Echo Server : " << ssrv << ":" << psrv << std::endl;
+    LOG_LINE_GLOBAL("ServerEcho", "Using Echo Server : ", ssrv, ":", psrv);
+    //server.SocketPath(ssrv);
+    server.Address(ssrv, psrv);
 
     if (SocketResult::SR_ERROR == server.Init())
     {
