@@ -23,10 +23,8 @@
 
 #include "orc/OrcFile.hh"
 
-ASDASDASDASD
-asdasdasdasd
 
-/*
+
 
 
 class OrcMemClient : public SocketClientPacket<SocketDomain>
@@ -69,10 +67,12 @@ public:
     {
         LOG_LINE_GLOBAL("remote", "XXXXXXXXXXXXXXXXXXXXXXX");
     }
+    /*
     virtual void OnRecv        (OrcMemClient &,       MemStream<std::uint8_t> &&)
     {
         LOG_LINE_GLOBAL("remote", "XXXXXXXXXXXXXXXXXXXXXXX");
     }
+    */
     virtual void OnDisconnect  (const OrcMemClient &)
     {
         LOG_LINE_GLOBAL("remote", "XXXXXXXXXXXXXXXXXXXXXXX");
@@ -91,7 +91,7 @@ private:
     std::string _name;
     std::string _serverChannel;
 };
-*/
+
 
 #endif /* __ORC_MEM_STREAM_REMOTE_SENDER_H__ */
 

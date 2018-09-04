@@ -22,6 +22,7 @@
  *
  */
 
+
 class PGMemPool : public orc::MemoryPool
 {
 public:
@@ -53,7 +54,7 @@ public:
     }
     uint64_t getNaturalWriteSize() const override
     {
-        return /*128 * */1024;
+        return /* 128 * */1024;
     }
     virtual uint64_t getNaturalReadSize() const override
     {

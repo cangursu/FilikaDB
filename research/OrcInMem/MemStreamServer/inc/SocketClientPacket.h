@@ -26,6 +26,7 @@
 template <typename TSocket>
 class SocketClientPacket : public SocketClient<TSocket>
 {
+
 protected:
     using byte_t   = StreamPacket::byte_t;
     using msize_t  = StreamPacket::msize_t;
@@ -90,7 +91,7 @@ public:
     {
         LOG_LINE_GLOBAL("ServerEcho");
 
-        std::cout << stream.dump("SocketClientPacket::OnRecv");
+        //std::cout << stream.dump("SocketClientPacket::OnRecv");
 
         SocketResult res = SocketResult::SR_ERROR_AGAIN;
         while(SocketResult::SR_ERROR_AGAIN == res)
@@ -179,15 +180,6 @@ public:
     template <typename FunctorRead>
     SocketResult recvPacket(StreamPacket &packet, FunctorRead && reader)
     {
-        const int                maxBuffLen           = 1024;
-        static __thread  msize_t lenBuff              = 0;
-        static __thread  msize_t posBuff              = 0;
-        static __thread  msize_t offsetBuff           = 0;
-        static __thread  msize_t posPacket            = 0;
-        static __thread  const   parserFunc *parsFunc = parserTable;
-        static __thread  char    buff[maxBuffLen];
-
-
         byte_t *packetData = nullptr;
         packet.Buffer(&packetData);
 
@@ -196,20 +188,20 @@ public:
         SocketResult result = SocketResult::SR_ERROR_AGAIN;
         while(false == isDone)
         {
-            if (lenBuff == 0) //Buffer Consumed or empty
+            if (_lenBuff == 0) //Buffer Consumed or empty
             {
-                lenBuff = reader(buff, offsetBuff, maxBuffLen);
-                offsetBuff += lenBuff;
+                _lenBuff     = reader(_buff, _offsetBuff, _maxBuffLen);
+                _offsetBuff += _lenBuff;
             }
-            if (lenBuff == 0)
+            if (_lenBuff == 0)
             {
                 result = SocketResult::SR_EMPTY;
-                offsetBuff = 0;
+                _offsetBuff = 0;
                 isDone = true;
             }
-            else if (lenBuff > 0 && lenBuff < maxBuffLen + 1)
+            else if (_lenBuff > 0 && _lenBuff < _maxBuffLen + 1)
             {
-                for (; (posBuff < lenBuff) && parsFunc->_fp && (false == isDone); ++posBuff)
+                for (; (_posBuff < _lenBuff) && _parsFunc->_fp && (false == isDone); ++_posBuff)
                 {
 //                    std::cout << "1.  - "/* LOG_LINE_GLOBAL("SServerClient" */
 //                                                    /*,*/ << "_fp:"        /*,*/  <<  parsFunc->_name
@@ -220,7 +212,7 @@ public:
 //                                                    /*,*/ << " posPacket:" /*,*/  <<  posPacket
 //                                                          << std::endl;
 
-                    ParseResult res = (this->*(parsFunc->_fp))(packetData[posPacket] = buff[posBuff], posBuff, posPacket);
+                    ParseResult res = (this->*(_parsFunc->_fp))(packetData[_posPacket] = _buff[_posBuff], _posBuff, _posPacket);
 
 //                    std::cout << "2.  - "/* LOG_LINE_GLOBAL("SServerClient" */
 //                                                    /*,*/ << " res:"       /*,*/  <<  ParseResultText(res)   /*)*/
@@ -230,24 +222,24 @@ public:
                     switch (res)
                     {
                         case ParseResult::CONTINUE  :
-                            posPacket++;
+                            _posPacket++;
                             break;
 
                         case ParseResult::NEXT      :
-                            posPacket++;
-                            parsFunc++;
+                            _posPacket++;
+                            _parsFunc++;
                             break;
 
                         case ParseResult::ERROR     :
                             //LOG_LINE_GLOBAL("SServerClient", "ERROR : PACKET ParseError (", parsFunc->_name, ")");
-                            std::cerr << "ERROR : PACKET ParseError (" << parsFunc->_name << ")" << std::endl;
-                            parsFunc  = parserTable;
-                            posPacket = 0;
-                            posBuff   = _posBuffBeginPack;
+                            std::cerr << "ERROR : PACKET ParseError (" << _parsFunc->_name << ")" << std::endl;
+                            _parsFunc  = _parserTable;
+                            _posPacket = 0;
+                            _posBuff   = _posBuffBeginPack;
                             break;
 
                         case ParseResult::FINISH    :
-                            packet.BufferLen(++posPacket);
+                            packet.BufferLen(++_posPacket);
 
                             if (true == packet.Check())
                             {
@@ -257,22 +249,22 @@ public:
                             else
                             {
                                 //LOG_LINE_GLOBAL("SServerClient", "ERROR : PACKET CRC Mismatch (", parsFunc->_name, ")");
-                                std::cerr << "ERROR : PACKET CRC Mismatch (" << parsFunc->_name << ")" << std::endl;
-                                result = SocketResult::SR_ERROR_CRC;
-                                posBuff   = _posBuffBeginPack;
+                                std::cerr << "ERROR : PACKET CRC Mismatch (" << _parsFunc->_name << ")" << std::endl;
+                                result     = SocketResult::SR_ERROR_CRC;
+                                _posBuff   = _posBuffBeginPack;
                             }
 
-                            parsFunc  = parserTable;
-                            posPacket = 0;
+                            _parsFunc  = _parserTable;
+                            _posPacket = 0;
                             break;
                     }
                 }
             }
 
-            if (posBuff == lenBuff)
+            if (_posBuff == _lenBuff)
             {
-                posBuff = 0L;
-                lenBuff = 0L;
+                _posBuff = 0L;
+                _lenBuff = 0L;
             }
         }
         return result;
@@ -293,12 +285,22 @@ private:
         parser_t    _fp;
         const char *_name;
     };
-    parserFunc parserTable[4] {
+    parserFunc _parserTable[4] {
                                   { ._fp = &SocketClientPacket::recvScanMID         ,   ._name = "ScanMID"       },
                                   { ._fp = &SocketClientPacket::recvParseDataLength ,   ._name = "DataLength"    },
                                   { ._fp = &SocketClientPacket::recvPayload         ,   ._name = "Payload"       },
                                   { ._fp = nullptr                                  ,   ._name = "nullptr"       }
-                               };
+                                };
+private :
+    msize_t             _lenBuff              = 0;
+    msize_t             _posBuff              = 0;
+    msize_t             _offsetBuff           = 0;
+    msize_t             _posPacket            = 0;
+    const parserFunc *  _parsFunc = _parserTable;
+
+    static const int    _maxBuffLen           = 1024;
+    char                _buff[_maxBuffLen];
+
 };
 
 #endif // __SOCKET_CLIENT_PACKET_H__

@@ -7,6 +7,7 @@
 #include "LoggerGlobal.h"
 #include "Logger.h"
 
+
 namespace  Filika
 {
     static const char *sfile = SOCK_PATH_DEFAULT;
@@ -31,3 +32,4 @@ namespace  Filika
         *p++ = '\0';
     }
 }
+

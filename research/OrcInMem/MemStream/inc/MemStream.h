@@ -11,7 +11,7 @@
 #include <sstream>
 #include <deque>
 #include <iostream>
-#include <iomanip>
+//#include <iomanip>
 
 
 
@@ -131,27 +131,38 @@ public:
         ss << "Data   :  \n";
         {
             const int line = 16;
+            const int buffTmpSize = 64;
 
             long newLinePos   = ss.tellp();
             long newLineCount = 1;
 
-            uint8_t buff[line];
+            uint8_t buffRead[line];
+            char    buffTmp[buffTmpSize];
             for (std::uint64_t offset = 0, len = Len(); offset < len; offset += line)
             {
-                memset(buff, 0, line);
-                read(buff, line, offset);
+                memset(buffRead, 0, line);
+                read(buffRead, line, offset);
 
-                ss << std::dec << std::setfill(' ') << std::setw(8) << offset << " - ";
+
+                // ......................................................
+                // Unable to include <iomanip>  ... have to use snprintf :(
+                // ......................................................
+                int j = snprintf(buffTmp, buffTmpSize, "%08d - ", offset);
                 for (int i = 0; (i < 16) && (i + offset < len); ++i)
-                    ss << std::hex << std::setfill('0') << std::setw(2) << (int)buff[i] << " ";
-
+                    j += snprintf(buffTmp + j, buffTmpSize, "%02x ", (int)buffRead[i]);
+                ss << buffTmp;
+// ::::::::::::::::::::::::::::
+//              ss << std::dec << std::setfill(' ') << std::setw(8) << offset << " - ";
+//              for (int i = 0; (i < 16) && (i + offset < len); ++i)
+//                  ss << std::hex << std::setfill('0') << std::setw(2) << (int)buff[i] << " ";
+// ::::::::::::::::::::::::::::
                 long nlp = ss.tellp();
                 for(long i = nlp - newLinePos; i < 64; ++i)
                     ss << " ";
 
                 for (int i = 0; (i < 16) && (i + offset < len); ++i)
                 {
-                    switch (buff[i])
+                    switch (buffRead[i])
                     {
                         case '\0' : ss << "NL"; break;
                         case '\n' : ss << "LF"; break;
@@ -159,7 +170,8 @@ public:
                         case '\v' : ss << "TB"; break;
                         case '\b' : ss << "BS"; break;
                         case '\r' : ss << "CR"; break;
-                        default   : ss << std::setw(1) << buff[i];
+                        default   : snprintf(buffTmp, buffTmpSize, "%1c", buffRead[i]); ss << buffTmp;
+                                    //ss << /* :::::::::::::::::::::  std::setw(1) << ::::::::::::::::::::::::::: */ buffRead[i];
                     }
                     ss << " ";
                 }

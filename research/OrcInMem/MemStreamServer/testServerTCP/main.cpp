@@ -75,11 +75,6 @@ class PacketEchoServer : public SocketServer<SocketTCP, PacketEchoClient>
                 ClientCount();
             }
         }
-        virtual void OnRecv(PacketEchoClient &sock, MemStream<uint8_t> &&stream)
-        {
-            LOG_LINE_GLOBAL("ServerEcho", "PacketEchoServer : OnRecv - lenght:", stream.Len());
-            sock.OnRecv(std::move(stream));
-        }
 
         virtual void OnDisconnect  (const PacketEchoClient &sock)
         {

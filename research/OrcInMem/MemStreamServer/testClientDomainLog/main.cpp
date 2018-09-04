@@ -14,6 +14,7 @@
 #include "LoggerGlobal.h"
 
 #include <iostream>
+#include <unistd.h>
 
 
 
@@ -24,8 +25,14 @@ int main(int , char** )
     std::cout << "StreamServerClient v0.0.0.2\n";
     std::cout << "Using domain Socket : " << sname << std::endl;
     LogLineGlbSocketName(sname);
-    
-    LOG_LINE_GLOBAL("LogClient", "Test");
+
+    std::string strTest("Test");
+    strTest += std::to_string(getpid());
+
+    LOG_LINE_GLOBAL("LogClient", strTest);
+
+    for (int i = 0; i<200000; ++i)
+        LOG_LINE_GLOBAL("LogClient", strTest + "-" + std::to_string(i));
 
     return 0;
 }

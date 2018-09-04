@@ -135,8 +135,17 @@ ssize_t SocketDomain::Read(void *pdata, size_t lenData)
     ssize_t bytes = ::read(fd(), pdata, lenData);
     if (bytes < 0)
     {
-        std::cerr << "SocketDomain(" << Name() << ")::Read  ERROR - (" << errno << ") " << strerror(errno) << std::endl;
-        Release();
+        switch(errno)
+        {
+            case EAGAIN :
+//            case EWOULDBLOCK :
+//                std::cerr << "SocketDomain(" << Name() << ")::Read  ERROR - " << ErrnoText(errno) <<  "(" << errno << ") " << strerror(errno) << std::endl;
+                break;
+            default :
+                std::cerr << "SocketDomain(" << Name() << ")::Read  ERROR - "  << ErrnoText(errno) <<  "(" << errno << ") " << strerror(errno) << std::endl;
+                Release();
+        }
+
     }
 
     if (bytes == 0)

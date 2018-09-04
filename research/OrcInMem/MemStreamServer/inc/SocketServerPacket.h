@@ -63,49 +63,6 @@ class SocketServerPacket : public SocketServer <TSocketSrv, TSocketClt>
             }
         }
 
-        virtual void OnRecv(/*const*/ TSocketClt &sock, MemStream<uint8_t> &&stream)
-        {
-            sock.OnRecv(std::move(stream));
-            /*
-            msize_t offsetStream = 0L;
-            msize_t offsetPacket = 0L;
-            msize_t stLen        = stream.Len();
-
-
-            LOG_LINE_GLOBAL("SServerClient");
-
-            SocketResult res = SocketResult::SR_ERROR_AGAIN;
-            while(SocketResult::SR_ERROR_AGAIN == res)
-            {
-                StreamPacket packet;
-                auto reader = [&stream, &offsetStream] (char *buff, int len) -> int { return stream.read(buff, len, offsetStream); };
-                res = sock.recvPacket(packet, reader);
-                //res = sock.recvPacket(packet, stream, offsetStream);
-
-                //LOG_LINE_GLOBAL("SServerClient", "recvPAcket : ", SocketResultText(res));
-                if (res == SocketResult::SR_ERROR_AGAIN || res == SocketResult::SR_SUCCESS)
-                {
-                    offsetStream += packet.BufferLen();
-                    _prm._que.push(std::move(packet));
-
-                    //msize_t stLen        = stream.Len();
-                    //msize_t pkLen = packet.BufferLen();
-                    //msize_t pyLen = packet.PayloadLen();
-                    //LOG_LINE_GLOBAL("SServerClient", "stLen:", stLen, " pkLen:", pkLen, ", pyLen:", pyLen, ", offsetStream:", offsetStream);
-                    //const msize_t        bufferLen = 128;
-                    //StreamPacket::byte_t buffer [bufferLen];
-                    //for (msize_t i = 0; i < pyLen; i += bufferLen)
-                    //{
-                    //    if (packet.PayloadPart(buffer, bufferLen, i) > 0)
-                    //    {
-                    //        LOG_LINE_GLOBAL("SServerClient", "Packet:", std::string((char*)buffer, pyLen));
-                    //    }
-                    //}
-                }
-            }
-        */
-        }
-
         virtual void OnDisconnect  (const TSocketClt &sock)
         {
             LOG_LINE_GLOBAL("SServerClient", "Client Disconnected.");

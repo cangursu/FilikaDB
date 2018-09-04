@@ -76,8 +76,7 @@ int main(int argc, char** argv)
 
     LogLineGlbSocketName(sFile);
 
-    pid_t pid =  getpid();
-    std::string desc (std::move(std::string("TestLog:") + std::to_string(pid)));
+    std::string desc (std::move(std::string("TestLog:") + std::to_string(getpid())));
     const char *pdesc = desc.c_str();
 
     {
@@ -94,10 +93,12 @@ int main(int argc, char** argv)
         LOG_LINE_GLOBAL(pdesc, "Test- -> ", 5555, " <- olayi");
     }
 
+    /*
     for (int i = 0; i < 10000; ++i)
     {
         LOG_LINE_GLOBAL(pdesc, "Global Log = ", std::to_string(i), " . ");
     }
+    */
 
 
 //    sleep(15);

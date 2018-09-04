@@ -837,9 +837,6 @@ Datum orc_buffer_remote_test(PG_FUNCTION_ARGS)
     LOG_LINE_GLOBAL("Init", "");
 
 
-ASDASDASDASD
-asdasdasdasd
-/*
     OrcMemStreamRemoteSender mem("OrcRemote", "/home/postgres/.sock_domain_pgext");
 
     SocketResult rc = mem.init();
@@ -867,7 +864,6 @@ asdasdasdasd
     {
         LOG_LINE_GLOBAL("remote", "Sender Init failed. ", SocketResultText(rc));
     }
-*/
 
     const char *resStr = "orc_buffer_remote_test FAILED";
     LOG_LINE_GLOBAL("remote", "----<  ", resStr);

@@ -21,9 +21,6 @@ extern "C"
 #include "postgres.h"
 }
 
-ASDASDASDASD
-asdasdasdasd
-/*
 OrcMemStreamRemoteSender::OrcMemStreamRemoteSender(const std::string &name,
                                                    const std::string &serverChannel)
     : SocketServer<SocketDomain, OrcMemClient>(name.c_str())
@@ -126,7 +123,6 @@ bool OrcMemStreamRemoteSender::validateName()
     if (_name.find('|') != std::string::npos) return false;
     return true;
 }
-*/
 
 
 

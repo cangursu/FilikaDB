@@ -119,7 +119,34 @@ void SendBulkIndividual(SocketTCP &sock)
 }
 
 
-void SendBulkDirt(SocketTCP &sock)
+
+void SendDirt(SocketTCP &sock)
+{
+    std::string           prefix = std::string("Dirt-")+std::to_string(getpid());
+    StreamPacket::byte_t  buff[4096];
+    StreamPacket::byte_t *pBuff  = nullptr;
+    int                   len    = 0;
+    int                   lenPck = 0;
+
+    std::string data = prefix + "Individual";
+    StreamPacket packet(data.c_str(), data.size());
+
+    lenPck = packet.Buffer(&pBuff);
+
+    std::memcpy(buff + len, "XXX", 3);
+    len+=3;
+
+    std::memcpy(buff + len, pBuff, lenPck);
+    len += lenPck;
+
+    std::memcpy(buff + len, "YYY", 3);
+    len+=3;
+
+    std::cout << "sending  len = " << len << std::endl;
+    send(sock, buff, len);
+}
+
+void SendDirtBulk(SocketTCP &sock)
 {
     std::string           prefix = "Dirt-";
     StreamPacket::byte_t  buff[4096];
@@ -148,7 +175,28 @@ void SendBulkDirt(SocketTCP &sock)
 }
 
 
-void SendBulkCorrupt(SocketTCP &sock)
+void SendCorrupt(SocketTCP &sock)
+{
+    std::string           prefix = "Corrupt-Individual";
+    StreamPacket::byte_t  buff2[4096];
+    StreamPacket::byte_t *pBuff  = nullptr;
+    int                   len    = 0;
+    int                   lenPck = 0;
+
+    std::string data = prefix;
+    StreamPacket packet(data.c_str(), data.size());
+
+    lenPck = packet.Buffer(&pBuff);
+    pBuff[13] = 'X';
+    std::memcpy(buff2 + len, pBuff, lenPck);
+    len += lenPck;
+
+    std::cout << "sending  len = " << len << std::endl;
+    send(sock, buff2, len);
+}
+
+
+void SendCorruptBulk(SocketTCP &sock)
 {
     std::string           prefix = "Corrupt-";
     StreamPacket::byte_t  buff2[4096];
@@ -208,7 +256,7 @@ int main(int , char** )
     sleep(1);
 
 
-
+/*
     {
         const char *data = nullptr;
         //Invidiual
@@ -221,8 +269,9 @@ int main(int , char** )
         send_StreamPacket(sock, "TestData_abcde");
         send_StreamPacket(sock, "TestData_fghiy");
     }
+*/
 
-
+/*
     {
         //Combined Individual
         StreamPacket pck1("TestDataCombinedPacket_1_1x345", 30);
@@ -240,8 +289,9 @@ int main(int , char** )
 
         send(sock, data, lenBuffer1 + lenBuffer2);
     }
+*/
 
-
+/*
     {
         //Fragmanted
         StreamPacket pck("TestDataFragmanted67890", 23);
@@ -260,8 +310,9 @@ int main(int , char** )
         std::memcpy(part2, bufferPrt+lenPart1, lenPart2);
         send(sock, part2, lenPart2);
     }
+*/
 
-
+/*
     {
         //Dirt
         StreamPacket pck("TestDataDirt:abcdefg", 20);
@@ -282,8 +333,9 @@ int main(int , char** )
 
         send(sock, data, lenBuffer+8);
     }
+*/
 
-
+/*
     {
         //Corrupt
         StreamPacket pck("hijklmnopqrstuvwxyz", 19);
@@ -291,25 +343,40 @@ int main(int , char** )
         StreamPacket::byte_t *bufferPrt;
         int lenBuffer = pck.Buffer(&bufferPrt);
         bufferPrt[16] = '.';
+
+        std::cout << "Sending : Corrupted Packet\n";
         send(sock, pck);
+
+        send_StreamPacket(sock, "yyy");
     }
+*/
 
-
+/*
     for(int i = 0; i < 50; ++i)
     {
         SendMultipleIndividual(sock);
         SendBulkIndividual(sock);
-        SendBulkDirt(sock);
 
+        SendBulkDirt(sock);
         SendBulkCorrupt(sock);
+
         send(sock, std::move(StreamPacket("12345", 5)));
     }
+*/
 
-    //SendBulkIndividual(sock);
+
+    {
+        send_StreamPacket(sock, (std::string("aaa.") + std::to_string(getpid())).c_str() );
+        SendDirt(sock);
+        send_StreamPacket(sock, (std::string("bbb.") + std::to_string(getpid())).c_str() );
+        SendCorrupt(sock);
+        send_StreamPacket(sock, (std::string("ccc.") + std::to_string(getpid())).c_str() );
+    }
+
 
 
     std::cout << "Sleeping before exit\n";
-    sleep(20);
+    sleep(10);
     //std::cout << "<\n";
     sock.LoopReadStop();
     if (th.joinable())  th.join();
