@@ -7,6 +7,7 @@
 #include "LoggerGlobal.h"
 #include "Logger.h"
 
+
 namespace  Filika
 {
     static const char *sfile = SOCK_PATH_DEFAULT;
@@ -20,6 +21,7 @@ namespace  Filika
 
     LSockLog &logger()
     {
+        //std::cout << "logger               --> " << sfile << std::endl;
         static LSockLog _glog (sfile);
         return _glog;
     }
@@ -30,3 +32,4 @@ namespace  Filika
         *p++ = '\0';
     }
 }
+

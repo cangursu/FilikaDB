@@ -125,20 +125,21 @@ std::uint32_t StreamPacket::PayloadPart(byte_t *buff, std::uint32_t lenBuff, std
 {
     if (false == Check()) return false;
 
-    std::uint32_t         len    = 0;
-    StreamPacket::byte_t *ptWalk = _buff  + g_lenMID;
+    std::uint32_t         lenRead    = 0;
+    std::uint32_t         lenPayload = 0;
+    StreamPacket::byte_t *ptWalk     = _buff  + g_lenMID;
 
-    std::memcpy((void*)&len, (void*)ptWalk, g_lenPLen);
+    std::memcpy((void*)&lenPayload, (void*)ptWalk, g_lenPLen);
     ptWalk += g_lenPLen;
 
-    if (len - offset > lenBuff)
-        len = lenBuff;
+    if ((lenRead = lenPayload - offset) > lenBuff)
+        lenRead = lenBuff;
+
     ptWalk += offset;
+    std::memcpy(buff, ptWalk, lenRead);
+    ptWalk += lenRead;
 
-    std::memcpy(buff, ptWalk, len);
-    ptWalk += len;
-
-    return len;
+    return lenRead;
 }
 
 std::uint32_t StreamPacket::Payload(byte_t *buff, std::uint32_t lenBuff)

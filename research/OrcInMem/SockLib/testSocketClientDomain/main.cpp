@@ -47,13 +47,10 @@ int main()
 {
     std::cout << "Domain Socket Client Test Suit V0.0\n";
  
-    const void *data  = "Test";
     const char *sname = "/home/postgres/.sock_rawtest";
 
     EchoClient<SocketDomain> sock1("EchoClient1");
     EchoClient<SocketDomain> sock2("EchoClient2");
-    sock1.SocketPath(sname);
-    sock2.SocketPath(sname);
 
     if (SocketResult::SR_SUCCESS != sock2.Init())
     {
@@ -66,7 +63,10 @@ int main()
         return -1;
     }
 
-
+    std::cout << "Connecting : " << sname << std::endl;
+    sock1.SocketPath(sname);
+    sock2.SocketPath(sname);
+    
     if (SocketResult::SR_SUCCESS != sock2.Connect())
     {
         std::cerr << "ERROR : Unable to Connect SocketClient - (" << errno <<  ") " << strerror(errno) << std::endl;
@@ -79,11 +79,14 @@ int main()
     }
 
 
+    const void *data = nullptr;
+    data  = "Test-DATA_1";
     if (SocketResult::SR_SUCCESS != sock2.Send(data, strlen((char*)data)))
     {
         std::cerr << "ERROR : Unable to Send data\n";
         return -3;
     }
+    data  = "Test-DATA_2";
     if (SocketResult::SR_SUCCESS != sock1.Send(data, strlen((char*)data)))
     {
         std::cerr << "ERROR : Unable to Send data\n";

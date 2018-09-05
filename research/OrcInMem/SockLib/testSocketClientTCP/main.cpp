@@ -105,7 +105,7 @@ int main()
             return -1;
         }
         sock[i].Port(5000);
-        sock[i].Adress("127.0.0.1");
+        sock[i].Address("127.0.0.1");
 
         if (SocketResult::SR_SUCCESS != sock[i].Connect())
         {

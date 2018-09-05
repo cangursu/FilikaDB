@@ -72,8 +72,8 @@ SocketResult SocketClient<TSocket>::Send(const void *data, std::uint64_t len)
 
     if (TSocket::IsGood() && len > 0)
     {
-        int  i = 0;
-        if (i = ::send(TSocket::fd(), data, len, 0) < 0)
+        ssize_t i = 0;
+        if (i = TSocket::Write(data, len) < 0)
         {
             OnErrorClient(res = SocketResult::SR_ERROR_SEND);
         }
@@ -126,7 +126,7 @@ SocketResult SocketClient<TSocket>::LoopRead()
             {
                 MemStream<std::uint8_t> stream;
 
-                ssize_t bytes = ::recv(TSocket::fd(), buff, buffLen, 0);
+                ssize_t bytes = TSocket::Read(buff, buffLen);
                 //std::cout << "bytes:" << bytes << std::endl;
 
                 if (bytes == 0)

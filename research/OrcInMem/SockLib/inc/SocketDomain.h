@@ -14,63 +14,47 @@
 #ifndef __SOCKET_DOMAIN_H__
 #define __SOCKET_DOMAIN_H__
 
-#include "SocketResult.h"
+#include "Socket.h"
 
-#include <sys/un.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-
-#include <iostream>
-
+#include <string>
 
 
 #define SOCK_PATH_DEFAULT "unix_sock.server"
 
 
 
-class SocketDomain
+class SocketDomain : public Socket
 {
 public:
 
-    SocketDomain(int fd, const char *name /*= "NA"*/);
     SocketDomain(const char *name = "NA");
-    SocketDomain(const SocketDomain &val) = delete;
+    SocketDomain(int fd, const char *name /*= "NA"*/);
+    SocketDomain(const SocketDomain &) = delete;
     SocketDomain(SocketDomain &&val);
 
-    virtual ~SocketDomain() ;
+    virtual ~SocketDomain();
 
     SocketDomain& operator=(SocketDomain &&s);
     SocketDomain& operator=(const SocketDomain &val) = delete;
 
-    SocketResult Init();
-    SocketResult Init(const char *path);
-    SocketResult InitServer(const char *path = nullptr);
-
-
-    int          Release() ;
+    SocketResult  Init();
+    SocketResult  Init(const char *path);
+    SocketResult  InitServer(const char *path = nullptr);
 
     // Parameters
-    const std::string &Name()                      { return _name; }
-    void         Name(const char *name)            { _name = name; }
-    void         SocketPath(const char *spath)     { strcpy(_addr.sun_path, spath);  _addr.sun_family = AF_UNIX; }
-    std::string  PrmDesc()                         { return std::move(std::string(_addr.sun_path)); }
-    SocketResult SetNonBlock();
+    void                SocketPath  (const char *spath)   { if (spath) _path = spath; }
+    const std::string & SocketPath  ()                    { return _path;             }
+    std::string         PrmDesc     ()                    { return _path;             }
 
-    bool         IsGood   ()                       { return _sock != -1;                                                      }
-    SocketResult Connect  ()                       { return (::connect(_sock, (struct sockaddr*) &_addr, sizeof (_addr)) == 0) ? SocketResult::SR_SUCCESS : SocketResult::SR_ERROR_CONNECT; }
-    SocketDomain Accept   ()                       { return std::move(SocketDomain(::accept(_sock, NULL, NULL), "client"));   }
-    int          AcceptFd ()                       { return ::accept(_sock, NULL, NULL);                                      }
-    ssize_t      Read     (void *pdata, size_t len);
-    ssize_t      Write    (const void *pdata, size_t len);
+    SocketResult        SetNonBlock ();
+    SocketResult        Connect     ();
+    SocketDomain        Accept      ();
+    int                 AcceptFd    ();
+    virtual ssize_t     Read        (void *pdata, size_t len);
+    virtual ssize_t     Write       (const void *pdata, size_t len);
 
-
-protected :
-    int fd() const { return _sock; }
 private:
-    int             _sock = -1;
-    sockaddr_un     _addr{AF_UNIX, SOCK_PATH_DEFAULT};
-
-    std::string     _name = "NA";
+    std::string  _path;// = SOCK_PATH_DEFAULT;
 };
 
 

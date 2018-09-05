@@ -1,6 +1,6 @@
 #!/bin/sh
 
-rm ./LoggerSender -f
+rm ./LoggerServer -f
 make clean all
 
 valgrind    --tool=memcheck         \
@@ -11,4 +11,4 @@ valgrind    --tool=memcheck         \
             --num-callers=20        \
             --track-fds=yes         \
             -v                      \
-         ./LoggerSender
+         ./LoggerServer

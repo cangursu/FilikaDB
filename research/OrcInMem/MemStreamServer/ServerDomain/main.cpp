@@ -277,6 +277,43 @@ SocketResult PacketConsumer<TQueue>::ListenLoop()
 
 
 
+class PacketEchoClient  : public  SocketClientPacket<SocketDomain>
+{
+    public:
+        PacketEchoClient(const char *name = "PacketEchoClient" )
+            : SocketClientPacket(name)
+        {
+        }
+        PacketEchoClient(int fd, const char *name)
+            : SocketClientPacket(fd, name)
+        {
+        }
+        virtual void OnRecvPacket(StreamPacket &&packet)
+        {
+            DisplayPacket(packet);
+
+            SocketResult res = SendPacket(packet);  //Echoing packet
+            std::cout << "Reflecting back -> res = " << SocketResultText(res) << std::endl;
+        }
+
+        void DisplayPacket(StreamPacket packet)
+        {
+            msize_t         pyLen = packet.PayloadLen();
+            const msize_t   buffLen = 128;
+            byte_t          buff [buffLen];
+
+            for (msize_t i = 0; i < pyLen; i += buffLen)
+            {
+                if (packet.PayloadPart(buff, buffLen, i) > 0)
+                {
+                    LOG_LINE_GLOBAL("ServerEcho", "Packet:", std::string((char*)buff, pyLen));
+                    std::cout << "Packet Reveived -> " << std::string((char*)buff, pyLen) << std::endl;
+                }
+            }
+        }
+};
+
+
 
 int main(int argc, char** argv)
 {
@@ -346,7 +383,7 @@ int main(int argc, char** argv)
 
 
 // Reciever Thread
-    SocketServerPacket<Queue<StreamPacket>, SocketDomain, SocketClientPacket<SocketDomain>>
+    SocketServerPacket<Queue<StreamPacket>, SocketDomain, PacketEchoClient>
             server( { ._sourceName = args._sourceChannel,
                       ._logName    = args._logChannel,
                       ._que        = queue  }                 );
@@ -359,7 +396,7 @@ int main(int argc, char** argv)
 
 
 
- 
+
 
     // **********  CLI  **********
     int keycode;

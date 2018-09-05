@@ -22,14 +22,14 @@
 #include <thread>
 
 
-class SocketClientPacketDisp : public SocketClientPacket<SocketDomain>
+class PacketEchoClient  : public  SocketClientPacket<SocketDomain>
 {
     public:
-        SocketClientPacketDisp(const char *name = "SocketClientPacketDisp" )
+        PacketEchoClient(const char *name = "PacketEchoClient" )
             : SocketClientPacket(name)
         {
         }
-        SocketClientPacketDisp(int fd, const char *name)
+        PacketEchoClient(int fd, const char *name)
             : SocketClientPacket(fd, name)
         {
         }
@@ -38,7 +38,7 @@ class SocketClientPacketDisp : public SocketClientPacket<SocketDomain>
             DisplayPacket(packet);
 
             SocketResult res = SendPacket(packet);  //Echoing packet
-            LOG_LINE_GLOBAL("ServerEcho", "REPLYING res = ", SocketResultText(res));
+            std::cout << "Reflecting back -> res = " << SocketResultText(res) << std::endl;
         }
 
         void DisplayPacket(StreamPacket packet)
@@ -59,14 +59,14 @@ class SocketClientPacketDisp : public SocketClientPacket<SocketDomain>
 };
 
 
-class PacketServerEcho : public SocketServer<SocketDomain, SocketClientPacketDisp>
+class PacketEchoServer : public SocketServer<SocketDomain, PacketEchoClient>
 {
     public:
-        PacketServerEcho()
-            : SocketServer<SocketDomain, SocketClientPacketDisp>("ServerEcho")
+        PacketEchoServer()
+            : SocketServer<SocketDomain, PacketEchoClient>("ServerEcho")
         {
         }
-        virtual void OnAccept(const SocketClientPacketDisp &sock, const sockaddr &addr)
+        virtual void OnAccept(const PacketEchoClient &sock, const sockaddr &addr)
         {
             std::string host, serv;
             if (true == NameInfo(addr, host, serv))
@@ -75,12 +75,8 @@ class PacketServerEcho : public SocketServer<SocketDomain, SocketClientPacketDis
                 ClientCount();
             }
         }
-        virtual void OnRecv(/*const*/ SocketClientPacketDisp &sock, MemStream<uint8_t> &&stream)
-        {
-            sock.OnRecv(std::move(stream));
-        }
 
-        virtual void OnDisconnect  (const SocketClientPacketDisp &sock)
+        virtual void OnDisconnect  (const PacketEchoClient &sock)
         {
             LOG_LINE_GLOBAL("ServerEcho", "Client Disconnected.");
             ClientCount();
@@ -98,12 +94,12 @@ class PacketServerEcho : public SocketServer<SocketDomain, SocketClientPacketDis
 
         void ClientCount()
         {
-            LOG_LINE_GLOBAL("ServerEcho", "Client count = ", SocketServer<SocketDomain, SocketClientPacketDisp>::ClientCount());
+            LOG_LINE_GLOBAL("ServerEcho", "Client count = ", SocketServer<SocketDomain, PacketEchoClient>::ClientCount());
         }
 };
 
 
-
+/*
 class SenderTestEcho : public SocketDomain
 {
 public:
@@ -113,7 +109,7 @@ public:
     bool init(const char *sockPath)
     {
         SocketDomain::SocketPath(sockPath);
-        if (SocketResult::SR_SUCCESS != SocketDomain::Init())
+        if (SocketResult::SR_SUCCESS != Init())
         {
             std::cerr << "ERROR: Unable to init SocketDomain \n";
             return false;
@@ -125,7 +121,7 @@ public:
         }
     }
 };
-
+*/
 
 int main(int argc, char** argv)
 {
@@ -139,8 +135,7 @@ int main(int argc, char** argv)
     LOG_LINE_GLOBAL("ServerEcho", "ver 0.0.0.0");
 
 
-
-    PacketServerEcho server/*(que)*/;
+    PacketEchoServer server;
     std::cout << "Using Ech Server : " << ssrv << std::endl;
     LOG_LINE_GLOBAL("ServerEcho", "Using Echo Server : ", ssrv);
     server.SocketPath(ssrv);
