@@ -6,14 +6,12 @@
 
 #include "MemStreamGlobals.h"
 
-//#include <stdint.h>
 #include <cstring>
 #include <string>
 #include <sstream>
 #include <deque>
-
-
 #include <iostream>
+//#include <iomanip>
 
 
 
@@ -127,10 +125,63 @@ public:
     {
         std::stringstream ss;
 
-        ss << /*GetDate() <<*/ "Dump ---> " << msg    << std::endl;
-        ss << /*GetDate() <<*/ "Size   :  " << Size() << std::endl;
-        ss << /*GetDate() <<*/ "Length :  " << Len()  << std::endl;
-        ss << /*GetDate() <<*/ "Dump ---< ";
+        ss << "Dump ---> " << msg    << std::endl;
+        ss << "Size   :  " << Size() << std::endl;
+        ss << "Length :  " << Len()  << std::endl;
+        ss << "Data   :  \n";
+        {
+            const int line = 16;
+            const int buffTmpSize = 64;
+
+            long newLinePos   = ss.tellp();
+            long newLineCount = 1;
+
+            uint8_t buffRead[line];
+            char    buffTmp[buffTmpSize];
+            for (std::uint64_t offset = 0, len = Len(); offset < len; offset += line)
+            {
+                memset(buffRead, 0, line);
+                read(buffRead, line, offset);
+
+
+                // ......................................................
+                // Unable to include <iomanip>  ... have to use snprintf :(
+                // ......................................................
+                int j = snprintf(buffTmp, buffTmpSize, "%08d - ", offset);
+                for (int i = 0; (i < 16) && (i + offset < len); ++i)
+                    j += snprintf(buffTmp + j, buffTmpSize, "%02x ", (int)buffRead[i]);
+                ss << buffTmp;
+// ::::::::::::::::::::::::::::
+//              ss << std::dec << std::setfill(' ') << std::setw(8) << offset << " - ";
+//              for (int i = 0; (i < 16) && (i + offset < len); ++i)
+//                  ss << std::hex << std::setfill('0') << std::setw(2) << (int)buff[i] << " ";
+// ::::::::::::::::::::::::::::
+                long nlp = ss.tellp();
+                for(long i = nlp - newLinePos; i < 64; ++i)
+                    ss << " ";
+
+                for (int i = 0; (i < 16) && (i + offset < len); ++i)
+                {
+                    switch (buffRead[i])
+                    {
+                        case '\0' : ss << "NL"; break;
+                        case '\n' : ss << "LF"; break;
+                        case '\t' : ss << "TB"; break;
+                        case '\v' : ss << "TB"; break;
+                        case '\b' : ss << "BS"; break;
+                        case '\r' : ss << "CR"; break;
+                        default   : snprintf(buffTmp, buffTmpSize, "%1c", buffRead[i]); ss << buffTmp;
+                                    //ss << /* :::::::::::::::::::::  std::setw(1) << ::::::::::::::::::::::::::: */ buffRead[i];
+                    }
+                    ss << " ";
+                }
+                ss << std::endl;
+
+                newLinePos = ss.tellp();
+                newLineCount++;
+            }
+        }
+        ss << /*GetDate() <<*/ "Dump ---<\n";
 
         return std::move(ss.str());
     }

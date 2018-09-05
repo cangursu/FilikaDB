@@ -22,6 +22,7 @@ extern "C" {
  *
  */
 
+
 PGMemPool &PGMemPool::Pool()
 {
     static PGMemPool s_pool;

@@ -6,56 +6,43 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <iostream>
+#include <cstring>
+#include <netdb.h>
 
 
 SocketTCP::SocketTCP(const char *name /*= "NA"*/)
-    : _name (name)
+    : Socket(name)
 {
 }
-SocketTCP::SocketTCP(int s, const char *name)
-    : _sock (s)
-    , _name (name)
+SocketTCP::SocketTCP(int fd, const char *name)
+    : Socket(fd, name)
 {
 }
 
 SocketTCP::SocketTCP(SocketTCP &&s)
-    : _sock (s._sock)
-    , _name (s._name)
+    : Socket(std::move(s))
 {
-    s._sock = -1;
 }
 
 SocketTCP::~SocketTCP()
 {
-    Release();
 }
 
 SocketTCP& SocketTCP::operator=(SocketTCP &&s)
 {
-    _sock = s._sock;
-    _name = s._name;
-
-    s._sock = -1;
+    Socket::operator = (std::move(s));
     return *this;
 }
 
-SocketResult SocketTCP::Init ()
+
+SocketResult SocketTCP::Init()
 {
-    Release();
-
-    SocketResult res = SocketResult::SR_SUCCESS;
-    if ((_sock = socket(AF_INET, SOCK_STREAM, 0)) == -1)
-    {
-        std::cerr << "ERROR : Socket\n";
-        res = SocketResult::SR_ERROR;
-    }
-
-    return res;
+    return Socket::Init(AF_INET, SOCK_STREAM);
 }
 
 SocketResult SocketTCP::InitServer()
 {
-    SocketResult res = Init();
+    SocketResult res = Socket::Init(AF_INET, SOCK_STREAM);
 
     if (SocketResult::SR_SUCCESS == res)
     {
@@ -77,17 +64,6 @@ SocketResult SocketTCP::InitServer()
     }
 
     return res;
-}
-
-
-void SocketTCP::Release()
-{
-    SocketResult res = SocketResult::SR_SUCCESS;
-    if (-1 != _sock)
-    {
-        if (-1 == ::close(_sock)) res = SocketResult::SR_ERROR;
-        _sock = -1;
-    }
 }
 
 SocketResult SocketTCP::Connect()
@@ -114,7 +90,7 @@ SocketResult SocketTCP::SetNonBlock()
 {
     SocketResult res = SocketResult::SR_ERROR;
 
-    int flags = fcntl(_sock, F_GETFL, 0);
+    int flags = fcntl(fd(), F_GETFL, 0);
     if (-1 == flags)
     {
         perror("fcntl");
@@ -122,7 +98,7 @@ SocketResult SocketTCP::SetNonBlock()
     }
 
     flags |= O_NONBLOCK;
-    if (-1 == fcntl(_sock, F_SETFL, flags))
+    if (-1 == fcntl(fd(), F_SETFL, flags))
     {
         perror("fcntl");
         return SocketResult::SR_ERROR;
@@ -131,6 +107,59 @@ SocketResult SocketTCP::SetNonBlock()
     return SocketResult::SR_SUCCESS;
 }
 
+ssize_t SocketTCP::Read  (void *pdata, size_t len)
+{
+    //std::cout << "SocketTCP(" << Name() << ")::Read ->   fd:"<< fd() << " - len:" << len << std::endl;
+    ssize_t bytes = ::read(fd(), pdata, len);
+    //std::cout << "SocketTCP(" << Name() << ")::Read -<   fd:"<< fd() << " - bytes:" << bytes << std::endl;
+
+    if (bytes < 0)
+    {
+        //std::cerr << "SocketTCP(" << Name() << ")::Read  ERROR - " << ErrnoText(errno) <<  "(" << errno << ") " << strerror(errno) << std::endl;
+        switch(errno)
+        {
+            case EAGAIN :
+//            case EWOULDBLOCK :
+//                std::cerr << "SocketTCP(" << Name() << ")::Read  ERROR - " << ErrnoText(errno) <<  "(" << errno << ") " << strerror(errno) << std::endl;
+                break;
+            default :
+                std::cerr << "SocketTCP(" << Name() << ")::Read  ERROR - " << ErrnoText(errno) <<  "(" << errno << ") " << strerror(errno) << std::endl;
+                Release();
+        }
+    }
+    else if (bytes == 0)
+    {
+        std::cerr << "SocketTCP(" << Name() << ")::Read  Peer disconnected\n";
+        Release();
+    }
+
+    return bytes;
+}
+
+
+ssize_t SocketTCP::Write (const void *pdata, size_t len)
+{
+    //std::cout << "SocketTCP(" << Name() << ")::Write ->   fd:"<< fd() << " - len:" << len << std::endl;
+
+    ssize_t bytes = -1;
+    if (false == IsGood())
+        errno = EBADF;
+    else
+        bytes = ::write(fd(), pdata, len);
+
+
+    if (bytes == -1)
+    {
+        std::cerr << "SocketTCP(" << Name() << ")::Write  ERROR - (" << errno << ") " << strerror(errno) << std::endl;
+        Release();
+    }
+    else if (bytes == 0)
+    {
+        std::cerr << "SocketTCP(" << Name() << ")::Read  Peer disconnected\n";
+        Release();
+    }
+    return bytes;
+}
 
 
 

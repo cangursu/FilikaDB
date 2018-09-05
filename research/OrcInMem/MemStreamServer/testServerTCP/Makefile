@@ -15,7 +15,7 @@ CC=g++
 
 #CFLAGS= -ggdb -w -Wall -fPIC -std=c++11
 #CFLAGS= -g -O3 -w -Wall -fPIC -std=c++17
-CFLAGS= -ggdb -O0 -w -Wall -fPIC -std=c++17 -rdynamic  \
+CFLAGS= -ggdb -O0 -w -Wall -Werror -fPIC -std=c++17 -rdynamic  \
         -DGIT_VERSION=\"$(GIT_VERSION)\"  \
         -DGIT_COMMIT=\"$(GIT_COMMIT)\"    \
         -DGIT_DATE=\"$(GIT_DATE)\"        \

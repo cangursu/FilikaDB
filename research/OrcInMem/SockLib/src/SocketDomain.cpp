@@ -12,95 +12,73 @@
  */
 
 #include "SocketDomain.h"
-#include "SocketResult.h"
+#include "SocketUtils.h"
 
 #include <cstring>
 #include <unistd.h>
 #include <iostream>
 #include <fcntl.h>
-
+#include <sys/un.h>
+#include <sys/socket.h>
 
 
 
 SocketDomain::SocketDomain(const char *name /*= "NA"*/)
-        : _name(name)
+        : Socket(name)
 {
-    //std::cout << "SocketDomain(" << _name << ")::SocketDomain sock:" << _sock << std::endl;
-    _addr.sun_family = AF_UNIX;
-//    strcpy(_addr.sun_path, path);
 }
 
 SocketDomain::SocketDomain(int fd, const char *name /*= "NA"*/)
-    : _sock(fd)
-    , _name(name)
+    : Socket(fd, name)
 {
-    _addr.sun_family = AF_UNIX;
 }
 
 SocketDomain::SocketDomain(SocketDomain &&val)
 {
-    //std::cout << "SocketDomain(" << val._name << ")::SocketDomain && sock:" << val._sock << std::endl;
-
-    _sock = val._sock;
-    _addr = val._addr;
-    _name = val._name;
-
-    val._sock = -1;
+    operator = (std::move(val));
 }
 
 
 SocketDomain::~SocketDomain()
 {
-    //std::cout << "SocketDomain(" << _name << ")::~SocketDomain sock:" << _sock  <<  std::endl;
     Release();
 }
 
 SocketDomain& SocketDomain::operator=(SocketDomain &&s)
 {
-    _sock = s._sock;
-    _addr = s._addr;
-    _name = s._name;
-
-    s._sock = -1;
+    SocketPath(s._path.c_str());
+    Socket::operator = (std::move(s));
     return *this;
 }
 
 SocketResult SocketDomain::Init()
 {
-    //std::cout << "SocketDomain(" << _name << ")::Init sock:" << _sock << std::endl;
-    Release();
-
-    _sock = ::socket(AF_UNIX, SOCK_STREAM, 0);
-    //std::cout << "SocketDomain(" << _name << ")::Init sock:" << _sock << std::endl;
-
-    return (_sock == -1) ? SocketResult::SR_ERROR : SocketResult::SR_SUCCESS;
+    return Socket::Init(AF_UNIX, SOCK_STREAM);
 }
 
 SocketResult SocketDomain::Init(const char *path)
 {
-    //std::cout << "SocketDomain(" << _name << ")::Init sock:" << _sock << std::endl;
-    SocketResult res = Init();
-
-    _addr.sun_family = AF_UNIX;
-    strcpy(_addr.sun_path, path);
-
-    return res;
+    SocketPath(path);
+    return Init();
 }
 
 SocketResult SocketDomain::InitServer(const char *path /*= nullptr*/)
 {
-    //std::cout << "SocketDomain(" << _name << ")InitServer sock:" << _sock << std::endl;
+    //std::cout << "SocketDomain(" << Name() << ")InitServer sock:" << fd() << std::endl;
     SocketResult res = SocketResult::SR_ERROR;
 
     if (SocketResult::SR_SUCCESS == Init())
     {
-        _addr.sun_family = AF_UNIX;
-        if (path) std::strcpy(_addr.sun_path, path);
+        //_addr.sun_family = AF_UNIX;
 
-        unlink(_addr.sun_path);
-        if (0 == ::bind(_sock, (struct sockaddr *) &_addr, sizeof (_addr)))
+        sockaddr_un addr { .sun_family = AF_UNIX };
+        if (path)  _path = path;
+        std::strcpy(addr.sun_path, _path.c_str());
+
+        unlink(_path.c_str());
+        if (0 == ::bind(fd(), (struct sockaddr *) &addr, sizeof (addr)))
         {
-            if (0 == ::listen(_sock, 150))
+            if (0 == ::listen(fd(), 150))
                 res = SocketResult::SR_SUCCESS;
         }
     }
@@ -108,25 +86,31 @@ SocketResult SocketDomain::InitServer(const char *path /*= nullptr*/)
     return res;
 }
 
-
-int SocketDomain::Release()
+SocketResult SocketDomain::Connect  ()
 {
-//    std::cout << "SocketDomain(" << _name << ")::Release sock:" << _sock << std::endl;
-    int rc = 0;
-    if (_sock != -1)
-    {
-        //std::cout << "SocketDomain(" << _name << ") closing sock:" << _sock << std::endl;
-        rc = ::close(_sock);
-        _sock = -1;
-    }
-    return rc;
+    sockaddr_un addr = {};
+    memset(&addr, 0, sizeof(addr));
+
+    addr.sun_family = AF_UNIX;
+    std::strcpy(addr.sun_path, _path.c_str());
+    return (::connect(fd(), (struct sockaddr*) &addr, sizeof (sockaddr_un)) == 0) ? SocketResult::SR_SUCCESS : SocketResult::SR_ERROR_CONNECT;
+}
+
+SocketDomain SocketDomain::Accept   ()
+{
+    return std::move(SocketDomain(::accept(fd(), NULL, NULL), "ClientDomain"));
+}
+
+int SocketDomain::AcceptFd ()
+{
+    return ::accept(fd(), NULL, NULL);
 }
 
 SocketResult SocketDomain::SetNonBlock()
 {
     SocketResult res = SocketResult::SR_ERROR;
 
-    int flags = fcntl(_sock, F_GETFL, 0);
+    int flags = fcntl(fd(), F_GETFL, 0);
     if (-1 == flags)
     {
         std::cerr << "ERROR : fcntl GETFL\n";
@@ -134,7 +118,7 @@ SocketResult SocketDomain::SetNonBlock()
     }
 
     flags |= O_NONBLOCK;
-    if (-1 == fcntl(_sock, F_SETFL, flags))
+    if (-1 == fcntl(fd(), F_SETFL, flags))
     {
         std::cerr << "ERROR : fcntl SETFL\n";
         return SocketResult::SR_ERROR;
@@ -146,18 +130,27 @@ SocketResult SocketDomain::SetNonBlock()
 
 ssize_t SocketDomain::Read(void *pdata, size_t lenData)
 {
-    //std::cout << "SocketDomain(" << _name << ")::Read --->  sock:" << _sock << std::endl;
+    //std::cout << "SocketDomain(" << Name() << ")::Read --->  sock:" << fd() << std::endl;
 
-    ssize_t bytes = ::read(_sock, pdata, lenData);
+    ssize_t bytes = ::read(fd(), pdata, lenData);
     if (bytes < 0)
     {
-        std::cerr << "SocketDomain(" << _name << ")::Read  ERROR - (" << errno << ") " << strerror(errno) << std::endl;
-        Release();
+        switch(errno)
+        {
+            case EAGAIN :
+//            case EWOULDBLOCK :
+//                std::cerr << "SocketDomain(" << Name() << ")::Read  ERROR - " << ErrnoText(errno) <<  "(" << errno << ") " << strerror(errno) << std::endl;
+                break;
+            default :
+                std::cerr << "SocketDomain(" << Name() << ")::Read  ERROR - "  << ErrnoText(errno) <<  "(" << errno << ") " << strerror(errno) << std::endl;
+                Release();
+        }
+
     }
 
     if (bytes == 0)
     {
-        std::cerr << "SocketDomain(" << _name << ")::Read  Peer disconnected\n";
+        std::cerr << "SocketDomain(" << Name() << ")::Read  Peer disconnected\n";
         Release();
     }
 
@@ -166,18 +159,18 @@ ssize_t SocketDomain::Read(void *pdata, size_t lenData)
 
 ssize_t  SocketDomain::Write(const void *pdata, size_t len)
 {
-    //std::cout << "SocketDomain(" << _name << ")::Write --->  sock:" << _sock << ", len:" << len << std::endl;
-    ssize_t bytes = ::write(_sock, pdata, len);
-    //std::cout << "SocketDomain(" << _name << ")::Write ---<  bytes:" << bytes << std::endl;
+    //std::cout << "SocketDomain(" << Name() << ")::Write --->  sock:" << fd() << ", len:" << len << std::endl;
+    ssize_t bytes = ::write(fd(), pdata, len);
+    //std::cout << "SocketDomain(" << Name() << ")::Write ---<  bytes:" << bytes << std::endl;
 
     if (bytes == -1)
     {
-        std::cerr << "SocketDomain(" << _name << ")::Write  ERROR - (" << errno << ") " << strerror(errno) << std::endl;
+        std::cerr << "SocketDomain(" << Name() << ")::Write  ERROR - (" << ErrnoText(errno) << ") " << strerror(errno) << std::endl;
         Release();
     }
     if (bytes == 0)
     {
-        std::cerr << "SocketDomain(" << _name << ")::Read  Peer disconnected\n";
+        std::cerr << "SocketDomain(" << Name() << ")::Read  Peer disconnected\n";
         Release();
     }
 

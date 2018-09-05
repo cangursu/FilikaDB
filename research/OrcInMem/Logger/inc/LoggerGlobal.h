@@ -75,7 +75,7 @@ void LogLineGlobalFormatPrefix(std::ostringstream &os, const char *desc, int lin
     os << std::string(funcName, std::strlen(funcName) < widthFunc ? std::strlen(funcName) : widthFunc) << " - ";
 }
 
-
+/*
 template<typename ... Args>
 void LogLineGlobalFormat(const char *desc, int lineNo, const char *fname, const char *funcName, Args ... args)
 {
@@ -84,12 +84,12 @@ void LogLineGlobalFormat(const char *desc, int lineNo, const char *fname, const 
     LogLineGlobalFormatPrefix(os, desc, lineNo, fname, funcName);
     LogLineGlobalFormat(os, args ...);
 
-    if (Filika::FILIKA_RESULT::FR_ERROR == Filika::logger().SendRaw())
+    if (Filika::FILIKA_RESULT::FR_ERROR == Filika::logger().___xxx___SendRaw())
     {
         std::cerr << "ERROR - Log : Unable to send log\n";
     }
 }
-
+*/
 
 template<typename ... Args>
 void LogLineGlobalFormatPacket(const char *desc, int lineNo, const char *fname, const char *funcName, Args ... args)
@@ -99,16 +99,16 @@ void LogLineGlobalFormatPacket(const char *desc, int lineNo, const char *fname, 
     LogLineGlobalFormatPrefix(os, desc, lineNo, fname, funcName);
     LogLineGlobalFormat(os, args ...);
 
-    if (Filika::FILIKA_RESULT::FR_ERROR == Filika::logger().SendPacket())
+    if (/*SocketResult::SR_SUCCESS != */ 0 > (int) Filika::logger().SendPacket())
     {
-        std::cerr << "ERROR - Log : Unable to send log\n";
+        std::cerr << "ERROR - Log : Unable to send log packet\n";
     }
 }
 
 
 
 #define LOG_LINE_GLOBAL(desc, ...)      LogLineGlobalFormatPacket(desc, __LINE__, __FILENC__, __func__, ## __VA_ARGS__)
-#define LOG_LINE_GLOBAL_PACK(desc, ...) LogLineGlobalFormatPacket(desc, __LINE__, __FILENC__, __func__, ## __VA_ARGS__)
+//#define LOG_LINE_GLOBAL_PACK(desc, ...) LogLineGlobalFormatPacket(desc, __LINE__, __FILENC__, __func__, ## __VA_ARGS__)
 
 
 #endif // __LOGGER_GLOBAL_H__

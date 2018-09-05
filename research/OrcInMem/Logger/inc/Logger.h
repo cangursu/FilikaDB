@@ -49,13 +49,6 @@
 
 namespace  Filika
 {
-    enum FILIKA_RESULT
-    {
-        FR_SUCCESS =  0,
-        FR_ERROR   = -1
-    };
-
-
 
 
 #ifndef __LOG_H__
@@ -193,14 +186,13 @@ class FILELOG_DECLSPEC LSockLog : public LogStream,
     public :
         LSockLog(const char *path = SOCK_PATH_DEFAULT, bool doConnect = true);
         ~LSockLog();
-        
-        FILIKA_RESULT SendRaw();
-        FILIKA_RESULT SendPacket();
+
+        SocketResult SendRaw();
+        SocketResult SendPacket();
 
 private :
 
-        bool _doConnect;
-        FILIKA_RESULT SendRaw(const void *p, int l);
+        SocketResult SendRaw(const void *p, int l);
 };
 
 
