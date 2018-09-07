@@ -23,7 +23,6 @@
 
 
 
-//#include "SocketTCP.h"
 #include "SocketServer.h"
 #include "SocketClient.h"
 #include "SocketDomain.h"
@@ -40,27 +39,12 @@ class EchoServer : public SocketServer<TSockSrv, TSockCln>
         {
         }
 
-
         virtual void OnAccept(const TSockCln &sock, const sockaddr &addr)
         {
             std::cout << "Connection Accepted  \n";
             ClientCount();
         }
-/*
-        virtual void OnRecv(TSockCln &sock, MemStream<std::uint8_t> &&stream)
-        {
-            const int buffLen = 128;
-            char buff[buffLen];
 
-            for (std::uint8_t i = 0, readed = 0, len = stream.Len(); i < len; i += readed)
-            {
-                readed = stream.read(buff, buffLen-1, i);
-                buff[readed] = '\0';
-                std::cout << buff;
-            }
-            std::cout << std::endl;
-        }
-*/
         virtual void OnDisconnect  (const TSockCln &sock)
         {
             std::cout << "Client Disconnected. \n";
@@ -129,7 +113,8 @@ int main()
 
     if (SocketResult::SR_ERROR == srv.Init())
     {
-        perror("Unable to initialize Echo Server");
+        std::cerr << "Unable to initialize Echo Server\n";
+        return -1;
     }
 
     srv.LoopListen();

@@ -16,7 +16,7 @@
 
 #include "SocketResult.h"
 #include "MemStream.h"
-//#include "SocketUtils.h"
+#include "SocketUtils.h"
 
 
 #include <string>
@@ -39,7 +39,7 @@ class SocketClient : public TSocket
 
         SocketResult Connect ();
         SocketResult Send    (const void *data, std::uint64_t len);
-        SocketResult Send    (MemStream<std::uint8_t> &&)   ;
+        SocketResult Send    (const MemStream<std::uint8_t> &)    ;
 
         SocketResult LoopRead();
         SocketResult LoopReadStop() { _exit = true; }
@@ -87,7 +87,7 @@ SocketResult SocketClient<TSocket>::Send(const void *data, std::uint64_t len)
 }
 
 template <typename TSocket>
-SocketResult SocketClient<TSocket>::Send(MemStream<std::uint8_t> &&stream)
+SocketResult SocketClient<TSocket>::Send(const MemStream<std::uint8_t> &stream)
 {
     SocketResult result = SocketResult::SR_SUCCESS;
 
@@ -109,7 +109,7 @@ SocketResult SocketClient<TSocket>::Send(MemStream<std::uint8_t> &&stream)
 template <typename TSocket>
 SocketResult SocketClient<TSocket>::LoopRead()
 {
-    std::cout << "Enter LoopRead - SocketClient<TSocket>::\n";
+    std::cout << "Enter LoopRead - SocketClient<TSocket>\n";
     SocketResult result = SocketResult::SR_ERROR_AGAIN;
     if (TSocket::IsGood())
     {
@@ -121,13 +121,13 @@ SocketResult SocketClient<TSocket>::LoopRead()
         else
         {
             const int buffLen = 512;
-            uint8_t buff[buffLen];
+            uint8_t   buff[buffLen];
             while ((_exit == false) && (result == SocketResult::SR_ERROR_AGAIN))
             {
                 MemStream<std::uint8_t> stream;
 
                 ssize_t bytes = TSocket::Read(buff, buffLen);
-                //std::cout << "bytes:" << bytes << std::endl;
+                //std::cout << "bytes:" << bytes << " errno:" << ErrnoText(errno) << std::endl;
 
                 if (bytes == 0)
                 {
@@ -151,7 +151,10 @@ SocketResult SocketClient<TSocket>::LoopRead()
         }
     }
 
-    std::cout << "Leaveing LoopRead - SocketClient<TSocket>::\n";
+    if ( (_exit == true) && (result == SocketResult::SR_ERROR_AGAIN) )
+        result = SocketResult::SR_SUCCESS; //Gracefully quit
+
+    std::cout << "Leaveing LoopRead - SocketClient<TSocket> - " << SocketResultText(result) << std::endl;
     return result;
 }
 
