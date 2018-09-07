@@ -40,28 +40,28 @@ class SocketServer  : public TSocketSrv
     public:
         SocketServer(const char *name) : TSocketSrv(name) {}
 
-        SocketResult    Init();
-        SocketResult    Release();
+        SocketResult      Init();
+        SocketResult      Release();
 
-        SocketResult    LoopListenPrepare();
-        SocketResult    LoopListenSingleShot();
-        SocketResult    LoopListen();
-        void            LoopListenStop() { _exit = true; }
+        SocketResult      LoopListenPrepare();
+        SocketResult      LoopListenSingleShot();
+        SocketResult      LoopListen();
+        void              LoopListenStop()     { _exit = true; }
 
-        void            Accept();
-        virtual void    Recv(int fd);
-        void            Disconnect(int fd);
+        void              Accept();
+        virtual void      Recv(int fd);
+        void              Disconnect(int fd);
 
-        std::uint64_t   ClientCount() { return _clientList.size(); }
-
+        std::uint64_t     ClientCount() const        { return _clientList.size();        }
+        const TSocketClt *ClientByIdx(int idx) const { return _clientList.getByIdx(idx); }
 
     public:
         // Events
-        virtual void OnAccept      (const TSocketClt &, const sockaddr &)           = 0;
-        virtual void OnRecv        (TSocketClt &,       MemStream<std::uint8_t> &&) = delete;
-        virtual void OnDisconnect  (const TSocketClt &)                             = 0;
-        virtual void OnErrorClient (SocketResult)                                   = 0;
-        virtual void OnErrorServer (SocketResult)                                   = 0;
+        virtual void  OnAccept      (const TSocketClt &, const sockaddr &)           = 0;
+        virtual void  OnRecv        (TSocketClt &,       MemStream<std::uint8_t> &&) = delete;
+        virtual void  OnDisconnect  (const TSocketClt &)                             = 0;
+        virtual void  OnErrorClient (SocketResult)                                   = 0;
+        virtual void  OnErrorServer (SocketResult)                                   = 0;
 
     protected :
         int epoll() const  { return _epoll; }
@@ -88,22 +88,33 @@ class SocketServer  : public TSocketSrv
                     _size++;
                     return true;
                 }
-                TSocketClt* get(int fd)
+                TSocketClt* getByFD(int fd)
                 {
                     auto it = _map.find(fd);
                     if (it != _map.cend())
                         return &it->second;
                     return nullptr;
                 }
-                const TSocketClt* get(int fd) const
+                const TSocketClt* getByFC(int fd) const
                 {
                     auto it = _map.find(fd);
                     if (it != _map.cend())
                         return &it->second;
                     return nullptr;
+                }
+                const TSocketClt* getByIdx(std::uint64_t idx) const //Beware to use this, CPU abuser...
+                {
+                    auto it    = _map.cbegin();
+                    auto itEnd = _map.cend();
+                    int count  = 0;
+
+                    while(it != itEnd && count++ < idx)
+                        ++it;
+
+                    return it == itEnd ? nullptr : &(it->second);
                 }
 
-                std::uint64_t size () { return _size; }
+                std::uint64_t size () const { return _size; }
             private :
                 std::unordered_map<int, TSocketClt> _map;
                 std::uint64_t                       _size = 0;
@@ -113,10 +124,6 @@ class SocketServer  : public TSocketSrv
         int                 _epoll = -1;
         std::atomic<bool>   _exit  = false;
 };
-
-
-
-
 
 
 template <typename TSocketSrv, typename TSocketClt>
@@ -142,6 +149,7 @@ SocketResult SocketServer<TSocketSrv, TSocketClt>::Init ()
     return res;
 }
 
+
 template <typename TSocketSrv, typename TSocketClt>
 SocketResult SocketServer<TSocketSrv, TSocketClt>::Release()
 {
@@ -150,7 +158,7 @@ SocketResult SocketServer<TSocketSrv, TSocketClt>::Release()
         ::close(_epoll);
         _epoll = -1;
     }
-    TSocketSrv::Release();
+    return TSocketSrv::Release();
 }
 
 
@@ -225,19 +233,23 @@ SocketResult SocketServer<TSocketSrv, TSocketClt>::LoopListenSingleShot()
     return res;
 }
 
+
 template <typename TSocketSrv, typename TSocketClt>
 SocketResult SocketServer<TSocketSrv, TSocketClt>::LoopListen()
 {
-    LoopListenPrepare();
-    std::cout << "Packet Server Listen Loop Entered\n";
-    while(_exit == false)
+    SocketResult res = LoopListenPrepare();
+    if (SocketResult::SR_SUCCESS == res)
     {
-        LoopListenSingleShot();
+        std::cout << "Packet Server Listen Loop Entered\n";
+        while(_exit == false)
+        {
+            res = LoopListenSingleShot();
+        }
     }
     std::cout << "Packet Server Listen Loop Quitted\n";
+
+    return res;
 }
-
-
 
 
 template <typename TSocketSrv, typename TSocketClt>
@@ -288,7 +300,7 @@ void SocketServer<TSocketSrv, TSocketClt>::Recv(int fd)
     uint8_t                 buffTmp[buffLen] = "";
     MemStream<std::uint8_t> stream;
 
-    TSocketClt *clt = _clientList.get(fd);
+    TSocketClt *clt = _clientList.getByFD(fd);
     if (nullptr == clt)
     {
         OnErrorServer(SocketResult::SR_ERROR_NOTCLIENT);

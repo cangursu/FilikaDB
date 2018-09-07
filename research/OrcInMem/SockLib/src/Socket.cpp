@@ -51,5 +51,6 @@ SocketResult Socket::Release()
         if (-1 == ::close(_sock)) res = SocketResult::SR_ERROR;
         _sock = -1;
     }
+    return res;
 }
 
