@@ -20,15 +20,7 @@
 #include <iostream>
 
 
-/*
-const std::uint32_t  StreamPacket::s_lenMID         = 4;
-const std::uint32_t  StreamPacket::s_lenDLen        = 4;
-const std::uint32_t  StreamPacket::s_lenCRC         = 4;
-
-const std::uint32_t  StreamPacket::s_lenMaxBuffer   = _16K;
-const std::uint32_t  StreamPacket::s_lenMaxPayload  = StreamPacket::s_lenMaxBuffer - (StreamPacket::s_lenCRC + StreamPacket::s_lenDLen + StreamPacket::s_lenMID);
-*/
-const std::string    StreamPacket::s_mid            = "MYSF";
+const std::string    StreamPacket::s_mid   = "MYSF";
 
 
 StreamPacket::StreamPacket()

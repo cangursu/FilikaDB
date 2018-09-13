@@ -30,15 +30,18 @@
 #define  _4K   (4*_1K)
 #define _16K   (16*_1K)
 
-const std::uint32_t  g_posMID         = 0;
-const std::uint32_t  g_lenMID         = 4;
-const std::uint32_t  g_posPLen        = g_posMID + g_lenMID;
-const std::uint32_t  g_lenPLen        = 4;
-const std::uint32_t  g_posPayload     = g_posPLen + g_lenPLen;
-const std::uint32_t  g_lenCRC         = 4;
 
-const std::uint32_t  g_lenMaxBuffer   = _16K;
-const std::uint32_t  g_lenMaxPayload  = g_lenMaxBuffer - (g_lenCRC + g_lenPLen + g_lenMID);
+constexpr std::uint32_t  g_posMID              = 0;
+constexpr std::uint32_t  g_lenMID              = 4;
+constexpr std::uint32_t  g_posPLen             = g_posMID + g_lenMID;
+constexpr std::uint32_t  g_lenPLen             = 4;
+constexpr std::uint32_t  g_posPayload          = g_posPLen + g_lenPLen;
+constexpr std::uint32_t  g_lenCRC              = 4;
+
+constexpr std::uint32_t  g_lenOverhead         = g_lenCRC + g_lenPLen + g_lenMID;
+constexpr std::uint32_t  g_lenMaxBuffer        = _16K;
+constexpr std::uint32_t  g_lenMaxPayload       = g_lenMaxBuffer - g_lenOverhead;
+
 
 
 class StreamPacket
