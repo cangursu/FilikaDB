@@ -40,7 +40,13 @@ Socket& Socket::operator=(Socket &&s)
 SocketResult Socket::Init (int domain, int type)
 {
     Release();
-    return ((_sock = ::socket(domain, type, 0)) == -1) ? SocketResult::SR_ERROR : SocketResult::SR_SUCCESS;
+
+    for (int ntry = 0; (false == IsGood()) && (ntry < 3); ++ntry)
+    {
+        _sock = ::socket(domain, type, 0);
+    }
+
+    return IsGood() ? SocketResult::SR_SUCCESS : SocketResult::SR_ERROR;
 }
 
 SocketResult Socket::Release()

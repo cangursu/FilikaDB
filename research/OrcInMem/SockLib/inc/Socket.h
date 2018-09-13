@@ -28,9 +28,9 @@ class Socket
 
         SocketResult    Init (int domain, int type);
         SocketResult    Release ();
-        bool            IsGood ()                     { return _sock != -1; }
+        bool            IsGood ()                      { return _sock != -1; }
 
-        std::string     Name() const                  { return _name;       }
+        std::string     Name() const                   { return _name;       }
         void            Name (const std::string &val)  { _name = val;        }
 
 
@@ -38,8 +38,9 @@ class Socket
         virtual ssize_t Write (const void *pdata, size_t len)  = 0;
 
 
-protected :
-        int fd() const                             { return _sock;       }
+//protected :  ??? :(
+        int fd() const                                 { return _sock;       }
+
 private :
         int          _sock    = -1;
         std::string  _name    = "NA";

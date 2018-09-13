@@ -60,7 +60,12 @@ public:
         AddNewBuffer();
     }
 
-    ~MemStream()
+
+    MemStream(const MemStream &other) = default;
+    MemStream(MemStream &&other)      = default;
+
+
+    virtual ~MemStream()
     {
         close();
     }

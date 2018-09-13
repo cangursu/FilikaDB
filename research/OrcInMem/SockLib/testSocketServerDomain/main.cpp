@@ -51,7 +51,7 @@ class EchoServer : public SocketServer<TSockSrv, TSockCln>
             ClientCount();
         }
 
-        virtual void OnErrorClient(SocketResult res)
+        virtual void OnErrorClient(const TSockCln &, SocketResult res)
         {
             std::cout << "ErrorClient : " << SocketResultText(res) << std::endl;
         }

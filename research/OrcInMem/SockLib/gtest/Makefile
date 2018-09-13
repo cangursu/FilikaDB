@@ -13,12 +13,12 @@ endif
 
 CC=g++
 
-CFLAGS= -ggdb -O0 -w -Wall -Werror -fPIC -std=c++17 -rdynamic  \
+CFLAGS= -g -O0 -w -Wall -Werror -fPIC -std=c++17 -rdynamic  \
         -DGIT_VERSION=\"$(GIT_VERSION)\"  \
         -DGIT_COMMIT=\"$(GIT_COMMIT)\"    \
         -DGIT_DATE=\"$(GIT_DATE)\"        \
         -DBUILD_DATE=\"$(BUILD_DATE)\"
-LDFLAGS=-L../../3rdparty/gtest/googlemock/gtest
+LDFLAGS=-L../../3rdparty/gtest/_build/googlemock/gtest
 LDLIBS=-lstdc++fs  -lpthread -lgtest
 
 INCLUDE_PATH=-I..                                      \

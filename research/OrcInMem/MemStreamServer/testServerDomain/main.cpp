@@ -82,7 +82,7 @@ class PacketEchoServer : public SocketServer<SocketDomain, PacketEchoClient>
             ClientCount();
         }
 
-        virtual void OnErrorClient(SocketResult res)
+        virtual void OnErrorClient(const PacketEchoClient &, SocketResult res)
         {
             LOG_LINE_GLOBAL("ServerEcho", "ErrorClient : ", SocketResultText(res));
         }

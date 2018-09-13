@@ -127,7 +127,6 @@ SocketResult SocketDomain::SetNonBlock()
     return SocketResult::SR_SUCCESS;
 }
 
-
 ssize_t SocketDomain::Read(void *pdata, size_t lenData)
 {
     //std::cout << "SocketDomain(" << Name() << ")::Read --->  sock:" << fd() << std::endl;
@@ -150,7 +149,7 @@ ssize_t SocketDomain::Read(void *pdata, size_t lenData)
 
     if (bytes == 0)
     {
-        std::cerr << "SocketDomain(" << Name() << ")::Read  Peer disconnected\n";
+        //std::cerr << "SocketDomain(" << Name() << ")::Read  Peer disconnected\n";
         Release();
     }
 
@@ -170,7 +169,7 @@ ssize_t  SocketDomain::Write(const void *pdata, size_t len)
     }
     if (bytes == 0)
     {
-        std::cerr << "SocketDomain(" << Name() << ")::Read  Peer disconnected\n";
+        //std::cerr << "SocketDomain(" << Name() << ")::Write  Peer disconnected\n";
         Release();
     }
 

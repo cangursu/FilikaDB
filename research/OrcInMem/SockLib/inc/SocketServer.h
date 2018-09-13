@@ -27,7 +27,7 @@
 
 
 
-#define MAXEVENTS 1024
+#define MAXEVENTS 2048
 
 
 
@@ -50,17 +50,21 @@ class SocketServer  : public TSocketSrv
 
         void              Accept();
         virtual void      Recv(int fd);
+        void              Disconnect();
         void              Disconnect(int fd);
+        void              Disconnect(const TSocketClt &cln) {Disconnect(cln.fd());}
+        void              Disconnect(const TSocketClt *cln) {if (cln) Disconnect(cln->fd());}
 
         std::uint64_t     ClientCount() const        { return _clientList.size();        }
         const TSocketClt *ClientByIdx(int idx) const { return _clientList.getByIdx(idx); }
+        //const TSocketClt *ClientByFd (int fd ) const { return _clientList.getByFD(fd);   }
 
     public:
         // Events
         virtual void  OnAccept      (const TSocketClt &, const sockaddr &)           = 0;
         virtual void  OnRecv        (TSocketClt &,       MemStream<std::uint8_t> &&) = delete;
         virtual void  OnDisconnect  (const TSocketClt &)                             = 0;
-        virtual void  OnErrorClient (SocketResult)                                   = 0;
+        virtual void  OnErrorClient (const TSocketClt &, SocketResult)               = 0;
         virtual void  OnErrorServer (SocketResult)                                   = 0;
 
     protected :
@@ -95,7 +99,7 @@ class SocketServer  : public TSocketSrv
                         return &it->second;
                     return nullptr;
                 }
-                const TSocketClt* getByFC(int fd) const
+                const TSocketClt* getByFD(int fd) const
                 {
                     auto it = _map.find(fd);
                     if (it != _map.cend())
@@ -117,7 +121,7 @@ class SocketServer  : public TSocketSrv
                 std::uint64_t size () const { return _size; }
             private :
                 std::unordered_map<int, TSocketClt> _map;
-                std::uint64_t                       _size = 0;
+                std::atomic<std::uint64_t>          _size = 0;
         } _clientList;
 
 
@@ -153,6 +157,8 @@ SocketResult SocketServer<TSocketSrv, TSocketClt>::Init ()
 template <typename TSocketSrv, typename TSocketClt>
 SocketResult SocketServer<TSocketSrv, TSocketClt>::Release()
 {
+    this->Disconnect();
+
     if (_epoll != -1)
     {
         ::close(_epoll);
@@ -172,7 +178,7 @@ SocketResult SocketServer<TSocketSrv, TSocketClt>::LoopListenPrepare()
         std::cerr << "Listen\n";
         return SocketResult::SR_ERROR;
     }
-    std::cout << "SocketServer Listenin : " << TSocketSrv::PrmDesc() << std::endl;
+    //std::cout << "SocketServer Listenin : " << TSocketSrv::PrmDesc() << std::endl;
 
 
     //epoll_event event {.events = EPOLLIN | EPOLLOUT | EPOLLRDHUP | EPOLLPRI | EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT | EPOLLWAKEUP | EPOLLRDNORM | EPOLLRDBAND | EPOLLWRNORM | EPOLLWRBAND | EPOLLMSG /*| EPOLLEXCLUSIVE*/};
@@ -207,7 +213,11 @@ SocketResult SocketServer<TSocketSrv, TSocketClt>::LoopListenSingleShot()
             if (events[i].data.fd == TSocketSrv::fd())
                 OnErrorServer(res = SocketResult::SR_ERROR_EPOLL);
             else
-                OnErrorClient(res = SocketResult::SR_ERROR_EPOLL);
+            {
+                const TSocketClt *cln = _clientList.getByFD(TSocketSrv::fd());
+                if(cln)
+                    OnErrorClient(*cln, res = SocketResult::SR_ERROR_EPOLL);
+            }
             Disconnect(events[i].data.fd);
         }
 
@@ -240,13 +250,13 @@ SocketResult SocketServer<TSocketSrv, TSocketClt>::LoopListen()
     SocketResult res = LoopListenPrepare();
     if (SocketResult::SR_SUCCESS == res)
     {
-        std::cout << "Packet Server Listen Loop Entered\n";
+//        std::cout << "Packet Server Listen Loop Entered\n";
         while(_exit == false)
         {
             res = LoopListenSingleShot();
         }
     }
-    std::cout << "Packet Server Listen Loop Quitted\n";
+//    std::cout << "Packet Server Listen Loop Quitted\n";
 
     return res;
 }
@@ -259,7 +269,7 @@ void SocketServer<TSocketSrv, TSocketClt>::Accept()
     sockaddr    in_addr;
 
     socklen_t in_len = sizeof(in_addr);
-    int infd;
+    int infd = -1;
 
     while ((infd = ::accept(TSocketSrv::fd(), &in_addr, &in_len)) != -1)
     {
@@ -273,21 +283,23 @@ void SocketServer<TSocketSrv, TSocketClt>::Accept()
 
         event.data.fd = infd;
         event.events = EPOLLIN | EPOLLHUP | EPOLLRDHUP | EPOLLERR | EPOLLET | EPOLLMSG;
-        //event.events = EPOLLIN | EPOLLOUT | EPOLLRDHUP | EPOLLPRI | EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT | EPOLLWAKEUP | EPOLLRDNORM | EPOLLRDBAND | EPOLLWRNORM | EPOLLWRBAND | EPOLLMSG /*| EPOLLEXCLUSIVE*/;
+        //event.events = EPOLLIN | EPOLLOUT | EPOLLRDHUP | EPOLLPRI | EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT | EPOLLWAKEUP | EPOLLRDNORM | EPOLLRDBAND | EPOLLWRNORM | EPOLLWRBAND | EPOLLMSG / *| EPOLLEXCLUSIVE* /;
         if (::epoll_ctl(epoll(), EPOLL_CTL_ADD, infd, &event) == -1)
         {
-            std::cerr << "epoll_ctl\n"; //abort();
+            OnErrorServer(SocketResult::SR_ERROR_EPOLL);
+            //std::cerr << "epoll_ctl\n"; //abort();
         }
 
         _clientList.set(infd, std::move(inSock));
-        OnAccept(inSock, in_addr);
+        OnAccept(*_clientList.getByFD(infd), in_addr);
 
         in_len = sizeof(in_addr);
     }
 
     if (errno != EAGAIN && errno != EWOULDBLOCK)
     {
-        std::cerr << "accept\n";
+        OnErrorServer(SocketResult::SR_ERROR_ACCEPT);
+        //std::cerr << "accept\n";
     }
 };
 
@@ -316,7 +328,7 @@ void SocketServer<TSocketSrv, TSocketClt>::Recv(int fd)
                 clt->OnRecv(std::move(stream));
                 return;
             }
-            OnErrorClient(SocketResult::SR_ERROR_READ);
+            OnErrorClient(*clt,  SocketResult::SR_ERROR_READ);
             break;
         }
         stream.write(buffTmp, count);
@@ -341,7 +353,12 @@ void SocketServer<TSocketSrv, TSocketClt>::Disconnect(int fd)
 }
 
 
-
+template <typename TSocketSrv, typename TSocketClt>
+void SocketServer<TSocketSrv, TSocketClt>::Disconnect()
+{
+    while (_clientList.size() > 0)
+        Disconnect(_clientList.getByIdx(0));
+}
 
 
 

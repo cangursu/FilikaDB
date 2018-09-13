@@ -53,27 +53,12 @@ class EchoServer : public SocketServer<TSckSrv, TSckCln>
                 ClientCount();
             }
         }
-        /*   .x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x
-        virtual void OnRecv(TSckCln &sock, MemStream<uint8_t> &&stream)
-        {
-            const int buffLen = 128;
-            char buff[buffLen];
-
-            for (std::uint8_t i = 0, readed = 0, len = stream.Len(); i < len; i += readed)
-            {
-                readed = stream.read(buff, buffLen-1, i);
-                buff[readed] = '\0';
-                std::cout << buff;
-            }
-            std::cout << std::endl;
-        }
-             .x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x    */
         virtual void OnDisconnect  (const TSckCln &sock)
         {
             std::cout << "Client Disconnected. \n";
             ClientCount();
         }
-        virtual void OnErrorClient(SocketResult res)
+        virtual void OnErrorClient(const TSckCln &, SocketResult res)
         {
             std::cout << "ErrorClient : " << SocketResultText(res) << std::endl;
         }
@@ -121,7 +106,6 @@ int main()
 {
 
     EchoServer<SocketTCP, EchoClient> srv("EchoServer");
-
 
     //srv.SocketPath("/home/postgres/.sock_rawtest");
     srv.Port(5000);
