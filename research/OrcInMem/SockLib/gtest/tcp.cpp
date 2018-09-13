@@ -141,8 +141,8 @@ TEST(SocketTCP, Transmission_MultipleConnect_ClientLost)
             EXPECT_EQ (SocketResult::SR_SUCCESS, res = clns[cidx].Init());
             clns[cidx].Port(5000);
             EXPECT_EQ (SocketResult::SR_SUCCESS, res = clns[cidx].Connect());
+            msleep(1);
         }
-        msleep(1);
         EXPECT_EQ (countClient, srv.ClientCount());
         for(int cidx = 0; cidx < countClient; ++cidx)
         {

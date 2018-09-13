@@ -62,7 +62,7 @@ SocketResult SocketClient<TSocket>::Connect()
 {
     SocketResult res = SocketResult::SR_EMPTY;
 
-    for (int ntry = 0; (res != SocketResult::SR_SUCCESS) && (ntry < 3); ++ntry)
+    for (int ntry = 0; (res != SocketResult::SR_SUCCESS) && (ntry < 5); ++ntry)
         res = TSocket::Connect();
 
     if (res != SocketResult::SR_SUCCESS)

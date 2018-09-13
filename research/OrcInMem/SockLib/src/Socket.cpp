@@ -41,7 +41,7 @@ SocketResult Socket::Init (int domain, int type)
 {
     Release();
 
-    for (int ntry = 0; (false == IsGood()) && (ntry < 3); ++ntry)
+    for (int ntry = 0; (false == IsGood()) && (ntry < 5); ++ntry)
     {
         _sock = ::socket(domain, type, 0);
     }
