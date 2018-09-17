@@ -26,6 +26,7 @@ enum class SocketResult : std::int16_t
     SR_ERROR_SOCKOPT   = -13,
     SR_ERROR_CRC       = -14,
     SR_ERROR_NOTCLIENT = -15,
+    SR_ERROR_PARSE     = -16,
 };
 
 

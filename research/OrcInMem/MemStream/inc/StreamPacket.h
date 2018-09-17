@@ -18,8 +18,8 @@
 #include "SocketResult.h"
 
 #include <cstdint>
+#include <cstring>
 #include <string>
-
 
 #include <iostream>
 
@@ -53,24 +53,26 @@ public:
     virtual ~StreamPacket();
 
     StreamPacket();
-    StreamPacket(const byte_t *payload, std::uint32_t len) { Create(payload, len); }
-    StreamPacket(const void   *payload, std::uint32_t len) { Create(payload, len); }
-    /*
-    StreamPacket(const StreamPacket& orig)                  = default;
-    StreamPacket(StreamPacket&& orig)                       = default;
-    StreamPacket &  operator = (const StreamPacket& orig)   = default;
-    StreamPacket && operator = (StreamPacket&& orig)        = default;
-    */
+    StreamPacket(const byte_t *payload, std::uint32_t len)  { Create(payload, len); }
+    StreamPacket(const void   *payload, std::uint32_t len)  { Create(payload, len); }
+    StreamPacket(const char   *payload)                     { Create(payload, std::strlen(payload)); }
+
+    StreamPacket(const StreamPacket& orig)                       = default;
+    StreamPacket(StreamPacket&& orig)                            = default;
+    StreamPacket &  operator = (const StreamPacket& orig)        = default;
+    StreamPacket &  operator = (StreamPacket&& orig)             = default;
+
+    bool            operator == (const StreamPacket& orig) const;
 
     void            Reset();
-    bool            Check();
-    std::uint32_t   Crc(const void *data, std::uint32_t len);
+    bool            Check() const;
+    std::uint32_t   Crc(const void *data, std::uint32_t len) const;
 
     std::uint32_t   Create     (const byte_t *payload, std::uint32_t len);
     std::uint32_t   Create     (const void   *payload, std::uint32_t len)   { return Create((byte_t *)payload, len); }
-    std::uint32_t   Payload    (byte_t       *buff   , std::uint32_t len);
-    std::uint32_t   PayloadPart(byte_t       *buff   , std::uint32_t len, std::uint32_t offset);
-    std::uint32_t   PayloadLen ();
+    std::uint32_t   Payload    (byte_t       *buff   , std::uint32_t len) const;
+    std::uint32_t   PayloadPart(byte_t       *buff   , std::uint32_t len, std::uint32_t offset) const;
+    std::uint32_t   PayloadLen () const;
 
     std::uint32_t   Buffer (byte_t **buff)                              { *buff = _buff; return _buffLen;  }
     std::uint32_t   Buffer (byte_t const **buff) const                  { *buff = _buff; return _buffLen;  }

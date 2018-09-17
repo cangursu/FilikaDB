@@ -77,7 +77,7 @@ public:
         SocketResult            res = SocketClient<TSocket>::Send(p, l);
 
         if (SocketResult::SR_SUCCESS != res)
-            OnErrorClient(res);
+            this->OnErrorClient(res);
 
         return res;
     }
@@ -89,10 +89,6 @@ public:
 
     virtual void OnRecv(MemStream<std::uint8_t> &&stream)
     {
-        LOG_LINE_GLOBAL("ServerEcho");
-
-        //std::cout << stream.dump("SocketClientPacket::OnRecv");
-
         SocketResult res = SocketResult::SR_ERROR_AGAIN;
         while(SocketResult::SR_ERROR_AGAIN == res)
         {
@@ -112,17 +108,16 @@ public:
                     break;
 
                 default                             :
-                    OnErrorClient(res);
+                    this->OnErrorClient(res);
                     break;
             }
         }
     }
+    /*
     virtual void OnErrorClient (SocketResult)
     {
-
     }
-
-
+    */
 
 
 
@@ -233,6 +228,7 @@ public:
                         case ParseResult::ERROR     :
                             //LOG_LINE_GLOBAL("SServerClient", "ERROR : PACKET ParseError (", parsFunc->_name, ")");
                             std::cerr << "ERROR : PACKET ParseError (" << _parsFunc->_name << ")" << std::endl;
+                            this->OnErrorClient(SocketResult::SR_ERROR_PARSE);
                             _parsFunc  = _parserTable;
                             _posPacket = 0;
                             _posBuff   = _posBuffBeginPack;

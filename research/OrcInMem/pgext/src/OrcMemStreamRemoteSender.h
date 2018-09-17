@@ -39,6 +39,10 @@ class OrcMemClient : public SocketClientPacket<SocketDomain>
         {
             std::cout << "SocketClientPacket::OnRecvPacket -  Len = " << packet.PayloadLen() << std::endl;
         }
+        virtual void OnErrorClient (SocketResult err)
+        {
+            std::cerr << "ERROR : OrcMemClient::OnErrorClient - " << SocketResultText(err) << std::endl;
+        }
 };
 
 class OrcMemStreamRemoteSender

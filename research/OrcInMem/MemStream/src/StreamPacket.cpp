@@ -45,7 +45,7 @@ void StreamPacket::Reset()
     _buffLen = 0;
 }
 
-std::uint32_t StreamPacket::Crc(const void *data, std::uint32_t len)
+std::uint32_t StreamPacket::Crc(const void *data, std::uint32_t len) const
 {
     std::uint32_t crc       = 0;
     std::size_t   bytesProc = 0;
@@ -63,10 +63,10 @@ std::uint32_t StreamPacket::Crc(const void *data, std::uint32_t len)
     return crc;
 }
 
-bool StreamPacket::Check()
+bool StreamPacket::Check() const
 {
-    StreamPacket::byte_t *ptWalk = _buff;
-    StreamPacket::byte_t *ptData = nullptr;
+    const StreamPacket::byte_t *ptWalk = _buff;
+    const StreamPacket::byte_t *ptData = nullptr;
 
 
     if (std::memcmp(ptWalk, s_mid.c_str(), g_lenMID))
@@ -113,13 +113,13 @@ std::uint32_t StreamPacket::Create(const byte_t *payload, std::uint32_t len)
     return _buffLen = (ptWalk - _buff);
 }
 
-std::uint32_t StreamPacket::PayloadPart(byte_t *buff, std::uint32_t lenBuff, std::uint32_t offset)
+std::uint32_t StreamPacket::PayloadPart(byte_t *buff, std::uint32_t lenBuff, std::uint32_t offset) const
 {
     if (false == Check()) return false;
 
     std::uint32_t         lenRead    = 0;
     std::uint32_t         lenPayload = 0;
-    StreamPacket::byte_t *ptWalk     = _buff  + g_lenMID;
+    const StreamPacket::byte_t *ptWalk     = _buff  + g_lenMID;
 
     std::memcpy((void*)&lenPayload, (void*)ptWalk, g_lenPLen);
     ptWalk += g_lenPLen;
@@ -134,12 +134,12 @@ std::uint32_t StreamPacket::PayloadPart(byte_t *buff, std::uint32_t lenBuff, std
     return lenRead;
 }
 
-std::uint32_t StreamPacket::Payload(byte_t *buff, std::uint32_t lenBuff)
+std::uint32_t StreamPacket::Payload(byte_t *buff, std::uint32_t lenBuff) const
 {
     if (false == Check()) return false;
 
     std::uint32_t         len    = 0;
-    StreamPacket::byte_t *ptWalk = _buff  + g_lenMID;
+    const StreamPacket::byte_t *ptWalk = _buff  + g_lenMID;
 
     std::memcpy((void*)&len, (void*)ptWalk, g_lenPLen);
     ptWalk += g_lenPLen;
@@ -152,13 +152,17 @@ std::uint32_t StreamPacket::Payload(byte_t *buff, std::uint32_t lenBuff)
     return len;
 }
 
-std::uint32_t StreamPacket::PayloadLen()
+std::uint32_t StreamPacket::PayloadLen() const
 {
     std::uint32_t         len    = 0;
-    StreamPacket::byte_t *ptWalk = _buff  + g_lenMID;
+    const StreamPacket::byte_t *ptWalk = _buff  + g_lenMID;
 
     std::memcpy((void*)&len, (void*)ptWalk, g_lenPLen);
     return len;
 }
 
 
+bool StreamPacket::operator == (const StreamPacket& orig) const
+{
+    return (_buffLen == orig._buffLen) && (0 == std::memcmp(_buff, orig._buff, _buffLen));
+}

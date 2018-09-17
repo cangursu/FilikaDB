@@ -14,16 +14,6 @@
 #ifndef PACKET_H
 #define PACKET_H
 
-class Packet
-{
-public:
-    Packet();
-    Packet(const Packet&);
-    Packet(Packet&&);
-    virtual ~Packet();
-private:
-
-};
 
 #endif /* PACKET_H */
 

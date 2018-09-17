@@ -18,11 +18,10 @@
 #include "SocketClient.h"
 #include "MemStream.h"
 
-int msleep(long miliseconds);
 int nsleep(long nanoseconds);
+int msleep(long miliseconds);
 
 std::string MemStream2String(MemStream<std::uint8_t> &stream);
-
 
 
 template <typename TSock>
@@ -44,7 +43,7 @@ class TestServerClient : public SocketClient<TSock>
             const void* buf = "::From-TestServerClient";
             stream.write(buf, std::strlen((char*)buf));
 
-            std::string str = MemStream2String(stream);
+            //std::string str = MemStream2String(stream);
 
             if (SocketResult::SR_SUCCESS != this->Send(stream))
             {
@@ -57,7 +56,6 @@ class TestServerClient : public SocketClient<TSock>
         }
 
         std::string  _testContent = "###Empty###_TestServerClient";
-        //bool         _doEcho      = true;
 };
 
 

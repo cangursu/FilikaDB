@@ -17,13 +17,13 @@ int msleep(long miliseconds)
 
    if(miliseconds > 999)
    {
-        req.tv_sec  = (int)(miliseconds / 1000);                            /* Must be Non-Negative */
-        req.tv_nsec = (miliseconds - ((long)req.tv_sec * 1000)) * 1000000; /* Must be in range of 0 to 999999999 */
+        req.tv_sec  = (int)(miliseconds / 1000);                            // Must be Non-Negative
+        req.tv_nsec = (miliseconds - ((long)req.tv_sec * 1000)) * 1000000;  // Must be in range of 0 to 999999999
    }
    else
    {
-        req.tv_sec  = 0;                         /* Must be Non-Negative */
-        req.tv_nsec = miliseconds * 1000000;    /* Must be in range of 0 to 999999999 */
+        req.tv_sec  = 0;                         // Must be Non-Negative
+        req.tv_nsec = miliseconds * 1000000;     // Must be in range of 0 to 999999999
    }
 
    return nanosleep(&req , &rem);
@@ -100,17 +100,14 @@ TEST(MemStream, Test3)
     const char *data[] =
     {
         "",
-        "09",
-        "98",
-        "87",
+        "099887",
         "1234567890abcdefghi",
         "76",
         "65",
         "jklmnopqr",
         "1a2b3c4d5e6f7g8h9i0",
         "54",
-        "43",
-        "32",
+        "4332",
         "21"
     };
 
@@ -140,30 +137,32 @@ TEST(MemStream, Test3)
 }
 
 
-
-
-
-
-
-
-
-
-
-
-    bool CheckBufferWrite(MemStream<std::uint8_t> *m, const char *data)
+TEST(StreamPacket, Test1)
 {
-    size_t len = std::strlen(data);
-    m->write(data, len);
-    std::cout << "Written : " << data << " - " << "Len:" << m->Len() << ", Size:" << m->Size() << ", Count:" << m->Cnt() << std::endl;
+    char *pdata = "DummyTestData";
+    int   len   = std::strlen(pdata);
 
-    char buff[len + 1] = "";
-    m->read(buff, len, m->Len() - len);
-    std::cout << "Readed : " << std::string(buff, len) << std::endl;
+    StreamPacket pck(pdata, len);
 
-    return std::strncmp(buff, data, len) == 0;
+    ASSERT_TRUE(pck.Check());
+    ASSERT_EQ(len, pck.PayloadLen());
+
+    StreamPacket::byte_t buff[len+1];
+    pck.Payload(buff, len);
+    ASSERT_EQ(0, std::memcmp(buff, pdata, len));
 }
 
 
+TEST(StreamPacket, Test2)
+{
+    char *pdata = "DummyTestData";
+    int   len   = std::strlen(pdata);
+
+    StreamPacket pck1(pdata, len);
+    StreamPacket pck2(pdata, len);
+
+    ASSERT_TRUE(pck1 == pck2);
+}
 
 
 

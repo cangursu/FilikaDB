@@ -82,23 +82,25 @@ const char *SocketResultText(const SocketResult &val)
     const char *res = "NA";
     switch(val)
     {
-        //case SocketResult::SR_FINISH          : res = "SR_FINISH"          ; break;
-        case SocketResult::SR_EMPTY           : res =  "SR_EMPTY"           ; break;
-        case SocketResult::SR_SUCCESS         : res =  "SR_SUCCESS"         ; break;
-        case SocketResult::SR_ERROR           : res =  "SR_ERROR"           ; break;
-        case SocketResult::SR_ERROR_PRM       : res =  "SR_ERROR_PRM"       ; break;
-        case SocketResult::SR_ERROR_EOF       : res =  "SR_ERROR_EOF"       ; break;
-        case SocketResult::SR_ERROR_BIND      : res =  "SR_ERROR_BIND"      ; break;
-        case SocketResult::SR_ERROR_ACCEPT    : res =  "SR_ERROR_ACCEPT"    ; break;
-        case SocketResult::SR_ERROR_CONNECT   : res =  "SR_ERROR_CONNECT"   ; break;
-        case SocketResult::SR_ERROR_SEND      : res =  "SR_ERROR_SEND"      ; break;
-        case SocketResult::SR_ERROR_READ      : res =  "SR_ERROR_READ"      ; break;
-        case SocketResult::SR_ERROR_EPOLL     : res =  "SR_ERROR_EPOLL"     ; break;
-        case SocketResult::SR_ERROR_LEN       : res =  "SR_ERROR_LEN"       ; break;
-        case SocketResult::SR_ERROR_AGAIN     : res =  "SR_ERROR_AGAIN"     ; break;
-        case SocketResult::SR_ERROR_REUSEADDR : res =  "SR_ERROR_REUSEADDR" ; break;
-        case SocketResult::SR_ERROR_SOCKOPT   : res =  "SR_ERROR_SOCKOPT"   ; break;
-        case SocketResult::SR_ERROR_CRC       : res =  "SR_ERROR_CRC"       ; break;
+        case SocketResult::SR_TIMEOUT         : res = "SR_TIMEOUT"          ; break;
+        case SocketResult::SR_EMPTY           : res = "SR_EMPTY"            ; break;
+        case SocketResult::SR_SUCCESS         : res = "SR_SUCCESS"          ; break;
+        case SocketResult::SR_ERROR           : res = "SR_ERROR"            ; break;
+        case SocketResult::SR_ERROR_PRM       : res = "SR_ERROR_PRM"        ; break;
+        case SocketResult::SR_ERROR_EOF       : res = "SR_ERROR_EOF"        ; break;
+        case SocketResult::SR_ERROR_BIND      : res = "SR_ERROR_BIND"       ; break;
+        case SocketResult::SR_ERROR_ACCEPT    : res = "SR_ERROR_ACCEPT"     ; break;
+        case SocketResult::SR_ERROR_CONNECT   : res = "SR_ERROR_CONNECT"    ; break;
+        case SocketResult::SR_ERROR_SEND      : res = "SR_ERROR_SEND"       ; break;
+        case SocketResult::SR_ERROR_READ      : res = "SR_ERROR_READ"       ; break;
+        case SocketResult::SR_ERROR_EPOLL     : res = "SR_ERROR_EPOLL"      ; break;
+        case SocketResult::SR_ERROR_LEN       : res = "SR_ERROR_LEN"        ; break;
+        case SocketResult::SR_ERROR_AGAIN     : res = "SR_ERROR_AGAIN"      ; break;
+        case SocketResult::SR_ERROR_REUSEADDR : res = "SR_ERROR_REUSEADDR"  ; break;
+        case SocketResult::SR_ERROR_SOCKOPT   : res = "SR_ERROR_SOCKOPT"    ; break;
+        case SocketResult::SR_ERROR_CRC       : res = "SR_ERROR_CRC"        ; break;
+        case SocketResult::SR_ERROR_NOTCLIENT : res = "SR_ERROR_NOTCLIENT"  ; break;
+        case SocketResult::SR_ERROR_PARSE     : res = "SR_ERROR_PARSE"      ; break;
     }
     return res;
 };

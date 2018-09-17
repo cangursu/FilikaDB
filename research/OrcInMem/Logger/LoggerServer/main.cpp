@@ -24,15 +24,7 @@ class LogServerOptions
 
         void Display(bool enable)
         {
-//            number ^= (-x ^ number) & (1UL << n);
             _flags ^= (-enable ^ _flags.load()) & (1UL << FLAG_POS_DISPLAY);
-/*
-            std::int16_t f = _flags.load();
-            if (enable)
-                _flags = f | (1UL << FLAG_POS_DISPLAY);
-            else
-                _flags = f & ~(1UL << FLAG_POS_DISPLAY);
-*/
         }
         bool Display()
         {
@@ -107,6 +99,11 @@ public:
     {
     }
 
+    virtual void OnErrorClient (SocketResult err)
+    {
+        std::cerr << "Error : LogServerClient::OnErrorClient - " << SocketResultText(err) << std::endl;
+    }
+
     virtual void OnRecvPacket(StreamPacket &&packet)
     {
         if (g_options.Display())
@@ -153,6 +150,15 @@ bool kbhit()
     return byteswaiting > 0;
 }
 
+void Help()
+{
+    std::cout << std::endl;
+    std::cout << "Keybord Functionalities : \n";
+    std::cout << "   q -> quit\n";
+    std::cout << "   d -> Toogle display log entries\n";
+    std::cout << "   h -> help\n";
+}
+
 int main(int argc, char** argv)
 {
     const char *sfile = (argc > 1) ? argv[1] : SOCK_PATH_DEFAULT;
@@ -169,15 +175,15 @@ int main(int argc, char** argv)
     }
 
 
+    Help();
+
+
     srv.LoopListenPrepare();
     bool quit = false;
     char ch;
 
     std::cout << "Packet Server Listen Loop Entered\n";
-    std::cout << "Keybord Functionalities : \n";
-    std::cout << "   q -> quit\n";
-    std::cout << "   d -> display log entries\n";
-    std::cout << "   h -> hide log entries\n";
+
 
     rawmode(true);
     while(false == quit)
@@ -197,14 +203,13 @@ int main(int argc, char** argv)
 
                 case 'd' :
                 case 'D' :
-                    std::cout << "log entries displaying \n";
-                    g_options.Display(true);
+                    g_options.Display(!g_options.Display());
+                    std::cout << (g_options.Display() ? "log entries displaying \n" : "log entries hiding \n");
                     break;
 
                 case 'h' :
                 case 'H' :
-                    std::cout << "log entries hiding \n";
-                    g_options.Display(false);
+                    Help();
                     break;
             }
         }

@@ -288,6 +288,10 @@ class PacketEchoClient  : public  SocketClientPacket<SocketDomain>
             : SocketClientPacket(fd, name)
         {
         }
+        virtual void OnErrorClient (SocketResult err)
+        {
+            std::cerr << "PacketEchoClient::OnErrorClient - " << SocketResultText(err) << std::endl;
+        }
         virtual void OnRecvPacket(StreamPacket &&packet)
         {
             DisplayPacket(packet);

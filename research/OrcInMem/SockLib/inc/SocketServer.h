@@ -56,8 +56,8 @@ class SocketServer  : public TSocketSrv
         void              Disconnect(const TSocketClt *cln) {if (cln) Disconnect(cln->fd());}
 
         std::uint64_t     ClientCount() const        { return _clientList.size();        }
-        const TSocketClt *ClientByIdx(int idx) const { return _clientList.getByIdx(idx); }
-        //const TSocketClt *ClientByFd (int fd ) const { return _clientList.getByFD(fd);   }
+        const TSocketClt *ClientByIdx(int idx) const { return _clientList.getByIdx(idx); } //CAUTION : Beware to use this, CPU abuser...
+      //const TSocketClt *ClientByFd (int fd ) const { return _clientList.getByFD(fd);   }
 
     public:
         // Events
@@ -106,8 +106,10 @@ class SocketServer  : public TSocketSrv
                         return &it->second;
                     return nullptr;
                 }
-                const TSocketClt* getByIdx(std::uint64_t idx) const //Beware to use this, CPU abuser...
+                const TSocketClt* getByIdx(std::uint64_t idx) const //CAUTION : Beware to use this, CPU abuser...
                 {
+                    if (idx > _size) return nullptr;
+
                     auto it    = _map.cbegin();
                     auto itEnd = _map.cend();
                     int count  = 0;
