@@ -14,177 +14,17 @@
 #include <thread>
 
 
-void PrintPacket(const StreamPacket &packet)
+
+
+
+TEST(MemStreamServerDomain, Individual)
 {
-    StreamPacket::byte_t buff[256];
-    int readed = 0;
-    for( int offset = 0;  (readed = packet.PayloadPart(buff, 256, offset)) == 256; offset += readed)
-        std::cout << (char*)buff;
-    if (readed > 0)
-        std::cout << std::setw(readed) << std::string((char*)buff, readed);
-    std::cout << std::endl;
+    PacketEchoServer<SocketDomain, SocketDomain>    server;
+    SClient<SocketDomain>                           client;
 
-}
+    server.SocketPath(g_srvSock);
+    client.SocketPath(g_srvSock);
 
-
-
-class SClient : public SocketClientPacket<SocketDomain>
-{
-    public:
-        SClient(const char *name): SocketClientPacket<SocketDomain>(name) {}
-
-        virtual void        OnErrorClient (SocketResult);
-        virtual void        OnRecvPacket  (StreamPacket &&packet);
-
-        bool                SendPacket(const StreamPacket &pack);
-        const StreamPacket &Packet(int idxPacket);
-
-        std::deque <StreamPacket> _packetList;
-};
-
-bool SClient::SendPacket(const StreamPacket &pack)
-{
-    const StreamPacket::byte_t *b;
-    std::uint32_t l = pack.Buffer(&b);
-
-    ssize_t res = (l > 0) ? this->Write(b, l) : 0;
-    return ((res > 0) && (res == (ssize_t)l));
-}
-inline void SClient::OnErrorClient (SocketResult err)
-{
-    std::cout << ".ERROR : SClient::OnErrorClient - " << SocketResultText(err) << std::endl;
-}
-inline void SClient::OnRecvPacket  (StreamPacket &&packet)
-{
-    //std::cout << "SClient::OnRecvPacket          - ";
-    //PrintPacket(packet);
-
-    _packetList.push_back(std::move(packet));
-}
-const StreamPacket &SClient::Packet(int idxPacket)
-{
-    return _packetList[idxPacket];
-}
-
-
-
-
-class PacketEchoClient  : public  SocketClientPacket<SocketDomain>
-{
-    public:
-        PacketEchoClient(const char *name = "PacketEchoClient" )
-            : SocketClientPacket(name)
-        {
-        }
-        PacketEchoClient(int fd, const char *name)
-            : SocketClientPacket(fd, name)
-        {
-        }
-        virtual void OnRecvPacket(StreamPacket &&packet)
-        {
-            //std::cout << "PacketEchoClient::OnRecvPacket - ";
-            //PrintPacket(packet);
-
-            SocketResult res = SendPacket(packet);  //Send Back
-            _packetList.push_back(std::move(packet));
-        }
-        virtual void OnErrorClient (SocketResult res)
-        {
-            _countError++;
-            LOG_LINE_GLOBAL("PacketEchoClient", "ERROR : PacketEchoClient::OnErrorClient (", _countError, ") -> ", SocketResultText(res));
-        }
-
-        std::deque<StreamPacket> _packetList;
-        int                      _countError = 0;
-};
-
-
-class PacketEchoServer : public SocketServer<SocketDomain, PacketEchoClient>
-{
-    public:
-        PacketEchoServer()
-            : SocketServer<SocketDomain, PacketEchoClient>("ServerEcho")
-        {
-        }
-        virtual void OnAccept(const PacketEchoClient &sock, const sockaddr &addr)
-        {
-            std::string host, serv;
-            if (true == NameInfo(addr, host, serv))
-            {
-                LOG_LINE_GLOBAL("ServerEcho", "Accepted connection on host = ", host, " port = ", serv);
-                ClientCountMsg();
-            }
-        }
-
-        virtual void OnDisconnect  (const PacketEchoClient &sock)
-        {
-            LOG_LINE_GLOBAL("ServerEcho", "Client Disconnected.");
-            ClientCountMsg();
-        }
-
-        virtual void OnErrorClient(const PacketEchoClient &, SocketResult res)
-        {
-            LOG_LINE_GLOBAL("ServerEcho", "ErrorClient : ", SocketResultText(res));
-        }
-
-        virtual void OnErrorServer(SocketResult res)
-        {
-            LOG_LINE_GLOBAL("ServerEcho", "ErrorServer : ", SocketResultText(res));
-        };
-
-        void ClientCountMsg()
-        {
-            LOG_LINE_GLOBAL("ServerEcho", "Client count = ", SocketServer<SocketDomain, PacketEchoClient>::ClientCount());
-        }
-};
-
-
-
-
-
-
-
-
-
-
-template <typename TServer, typename TClient, typename TFunctor>
-void DomainSockClientServerFrame(TServer &server, TClient &client, TFunctor f)
-{
-    LogLineGlbSocketName(g_slog);
-
-    //Prepare Server
-    //PacketEchoServer server;
-    server.SocketPath(g_ssrv);
-
-    ASSERT_EQ(SocketResult::SR_SUCCESS, server.Init());
-    std::thread thSrv(   [&server](){server.LoopListen();}   );
-
-    //Prepare Client
-    //SClient client("Sender");
-    EXPECT_EQ(SocketResult::SR_SUCCESS, client.Init(g_ssrv));
-    EXPECT_EQ(SocketResult::SR_SUCCESS, client.Connect());
-    msleep(1);
-    EXPECT_EQ(1, server.ClientCount());
-
-    std::thread thCln ( [&client] () { client.LoopRead();} );
-    msleep(1);
-
-    f(client);
-
-    client.LoopReadStop();
-    server.LoopListenStop();
-
-    if (thCln.joinable()) thCln.join();
-    if (thSrv.joinable()) thSrv.join();
-
-}
-
-
-
-TEST(MemStreamServer, DomainIndividual)
-{
-    PacketEchoServer server;
-    SClient client("Sender");
 
 
     std::string dataPrefix("TestDataIndividual");
@@ -199,7 +39,7 @@ TEST(MemStreamServer, DomainIndividual)
     }
 
 
-    DomainSockClientServerFrame(server, client, [&data] (auto &client)
+    ClientServerFrame(server, client, [&data] (auto &client)
         {
             for (const auto &item : data)
             {
@@ -211,7 +51,7 @@ TEST(MemStreamServer, DomainIndividual)
     );
 
 
-    const PacketEchoClient *cln = server.ClientByIdx(0);
+    const PacketEchoClient<SocketDomain> *cln = server.ClientByIdx(0);
     EXPECT_TRUE(cln != nullptr);
     EXPECT_EQ(count, cln->_packetList.size());
 
@@ -235,15 +75,19 @@ TEST(MemStreamServer, DomainIndividual)
 }
 
 
-TEST(MemStreamServer, DomainBulkIndividual)
+TEST(MemStreamServerDomain, BulkIndividual)
 {
-    PacketEchoServer server;
-    SClient client("Sender");
+    PacketEchoServer<SocketDomain,SocketDomain> server;
+    SClient<SocketDomain>                       client;
+
+    server.SocketPath(g_srvSock);
+    client.SocketPath(g_srvSock);
+
 
     int         count   = 5;
     std::string prefix = "BulkIndividual-";
 
-    DomainSockClientServerFrame(server, client, [&count, &prefix] (auto &client)
+    ClientServerFrame(server, client, [&count, &prefix] (auto &client)
         {
             StreamPacket::byte_t  buff2[4096];
             StreamPacket::byte_t *pBuff = nullptr;
@@ -271,7 +115,7 @@ TEST(MemStreamServer, DomainBulkIndividual)
     );
 
 
-    const PacketEchoClient *cln = server.ClientByIdx(0);
+    const PacketEchoClient<SocketDomain> *cln = server.ClientByIdx(0);
     EXPECT_TRUE(cln != nullptr);
     EXPECT_EQ(count, cln->_packetList.size());
 
@@ -294,14 +138,18 @@ TEST(MemStreamServer, DomainBulkIndividual)
 }
 
 
-TEST(MemStreamServer, DomainDirt)
+TEST(MemStreamServerDomain, Dirt)
 {
-    PacketEchoServer server;
-    SClient client("Sender");
+    PacketEchoServer<SocketDomain,SocketDomain> server;
+    SClient<SocketDomain>                       client;
+
+    server.SocketPath(g_srvSock);
+    client.SocketPath(g_srvSock);
+
 
     const char *pData = "TestDataDirt:abcdefghijklmnopqrstuvwxyz";
 
-    DomainSockClientServerFrame(server, client, [&pData] (auto &client)
+    ClientServerFrame(server, client, [&pData] (auto &client)
         {
             StreamPacket pck(pData);
 
@@ -328,7 +176,7 @@ TEST(MemStreamServer, DomainDirt)
     );
 
 
-    const PacketEchoClient *cln = server.ClientByIdx(0);
+    const PacketEchoClient<SocketDomain> *cln = server.ClientByIdx(0);
     EXPECT_TRUE(cln != nullptr);
     EXPECT_EQ(1, cln->_packetList.size());
     EXPECT_EQ(8, cln->_countError);
@@ -345,15 +193,19 @@ TEST(MemStreamServer, DomainDirt)
 }
 
 
-TEST(MemStreamServer, DomainCorrupt)
+TEST(MemStreamServerDomain, Corrupt)
 {
     int         lenBuffer   = 0;
     const char *pload       = "abcdefghijklmnopqrstuvwxyz";
 
-    PacketEchoServer server;
-    SClient client("Sender");
+    PacketEchoServer<SocketDomain,SocketDomain> server;
+    SClient<SocketDomain>                       client;
 
-    DomainSockClientServerFrame(server, client, [&lenBuffer, &pload](auto &client)
+    server.SocketPath(g_srvSock);
+    client.SocketPath(g_srvSock);
+
+
+    ClientServerFrame(server, client, [&lenBuffer, &pload](auto &client)
         {
             StreamPacket pck(pload);
 
@@ -368,25 +220,30 @@ TEST(MemStreamServer, DomainCorrupt)
 
 
 
-    const PacketEchoClient *cln = server.ClientByIdx(0);
+    const PacketEchoClient<SocketDomain> *cln = server.ClientByIdx(0);
     EXPECT_TRUE(cln != nullptr);
-    EXPECT_EQ(0, cln->_packetList.size());
+    ASSERT_EQ(0, cln->_packetList.size());
     EXPECT_EQ(lenBuffer - 1, cln->_countError);
 }
 
 
-TEST(MemStreamServer, DomainBulkCorrupt)
+TEST(MemStreamServerDomain, BulkCorrupt)
 {
-    int count = 1;
+    int count = 20;
 
-    PacketEchoServer server;
-    SClient client("Sender");
+    PacketEchoServer<SocketDomain,SocketDomain> server;
+    SClient<SocketDomain>                       client;
 
-    DomainSockClientServerFrame(server, client, [&count](auto &client)
+    server.SocketPath(g_srvSock);
+    client.SocketPath(g_srvSock);
+
+
+    ClientServerFrame(server, client, [&count](auto &client)
         {
-            std::string           prefix = "Corrupt-";
             StreamPacket::byte_t  buff2[4096];
             StreamPacket::byte_t *pBuff = nullptr;
+
+            std::string           prefix = "Corrupt-";
 
             int  len    = 0;
             int  lenPck = 0;
@@ -404,5 +261,13 @@ TEST(MemStreamServer, DomainBulkCorrupt)
             client.Send(buff2, len);
         }
     );
+
+
+    const PacketEchoClient<SocketDomain> *cln = server.ClientByIdx(0);
+    ASSERT_TRUE(cln != nullptr);
+    EXPECT_EQ(0, cln->_packetList.size());
+    EXPECT_EQ(0, client._packetList.size());
 }
+
+
 

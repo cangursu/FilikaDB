@@ -14,15 +14,6 @@
 #ifndef __MAIN_H__
 #define __MAIN_H__
 
-#include "SocketServer.h"
-#include "SocketClient.h"
-#include "MemStream.h"
-
-int msleep(long miliseconds);
-int nsleep(long nanoseconds);
-
-std::string MemStream2String(MemStream<std::uint8_t> &stream);
-
 
 #endif /* __MAIN_H__ */
 

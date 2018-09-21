@@ -14,6 +14,7 @@
 #include "StreamPacket.h"
 #include "LoggerGlobal.h"
 #include "crc32.h"
+#include "SocketUtils.h"
 
 #include <utility>
 #include <cstring>
@@ -25,6 +26,7 @@ const std::string    StreamPacket::s_mid   = "MYSF";
 
 StreamPacket::StreamPacket()
 {
+    //Reset();
 }
 /*
 StreamPacket::StreamPacket(const StreamPacket& orig)
@@ -65,9 +67,13 @@ std::uint32_t StreamPacket::Crc(const void *data, std::uint32_t len) const
 
 bool StreamPacket::Check() const
 {
+//    std::cout << "CRC Test "  << std::endl;
+//    std::cout << "_buffLen :" << _buffLen << " - _buff  :\n" << dumpMemory(_buff, _buffLen) << std::endl;
+
+
+
     const StreamPacket::byte_t *ptWalk = _buff;
     const StreamPacket::byte_t *ptData = nullptr;
-
 
     if (std::memcmp(ptWalk, s_mid.c_str(), g_lenMID))
         return false;
@@ -86,6 +92,8 @@ bool StreamPacket::Check() const
     std::memcpy(&crc, ptWalk, g_lenCRC);
     ptWalk += g_lenCRC;
 
+
+//    std::cout << "CRC Test  crc : " << crc << " - Calculated : " << Crc(ptData, len) << std::endl;
     return crc == Crc(ptData, len);
 }
 
@@ -166,3 +174,17 @@ bool StreamPacket::operator == (const StreamPacket& orig) const
 {
     return (_buffLen == orig._buffLen) && (0 == std::memcmp(_buff, orig._buff, _buffLen));
 }
+
+
+
+std::string StreamPacket::Dump(const std::string &msg /*= ""*/) const
+{
+    std::stringstream ss;
+
+    ss << "Dump Packet --->  " << msg                          << std::endl;
+    ss << "buffLen :  "        << _buffLen                     << std::endl;
+    ss << "buff    : \n"       << dumpMemory(_buff, _buffLen)  << std::endl;
+
+    return std::move(ss.str());
+}
+

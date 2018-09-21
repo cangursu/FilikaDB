@@ -62,11 +62,18 @@ SocketResult SocketClient<TSocket>::Connect()
 {
     SocketResult res = SocketResult::SR_EMPTY;
 
-    for (int ntry = 0; (res != SocketResult::SR_SUCCESS) && (ntry < 5); ++ntry)
+    errno = 0;
+    int ntry = 0;
+    for (ntry = 0; (res != SocketResult::SR_SUCCESS) && (ntry < 5); ++ntry)
+    {
         res = TSocket::Connect();
+        nsleep(10);
+    }
 
     if (res != SocketResult::SR_SUCCESS)
+    {
         OnErrorClient (res);
+    }
 
     return res;
 }
@@ -104,7 +111,7 @@ SocketResult SocketClient<TSocket>::Send(const MemStream<std::uint8_t> &stream)
     char buff[lenBuff] = "";
     for (int offset = 0; offset < len && (result == SocketResult::SR_SUCCESS); offset += readed)
     {
-        readed = stream.read(buff, lenBuff, offset);
+        readed = stream.Read(buff, lenBuff, offset);
         result = Send(static_cast<void *>(buff), readed);
     }
 
@@ -151,7 +158,7 @@ SocketResult SocketClient<TSocket>::LoopRead()
                 }
                 else //(bytes > 0)
                 {
-                    stream.write(buff, bytes);
+                    stream.Write(buff, bytes);
                     OnRecv(std::move(stream));
                 }
             }

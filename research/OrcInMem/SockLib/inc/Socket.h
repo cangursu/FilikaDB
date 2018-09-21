@@ -21,7 +21,7 @@ class Socket
         Socket(const char *name = "NA");
         Socket(const Socket &s) = delete;
         Socket(Socket &&s);
-        ~Socket();
+        virtual ~Socket();
 
         Socket&         operator= (Socket &&s);
         Socket&         operator= (const Socket &s) = delete;

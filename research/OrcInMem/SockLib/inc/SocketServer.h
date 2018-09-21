@@ -16,6 +16,7 @@
 
 #include "SocketResult.h"
 #include "MemStream.h"
+#include "SocketUtils.h"
 
 #include <unordered_map>
 #include <unistd.h>
@@ -39,6 +40,7 @@ class SocketServer  : public TSocketSrv
 {
     public:
         SocketServer(const char *name) : TSocketSrv(name) {}
+        //virtual ~SocketServer() { Release(); }
 
         SocketResult      Init();
         SocketResult      Release();
@@ -177,7 +179,7 @@ SocketResult SocketServer<TSocketSrv, TSocketClt>::LoopListenPrepare()
 
     if (::listen(TSocketSrv::fd(), 1024) == -1)
     {
-        std::cerr << "Listen\n";
+        std::cerr << "ERROR : Listen\n";
         return SocketResult::SR_ERROR;
     }
     //std::cout << "SocketServer Listenin : " << TSocketSrv::PrmDesc() << std::endl;
@@ -333,7 +335,7 @@ void SocketServer<TSocketSrv, TSocketClt>::Recv(int fd)
             OnErrorClient(*clt,  SocketResult::SR_ERROR_READ);
             break;
         }
-        stream.write(buffTmp, count);
+        stream.Write(buffTmp, count);
     }
 
     if (stream.Len() > 0)

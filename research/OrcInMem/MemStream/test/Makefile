@@ -12,6 +12,7 @@ INCLUDE_PATH=-I.. -I../inc -I../../SockLib/inc -I../../Logger/inc -I../../3rdpar
 SOURCES=$(wildcard *.cpp)
 SOURCES+=$(wildcard ../src/*.cpp)
 SOURCES+=$(wildcard ../../3rdparty/crc32/*.cpp)
+SOURCES+=$(wildcard ../../SockLib/src/*.cpp)
 
 OBJECTS=$(SOURCES:.cpp=.o)
 DEPENDS=$(SOURCES:.cpp=.d)

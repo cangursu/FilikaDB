@@ -739,10 +739,10 @@ Datum orc_inmem_test(PG_FUNCTION_ARGS)
 bool CheckBufferWrite(MemStream<char> *m, const char *data)
 {
     size_t len = std::strlen(data);
-    m->write(data, len);
+    m->Write(data, len);
 
     char buff[len + 1] = "";
-    m->read(buff, len, m->Len() - len);
+    m->Read(buff, len, m->Len() - len);
 
     //LOG_LINE_GLOBAL("buffer", "buff... = '", buff, "'");
     //LOG_LINE_GLOBAL("buffer", "data... = '", data, "'");
@@ -764,12 +764,12 @@ void CheckBufferWrite__xxx__(MemStream<char> *m, const char *data, int pieceLen)
     int offset;
     for(offset = 0; offset < len-pieceLen; offset+=pieceLen)
     {
-        m->read(buff, pieceLen, offset);
+        m->Read(buff, pieceLen, offset);
         buff[pieceLen] = '\0';
         LOG_LINE_GLOBAL("buffer", "buff... = '", buff, "'");
     }
 
-    m->read(buff, len - offset, offset);
+    m->Read(buff, len - offset, offset);
     buff[len - offset] = '\0';
     LOG_LINE_GLOBAL("buffer", "buff... = '", buff, "'");
 //    LOG_LINE_GLOBAL("buffer", "----<");

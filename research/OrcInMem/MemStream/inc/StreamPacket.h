@@ -74,12 +74,13 @@ public:
     std::uint32_t   PayloadPart(byte_t       *buff   , std::uint32_t len, std::uint32_t offset) const;
     std::uint32_t   PayloadLen () const;
 
-    std::uint32_t   Buffer (byte_t **buff)                              { *buff = _buff; return _buffLen;  }
-    std::uint32_t   Buffer (byte_t const **buff) const                  { *buff = _buff; return _buffLen;  }
+    std::uint32_t   Buffer     (byte_t **buff)                              { *buff = _buff; return _buffLen;  }
+    std::uint32_t   Buffer     (byte_t const **buff) const                  { *buff = _buff; return _buffLen;  }
 
-    void            BufferLen (std::uint32_t len)                       { _buffLen = len;  }
-    std::uint32_t   BufferLen () const                                  { return _buffLen; }
+    void            BufferLen  (std::uint32_t len)                       { _buffLen = len;  }
+    std::uint32_t   BufferLen  () const                                  { return _buffLen; }
 
+    std::string     Dump       (const std::string &msg = "") const;
 private:
 
     byte_t          _buff[g_lenMaxBuffer];

@@ -19,8 +19,17 @@ SocketTCP::SocketTCP(int fd, const char *name)
 {
 }
 
+/*
 SocketTCP::SocketTCP(SocketTCP &&s)
     : Socket(std::move(s))
+{
+}
+*/
+
+SocketTCP::SocketTCP(const std::string &address, std::uint16_t port, const char *name)
+    : Socket(name)
+    , _address(address)
+    , _port(port)
 {
 }
 
@@ -28,12 +37,13 @@ SocketTCP::~SocketTCP()
 {
 }
 
+/*
 SocketTCP& SocketTCP::operator=(SocketTCP &&s)
 {
     Socket::operator = (std::move(s));
     return *this;
 }
-
+*/
 
 SocketResult SocketTCP::Init()
 {
@@ -79,6 +89,7 @@ SocketResult SocketTCP::Connect()
                      };
         std::memset(&(addr.sin_zero), 0, 8);
 
+        errno = 0;
         res = (::connect(fd(), (struct sockaddr *)&addr, sizeof(struct sockaddr)) == -1) ?
             SocketResult::SR_ERROR_CONNECT : SocketResult::SR_SUCCESS;
     }

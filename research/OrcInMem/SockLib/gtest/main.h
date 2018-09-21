@@ -18,8 +18,6 @@
 #include "SocketClient.h"
 #include "MemStream.h"
 
-int nsleep(long nanoseconds);
-int msleep(long miliseconds);
 
 std::string MemStream2String(MemStream<std::uint8_t> &stream);
 
@@ -41,7 +39,7 @@ class TestServerClient : public SocketClient<TSock>
             _testContent = MemStream2String(stream);
 
             const void* buf = "::From-TestServerClient";
-            stream.write(buf, std::strlen((char*)buf));
+            stream.Write(buf, std::strlen((char*)buf));
 
             //std::string str = MemStream2String(stream);
 
