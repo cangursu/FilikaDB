@@ -69,7 +69,7 @@ class SocketServerPacket : public SocketServer <TSocketSrv, TSocketClt>
             ClientCount();
         }
 
-        virtual void OnErrorClient(SocketResult res)
+        virtual void OnErrorClient(const TSocketClt &, SocketResult res)
         {
             LOG_LINE_GLOBAL("SServerClient", "ErrorClient : ", SocketResultText(res));
         }

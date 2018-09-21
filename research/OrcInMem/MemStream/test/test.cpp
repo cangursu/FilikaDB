@@ -10,11 +10,11 @@
 bool CheckBufferWrite(MemStream<std::uint8_t> *m, const char *data)
 {
     size_t len = std::strlen(data);
-    m->write(data, len);
+    m->Write(data, len);
     std::cout << "Written : " << data << " - " << "Len:" << m->Len() << ", Size:" << m->Size() << ", Count:" << m->Cnt() << std::endl;
 
     char buff[len + 1] = "";
-    m->read(buff, len, m->Len() - len);
+    m->Read(buff, len, m->Len() - len);
     std::cout << "Readed : " << std::string(buff, len) << std::endl;
 
     return std::strncmp(buff, data, len) == 0;

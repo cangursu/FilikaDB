@@ -19,12 +19,13 @@ class SocketTCP : public Socket
     public :
         SocketTCP(const char *name = "NA");
         SocketTCP(int fd, const char *name);
+        SocketTCP(const std::string &addr, std::uint16_t port, const char *name);
         SocketTCP(const SocketTCP &s) = delete;
-        SocketTCP(SocketTCP &&s);
+        SocketTCP(SocketTCP &&s)      = default;
 
         virtual ~SocketTCP();
 
-        SocketTCP& operator=(SocketTCP &&s);
+        SocketTCP& operator=(SocketTCP &&s)      = default;
         SocketTCP& operator=(const SocketTCP &s) = delete;
 
         SocketResult    Init();

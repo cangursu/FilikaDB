@@ -14,25 +14,19 @@
 #include "StreamPacket.h"
 #include "LoggerGlobal.h"
 #include "crc32.h"
+#include "SocketUtils.h"
 
 #include <utility>
 #include <cstring>
 #include <iostream>
 
 
-/*
-const std::uint32_t  StreamPacket::s_lenMID         = 4;
-const std::uint32_t  StreamPacket::s_lenDLen        = 4;
-const std::uint32_t  StreamPacket::s_lenCRC         = 4;
-
-const std::uint32_t  StreamPacket::s_lenMaxBuffer   = _16K;
-const std::uint32_t  StreamPacket::s_lenMaxPayload  = StreamPacket::s_lenMaxBuffer - (StreamPacket::s_lenCRC + StreamPacket::s_lenDLen + StreamPacket::s_lenMID);
-*/
-const std::string    StreamPacket::s_mid            = "MYSF";
+const std::string    StreamPacket::s_mid   = "MYSF";
 
 
 StreamPacket::StreamPacket()
 {
+    //Reset();
 }
 /*
 StreamPacket::StreamPacket(const StreamPacket& orig)
@@ -53,7 +47,7 @@ void StreamPacket::Reset()
     _buffLen = 0;
 }
 
-std::uint32_t StreamPacket::Crc(const void *data, std::uint32_t len)
+std::uint32_t StreamPacket::Crc(const void *data, std::uint32_t len) const
 {
     std::uint32_t crc       = 0;
     std::size_t   bytesProc = 0;
@@ -71,11 +65,15 @@ std::uint32_t StreamPacket::Crc(const void *data, std::uint32_t len)
     return crc;
 }
 
-bool StreamPacket::Check()
+bool StreamPacket::Check() const
 {
-    StreamPacket::byte_t *ptWalk = _buff;
-    StreamPacket::byte_t *ptData = nullptr;
+//    std::cout << "CRC Test "  << std::endl;
+//    std::cout << "_buffLen :" << _buffLen << " - _buff  :\n" << dumpMemory(_buff, _buffLen) << std::endl;
 
+
+
+    const StreamPacket::byte_t *ptWalk = _buff;
+    const StreamPacket::byte_t *ptData = nullptr;
 
     if (std::memcmp(ptWalk, s_mid.c_str(), g_lenMID))
         return false;
@@ -94,6 +92,8 @@ bool StreamPacket::Check()
     std::memcpy(&crc, ptWalk, g_lenCRC);
     ptWalk += g_lenCRC;
 
+
+//    std::cout << "CRC Test  crc : " << crc << " - Calculated : " << Crc(ptData, len) << std::endl;
     return crc == Crc(ptData, len);
 }
 
@@ -121,13 +121,13 @@ std::uint32_t StreamPacket::Create(const byte_t *payload, std::uint32_t len)
     return _buffLen = (ptWalk - _buff);
 }
 
-std::uint32_t StreamPacket::PayloadPart(byte_t *buff, std::uint32_t lenBuff, std::uint32_t offset)
+std::uint32_t StreamPacket::PayloadPart(byte_t *buff, std::uint32_t lenBuff, std::uint32_t offset) const
 {
     if (false == Check()) return false;
 
     std::uint32_t         lenRead    = 0;
     std::uint32_t         lenPayload = 0;
-    StreamPacket::byte_t *ptWalk     = _buff  + g_lenMID;
+    const StreamPacket::byte_t *ptWalk     = _buff  + g_lenMID;
 
     std::memcpy((void*)&lenPayload, (void*)ptWalk, g_lenPLen);
     ptWalk += g_lenPLen;
@@ -142,12 +142,12 @@ std::uint32_t StreamPacket::PayloadPart(byte_t *buff, std::uint32_t lenBuff, std
     return lenRead;
 }
 
-std::uint32_t StreamPacket::Payload(byte_t *buff, std::uint32_t lenBuff)
+std::uint32_t StreamPacket::Payload(byte_t *buff, std::uint32_t lenBuff) const
 {
     if (false == Check()) return false;
 
     std::uint32_t         len    = 0;
-    StreamPacket::byte_t *ptWalk = _buff  + g_lenMID;
+    const StreamPacket::byte_t *ptWalk = _buff  + g_lenMID;
 
     std::memcpy((void*)&len, (void*)ptWalk, g_lenPLen);
     ptWalk += g_lenPLen;
@@ -160,13 +160,31 @@ std::uint32_t StreamPacket::Payload(byte_t *buff, std::uint32_t lenBuff)
     return len;
 }
 
-std::uint32_t StreamPacket::PayloadLen()
+std::uint32_t StreamPacket::PayloadLen() const
 {
     std::uint32_t         len    = 0;
-    StreamPacket::byte_t *ptWalk = _buff  + g_lenMID;
+    const StreamPacket::byte_t *ptWalk = _buff  + g_lenMID;
 
     std::memcpy((void*)&len, (void*)ptWalk, g_lenPLen);
     return len;
 }
 
+
+bool StreamPacket::operator == (const StreamPacket& orig) const
+{
+    return (_buffLen == orig._buffLen) && (0 == std::memcmp(_buff, orig._buff, _buffLen));
+}
+
+
+
+std::string StreamPacket::Dump(const std::string &msg /*= ""*/) const
+{
+    std::stringstream ss;
+
+    ss << "Dump Packet --->  " << msg                          << std::endl;
+    ss << "buffLen :  "        << _buffLen                     << std::endl;
+    ss << "buff    : \n"       << dumpMemory(_buff, _buffLen)  << std::endl;
+
+    return std::move(ss.str());
+}
 

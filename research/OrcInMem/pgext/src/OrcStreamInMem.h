@@ -62,12 +62,12 @@ public:
     }
     virtual void write (const void* buf, size_t length) override
     {
-        MemStream<U>::write(buf, length);
+        MemStream<U>::Write(buf, length);
     }
 
     virtual void read  (void* buf, uint64_t length, uint64_t offset) override
     {
-        MemStream<U>::read(buf, length, offset);
+        MemStream<U>::Read(buf, length, offset);
     }
 
 

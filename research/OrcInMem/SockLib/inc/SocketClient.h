@@ -60,9 +60,22 @@ class SocketClient : public TSocket
 template <typename TSocket>
 SocketResult SocketClient<TSocket>::Connect()
 {
-    SocketResult res = TSocket::Connect();
+    SocketResult res = SocketResult::SR_EMPTY;
+
+    errno = 0;
+    int ntry = 0;
+    for (ntry = 0; (res != SocketResult::SR_SUCCESS) && (ntry < 5); ++ntry)
+    {
+        res = TSocket::Connect();
+        nsleep(10);
+    }
+
     if (res != SocketResult::SR_SUCCESS)
+    {
         OnErrorClient (res);
+    }
+
+    return res;
 }
 
 template <typename TSocket>
@@ -98,7 +111,7 @@ SocketResult SocketClient<TSocket>::Send(const MemStream<std::uint8_t> &stream)
     char buff[lenBuff] = "";
     for (int offset = 0; offset < len && (result == SocketResult::SR_SUCCESS); offset += readed)
     {
-        readed = stream.read(buff, lenBuff, offset);
+        readed = stream.Read(buff, lenBuff, offset);
         result = Send(static_cast<void *>(buff), readed);
     }
 
@@ -109,13 +122,14 @@ SocketResult SocketClient<TSocket>::Send(const MemStream<std::uint8_t> &stream)
 template <typename TSocket>
 SocketResult SocketClient<TSocket>::LoopRead()
 {
-    std::cout << "Enter LoopRead - SocketClient<TSocket>\n";
+//    std::cout << "Enter LoopRead - SocketClient<TSocket>\n";
     SocketResult result = SocketResult::SR_ERROR_AGAIN;
     if (TSocket::IsGood())
     {
         timeval tv { .tv_sec = 1, .tv_usec = 0 };
-        if (0 > setsockopt(TSocket::fd(), SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv))
+        if (0 > setsockopt(TSocket::fd(), SOL_SOCKET, SO_RCVTIMEO, (const char*)(&tv), sizeof(timeval)))
         {
+            std::cerr << "setsockopt : " << ErrnoText(errno) << " (" << errno << ")\n";
             result = SocketResult::SR_ERROR_SOCKOPT;
         }
         else
@@ -127,7 +141,7 @@ SocketResult SocketClient<TSocket>::LoopRead()
                 MemStream<std::uint8_t> stream;
 
                 ssize_t bytes = TSocket::Read(buff, buffLen);
-                //std::cout << "bytes:" << bytes << " errno:" << ErrnoText(errno) << std::endl;
+                //std::cout << "TSocket::Read -> bytes:" << bytes << " errno:" << ErrnoText(errno) << std::endl;
 
                 if (bytes == 0)
                 {
@@ -138,13 +152,13 @@ SocketResult SocketClient<TSocket>::LoopRead()
                     //std::cout << "ERROR errno:" << errno << " - " << ErrnoText(errno) << std::endl;
                     switch (errno)
                     {
-                        case EAGAIN : result = SocketResult::SR_ERROR_AGAIN; break;
-                        default     : result = SocketResult::SR_ERROR_READ;  break;
+                        case EAGAIN     : result = SocketResult::SR_ERROR_AGAIN; break;
+                        default         : result = SocketResult::SR_ERROR_READ;  break;
                     }
                 }
                 else //(bytes > 0)
                 {
-                    stream.write(buff, bytes);
+                    stream.Write(buff, bytes);
                     OnRecv(std::move(stream));
                 }
             }
@@ -154,7 +168,7 @@ SocketResult SocketClient<TSocket>::LoopRead()
     if ( (_exit == true) && (result == SocketResult::SR_ERROR_AGAIN) )
         result = SocketResult::SR_SUCCESS; //Gracefully quit
 
-    std::cout << "Leaveing LoopRead - SocketClient<TSocket> - " << SocketResultText(result) << std::endl;
+//    std::cout << "Leaveing LoopRead - SocketClient<TSocket> - " << SocketResultText(result) << std::endl;
     return result;
 }
 

@@ -12,7 +12,7 @@
  */
 
 
-#include "SocketServerPacket.h"
+#include "SocketServer.h"
 #include "SocketClientPacket.h"
 #include "SocketTCP.h"
 #include "LoggerGlobal.h"
@@ -32,6 +32,10 @@ class PacketEchoClient  : public  SocketClientPacket<SocketTCP>
         PacketEchoClient(int fd, const char *name)
             : SocketClientPacket(fd, name)
         {
+        }
+        virtual void OnErrorClient (SocketResult err)
+        {
+            std::cerr << "ERROR : PacketEchoClient::OnErrorClient" << SocketResultText(err) << std::endl;
         }
         virtual void OnRecvPacket(StreamPacket &&packet)
         {
@@ -82,7 +86,7 @@ class PacketEchoServer : public SocketServer<SocketTCP, PacketEchoClient>
             ClientCount();
         }
 
-        virtual void OnErrorClient(SocketResult res)
+        virtual void OnErrorClient(const PacketEchoClient&, SocketResult res)
         {
             std::cout << "ErrorServer : " << SocketResultText(res) << std::endl;
             LOG_LINE_GLOBAL("ServerEcho", "ErrorClient : ", SocketResultText(res));

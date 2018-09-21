@@ -60,12 +60,17 @@ public:
         AddNewBuffer();
     }
 
-    ~MemStream()
+
+    MemStream(const MemStream &other) = default;
+    MemStream(MemStream &&other)      = default;
+
+
+    virtual ~MemStream()
     {
         close();
     }
 
-    void write (const void* buf, size_t length)
+    void Write (const void* buf, size_t length)
     {
         if (nullptr == buf) return;
 
@@ -85,7 +90,7 @@ public:
         }
     }
 
-    std::uint64_t read (void* buf, std::uint64_t length, std::uint64_t offset) const
+    std::uint64_t Read (void* buf, std::uint64_t length, std::uint64_t offset) const
     {
         if (nullptr == buf) return 0L;
 
@@ -121,11 +126,11 @@ public:
         //_buffer.Clear();
     }
 
-    std::string dump(const std::string &msg = "")
+    std::string Dump(const std::string &msg = "") const
     {
         std::stringstream ss;
 
-        ss << "Dump ---> " << msg    << std::endl;
+        ss << "Dump Stream ---> " << msg    << std::endl;
         ss << "Size   :  " << Size() << std::endl;
         ss << "Length :  " << Len()  << std::endl;
         ss << "Data   :  \n";
@@ -141,7 +146,7 @@ public:
             for (std::uint64_t offset = 0, len = Len(); offset < len; offset += line)
             {
                 memset(buffRead, 0, line);
-                read(buffRead, line, offset);
+                Read(buffRead, line, offset);
 
 
                 // ......................................................
@@ -181,6 +186,7 @@ public:
                 newLineCount++;
             }
         }
+
         ss << /*GetDate() <<*/ "Dump ---<\n";
 
         return std::move(ss.str());

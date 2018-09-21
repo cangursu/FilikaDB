@@ -13,19 +13,3 @@
 
 #include "Packet.h"
 
-Packet::Packet()
-{
-}
-
-Packet::Packet(const Packet& orig)
-{
-}
-
-Packet::Packet(Packet &&orig)
-{
-}
-
-Packet::~Packet()
-{
-}
-

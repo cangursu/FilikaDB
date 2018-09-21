@@ -5,15 +5,15 @@
  */
 
 /*
- * File:   Packet.h
+ * File:   main.h
  * Author: can.gursu
  *
- * Created on 07 August 2018, 09:54
+ * Created on 10 September 2018, 09:59
  */
 
-#ifndef PACKET_H
-#define PACKET_H
+#ifndef __MAIN_H__
+#define __MAIN_H__
 
 
-#endif /* PACKET_H */
+#endif /* __MAIN_H__ */
 

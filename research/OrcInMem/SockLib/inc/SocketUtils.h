@@ -11,13 +11,22 @@
 #include "SocketResult.h"
 #include "ParseResult.h"
 
-
+#include <sys/socket.h>
 #include <cstdint>
 #include <string>
-#include <sys/socket.h>
 
+
+
+int             msleep              (long miliseconds);
+int             nsleep              (long nanoseconds);
 
 bool            NameInfo            (const sockaddr &addr, std::string &host, std::string &serv);
+std::string     dumpMemory          (const void *p,         std::uint32_t len);
+std::string     dumpMemory          (const std::uint8_t *p, std::uint32_t len);
+std::string     dumpMemory          (const char *p,         std::uint32_t len);
+
+
+
 
 const char *    ErrnoText           (int val);
 

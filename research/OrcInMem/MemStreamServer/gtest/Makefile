@@ -32,12 +32,10 @@ INCLUDE_PATH=-I..                                      \
              -I../../3rdparty/gtest/googletest/include \
 
 SOURCES=$(wildcard *.cpp)
-SOURCES+=$(wildcard ../src/*.cpp)
-#SOURCES+=$(wildcard ../../SockLib/src/*.cpp)
 SOURCES+=$(wildcard ../../MemStream/src/*.cpp)
 SOURCES+=$(wildcard ../../MemStreamServer/src/*.cpp)
-#SOURCES+=$(wildcard ../../Logger/src/*.cpp)
-SOURCES+=$(wildcard ../../3rdparty/rapidjson.1/*.cpp)
+SOURCES+=$(wildcard ../../SockLib/src/*.cpp)
+SOURCES+=$(wildcard ../../Logger/src/*.cpp)
 SOURCES+=$(wildcard ../../3rdparty/crc32/*.cpp)
 
 

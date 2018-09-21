@@ -51,7 +51,7 @@ class EchoServer : public SocketServer<TSockSrv, TSockCln>
             ClientCount();
         }
 
-        virtual void OnErrorClient(SocketResult res)
+        virtual void OnErrorClient(const TSockCln &, SocketResult res)
         {
             std::cout << "ErrorClient : " << SocketResultText(res) << std::endl;
         }
@@ -88,7 +88,7 @@ class EchoClient : public SocketClient<TSocket>
 
             for (std::uint8_t i = 0, readed = 0, len = stream.Len(); i < len; i += readed)
             {
-                readed = stream.read(buff, buffLen-1, i);
+                readed = stream.Read(buff, buffLen-1, i);
                 buff[readed] = '\0';
                 std::cout << buff;
             }

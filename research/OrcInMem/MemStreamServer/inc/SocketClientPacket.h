@@ -77,29 +77,26 @@ public:
         SocketResult            res = SocketClient<TSocket>::Send(p, l);
 
         if (SocketResult::SR_SUCCESS != res)
-            OnErrorClient(res);
+            this->OnErrorClient(res);
 
         return res;
     }
 
     virtual void OnRecvPacket(StreamPacket &&packet) = 0;
-//    {
-//        std::cout << "SocketClientPacket::OnRecvPacket -  Len = " << packet.PayloadLen() << std::endl;
-//    }
+
 
     virtual void OnRecv(MemStream<std::uint8_t> &&stream)
     {
-        LOG_LINE_GLOBAL("ServerEcho");
-
-        //std::cout << stream.dump("SocketClientPacket::OnRecv");
+//        std::cout << stream.Dump("SocketClientPacket::OnRecv --->");
 
         SocketResult res = SocketResult::SR_ERROR_AGAIN;
         while(SocketResult::SR_ERROR_AGAIN == res)
         {
             StreamPacket packet;
 
-            auto reader = [&stream] (char *buff, int offset, int len) -> int { return stream.read(buff, len, offset); };
+            auto reader = [&stream] (char *buff, int offset, int len) -> int { return stream.Read(buff, len, offset); };
             res = recvPacket(packet, reader);
+//            std::cout << "SocketClientPacket::OnRecv recvPacket:" << SocketResultText(res) << std::endl;
 
             switch(res)
             {
@@ -112,17 +109,18 @@ public:
                     break;
 
                 default                             :
-                    OnErrorClient(res);
+                    this->OnErrorClient(res);
                     break;
             }
         }
+
+//        std::cout << "SocketClientPacket::OnRecv ---<" << std::endl;
     }
+    /*
     virtual void OnErrorClient (SocketResult)
     {
-
     }
-
-
+    */
 
 
 
@@ -180,6 +178,8 @@ public:
     template <typename FunctorRead>
     SocketResult recvPacket(StreamPacket &packet, FunctorRead && reader)
     {
+//        std::cout << "SocketClientPacket::recvPacket --->\n";
+
         byte_t *packetData = nullptr;
         packet.Buffer(&packetData);
 
@@ -203,20 +203,24 @@ public:
             {
                 for (; (_posBuff < _lenBuff) && _parsFunc->_fp && (false == isDone); ++_posBuff)
                 {
-//                    std::cout << "1.  - "/* LOG_LINE_GLOBAL("SServerClient" */
-//                                                    /*,*/ << "_fp:"        /*,*/  <<  parsFunc->_name
-//                                                    /*,*/ << " by:"        /*,*/  <<  packetData[posPacket]
-//                                                    /*,*/ << "(0x"         /*,*/  <<  std::hex  /*,*/<< (int)packetData[posPacket]  /*,*/<< std::dec /*,*/<< ")"
-//                                                    /*,*/ << " posBuff:"   /*,*/  <<  posBuff
-//                                                    /*,*/ << " lenBuff:"   /*,*/  <<  lenBuff
-//                                                    /*,*/ << " posPacket:" /*,*/  <<  posPacket
-//                                                          << std::endl;
+//                    std::cout   << "1.  - "
+//                                << "_fp:"           <<  _parsFunc->_name
+//                                << " by:"           <<  _buff[_posBuff]
+//                                << "(0x"            <<  std::hex << (int)_buff[_posBuff]        << std::dec << ")"
+//                                << " - "            <<  packetData[_posPacket]
+//                                << "(0x"            <<  std::hex << (int)packetData[_posPacket] << std::dec << ")"
+//                                << " _posBuff:"     <<  _posBuff
+//                                << " _lenBuff:"     <<  _lenBuff
+//                                << " _posPacket:"   <<  _posPacket
+//                                << std::endl;
 
                     ParseResult res = (this->*(_parsFunc->_fp))(packetData[_posPacket] = _buff[_posBuff], _posBuff, _posPacket);
 
-//                    std::cout << "2.  - "/* LOG_LINE_GLOBAL("SServerClient" */
-//                                                    /*,*/ << " res:"       /*,*/  <<  ParseResultText(res)   /*)*/
-//                                                          << std::endl;
+//                    std::cout   << "2.  - "
+//                                << " by:"           <<  packetData[_posPacket]
+//                                << "(0x"            <<  std::hex << (int)packetData[_posPacket] << std::dec << ")"
+//                                << " res:"          <<  ParseResultText(res)   /*)*/
+//                                << std::endl;
 
 
                     switch (res)
@@ -233,6 +237,7 @@ public:
                         case ParseResult::ERROR     :
                             //LOG_LINE_GLOBAL("SServerClient", "ERROR : PACKET ParseError (", parsFunc->_name, ")");
                             std::cerr << "ERROR : PACKET ParseError (" << _parsFunc->_name << ")" << std::endl;
+                            this->OnErrorClient(SocketResult::SR_ERROR_PARSE);
                             _parsFunc  = _parserTable;
                             _posPacket = 0;
                             _posBuff   = _posBuffBeginPack;
@@ -267,6 +272,8 @@ public:
                 _lenBuff = 0L;
             }
         }
+
+//        std::cout << "SocketClientPacket::recvPacket ---<\n";
         return result;
     }
 
@@ -296,7 +303,7 @@ private :
     msize_t             _posBuff              = 0;
     msize_t             _offsetBuff           = 0;
     msize_t             _posPacket            = 0;
-    const parserFunc *  _parsFunc = _parserTable;
+    const parserFunc *  _parsFunc             = _parserTable;
 
     static const int    _maxBuffLen           = 1024;
     char                _buff[_maxBuffLen];

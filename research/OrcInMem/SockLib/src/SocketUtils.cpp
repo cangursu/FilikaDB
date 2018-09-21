@@ -11,8 +11,32 @@
 #include <cstring>
 #include <sys/epoll.h>
 #include <netdb.h>
+#include <iomanip>
 
 
+int nsleep(long nanoseconds)
+{
+    timespec rem{0,0}, req {.tv_sec = 0, .tv_nsec = nanoseconds};
+    nanosleep(&req, &rem);
+}
+
+int msleep(long miliseconds)
+{
+   timespec req, rem;
+
+   if(miliseconds > 999)
+   {
+        req.tv_sec  = (int)(miliseconds / 1000);                           /* Must be Non-Negative */
+        req.tv_nsec = (miliseconds - ((long)req.tv_sec * 1000)) * 1000000; /* Must be in range of 0 to 999999999 */
+   }
+   else
+   {
+        req.tv_sec  = 0;                        /* Must be Non-Negative */
+        req.tv_nsec = miliseconds * 1000000;    /* Must be in range of 0 to 999999999 */
+   }
+
+   return nanosleep(&req , &rem);
+}
 
 bool NameInfo(const sockaddr &addr, std::string &host, std::string &serv) /*const*/
 {
@@ -34,6 +58,75 @@ bool NameInfo(const sockaddr &addr, std::string &host, std::string &serv) /*cons
 
     return res;
 }
+
+
+std::string dumpMemory(const std::uint8_t *p, std::uint32_t len)
+{
+    return dumpMemory( (const char *)p, len);
+}
+
+std::string dumpMemory(const void *p, std::uint32_t len)
+{
+    return dumpMemory( (const char *)p, len);
+}
+
+std::string dumpMemory(const char *p, std::uint32_t len)
+{
+    std::stringstream ss;
+
+    const int line = 16;
+    const int buffTmpSize = 64;
+
+    long newLinePos   = ss.tellp();
+    long newLineCount = 1;
+
+    uint8_t buffRead[line];
+    char    buffTmp[buffTmpSize];
+    for (std::uint64_t offset = 0/*, len = Len()*/; offset < len; offset += line)
+    {
+        std::memset(buffRead, 0, line);
+        std::memcpy(buffRead, p + offset, line);
+
+
+        /*
+        int j = snprintf(buffTmp, buffTmpSize, "%08d - ", offset);
+        for (int i = 0; (i < 16) && (i + offset < len); ++i)
+            j += snprintf(buffTmp + j, buffTmpSize, "%02x ", (int)buffRead[i]);
+        ss << buffTmp;
+        */
+        ss << std::dec << std::setfill(' ') << std::setw(8) << offset << " - ";
+        for (int i = 0; (i < 16) && (i + offset < len); ++i)
+            ss << std::hex << std::setfill('0') << std::setw(2) << (int)buffRead[i] << " ";
+
+
+        long nlp = ss.tellp();
+        for(long i = nlp - newLinePos; i < 64; ++i)
+            ss << " ";
+
+        for (int i = 0; (i < 16) && (i + offset < len); ++i)
+        {
+            switch (buffRead[i])
+            {
+                case '\0' : ss << "NL"; break;
+                case '\n' : ss << "LF"; break;
+                case '\t' : ss << "TB"; break;
+                case '\v' : ss << "TB"; break;
+                case '\b' : ss << "BS"; break;
+                case '\r' : ss << "CR"; break;
+                default   : snprintf(buffTmp, buffTmpSize, "%1c", buffRead[i]); ss << buffTmp;
+                            //ss << /* :::::::::::::::::::::  std::setw(1) << ::::::::::::::::::::::::::: */ buffRead[i];
+            }
+            ss << " ";
+        }
+        ss << std::endl;
+
+        newLinePos = ss.tellp();
+        newLineCount++;
+    }
+
+    return std::move(ss.str());
+}
+
 
 
 
@@ -82,22 +175,25 @@ const char *SocketResultText(const SocketResult &val)
     const char *res = "NA";
     switch(val)
     {
-        //case SocketResult::SR_FINISH          : res = "SR_FINISH"          ; break;
-        case SocketResult::SR_EMPTY           : res =  "SR_EMPTY"           ; break;
-        case SocketResult::SR_SUCCESS         : res =  "SR_SUCCESS"         ; break;
-        case SocketResult::SR_ERROR           : res =  "SR_ERROR"           ; break;
-        case SocketResult::SR_ERROR_PRM       : res =  "SR_ERROR_PRM"       ; break;
-        case SocketResult::SR_ERROR_EOF       : res =  "SR_ERROR_EOF"       ; break;
-        case SocketResult::SR_ERROR_BIND      : res =  "SR_ERROR_BIND"      ; break;
-        case SocketResult::SR_ERROR_CONNECT   : res =  "SR_ERROR_CONNECT"   ; break;
-        case SocketResult::SR_ERROR_SEND      : res =  "SR_ERROR_SEND"      ; break;
-        case SocketResult::SR_ERROR_READ      : res =  "SR_ERROR_READ"      ; break;
-        case SocketResult::SR_ERROR_EPOLL     : res =  "SR_ERROR_EPOLL"     ; break;
-        case SocketResult::SR_ERROR_LEN       : res =  "SR_ERROR_LEN"       ; break;
-        case SocketResult::SR_ERROR_AGAIN     : res =  "SR_ERROR_AGAIN"     ; break;
-//        case SocketResult::SR_ERROR_REUSEADDR : res =  "SR_ERROR_REUSEADDR" ; break;
-        case SocketResult::SR_ERROR_SOCKOPT   : res =  "SR_ERROR_SOCKOPT"   ; break;
-        case SocketResult::SR_ERROR_CRC       : res =  "SR_ERROR_CRC"       ; break;
+        case SocketResult::SR_TIMEOUT         : res = "SR_TIMEOUT"          ; break;
+        case SocketResult::SR_EMPTY           : res = "SR_EMPTY"            ; break;
+        case SocketResult::SR_SUCCESS         : res = "SR_SUCCESS"          ; break;
+        case SocketResult::SR_ERROR           : res = "SR_ERROR"            ; break;
+        case SocketResult::SR_ERROR_PRM       : res = "SR_ERROR_PRM"        ; break;
+        case SocketResult::SR_ERROR_EOF       : res = "SR_ERROR_EOF"        ; break;
+        case SocketResult::SR_ERROR_BIND      : res = "SR_ERROR_BIND"       ; break;
+        case SocketResult::SR_ERROR_ACCEPT    : res = "SR_ERROR_ACCEPT"     ; break;
+        case SocketResult::SR_ERROR_CONNECT   : res = "SR_ERROR_CONNECT"    ; break;
+        case SocketResult::SR_ERROR_SEND      : res = "SR_ERROR_SEND"       ; break;
+        case SocketResult::SR_ERROR_READ      : res = "SR_ERROR_READ"       ; break;
+        case SocketResult::SR_ERROR_EPOLL     : res = "SR_ERROR_EPOLL"      ; break;
+        case SocketResult::SR_ERROR_LEN       : res = "SR_ERROR_LEN"        ; break;
+        case SocketResult::SR_ERROR_AGAIN     : res = "SR_ERROR_AGAIN"      ; break;
+        case SocketResult::SR_ERROR_REUSEADDR : res = "SR_ERROR_REUSEADDR"  ; break;
+        case SocketResult::SR_ERROR_SOCKOPT   : res = "SR_ERROR_SOCKOPT"    ; break;
+        case SocketResult::SR_ERROR_CRC       : res = "SR_ERROR_CRC"        ; break;
+        case SocketResult::SR_ERROR_NOTCLIENT : res = "SR_ERROR_NOTCLIENT"  ; break;
+        case SocketResult::SR_ERROR_PARSE     : res = "SR_ERROR_PARSE"      ; break;
     }
     return res;
 };
@@ -120,40 +216,41 @@ const char *ErrnoText(int val)
 {
     switch (val)
     {
+        case 0               : return "Success"            ;
         case EPERM           : return "EPERM"              ;
-        case ENOENT          : return"ENOENT"              ;
-        case ESRCH           : return"ESRCH"               ;
-        case EINTR           : return"EINTR"               ;
-        case EIO             : return"EIO"                 ;
-        case ENXIO           : return"ENXIO"               ;
-        case E2BIG           : return"E2BIG"               ;
-        case ENOEXEC         : return"ENOEXEC"             ;
-        case EBADF           : return"EBADF"               ;
-        case ECHILD          : return"ECHILD"              ;
-        case EAGAIN          : return"EAGAIN/EWOULDBLOCK"  ;
-        case ENOMEM          : return"ENOMEM"              ;
-        case EACCES          : return"EACCES"              ;
-        case EFAULT          : return"EFAULT"              ;
-        case ENOTBLK         : return"ENOTBLK"             ;
-        case EBUSY           : return"EBUSY"               ;
-        case EEXIST          : return"EEXIST"              ;
-        case EXDEV           : return"EXDEV"               ;
-        case ENODEV          : return"ENODEV"              ;
-        case ENOTDIR         : return"ENOTDIR"             ;
-        case EISDIR          : return"EISDIR"              ;
-        case EINVAL          : return"EINVAL"              ;
-        case ENFILE          : return"ENFILE"              ;
-        case EMFILE          : return"EMFILE"              ;
-        case ENOTTY          : return"ENOTTY"              ;
-        case ETXTBSY         : return"ETXTBSY"             ;
-        case EFBIG           : return"EFBIG"               ;
-        case ENOSPC          : return"ENOSPC"              ;
-        case ESPIPE          : return"ESPIPE"              ;
-        case EROFS           : return"EROFS"               ;
-        case EMLINK          : return"EMLINK"              ;
-        case EPIPE           : return"EPIPE"               ;
-        case EDOM            : return"EDOM"                ;
-        case ERANGE          : return"ERANGE"              ;
+        case ENOENT          : return "ENOENT"             ;
+        case ESRCH           : return "ESRCH"              ;
+        case EINTR           : return "EINTR"              ;
+        case EIO             : return "EIO"                ;
+        case ENXIO           : return "ENXIO"              ;
+        case E2BIG           : return "E2BIG"              ;
+        case ENOEXEC         : return "ENOEXEC"            ;
+        case EBADF           : return "EBADF"              ;
+        case ECHILD          : return "ECHILD"             ;
+        case EAGAIN          : return "EAGAIN/EWOULDBLOCK" ;
+        case ENOMEM          : return "ENOMEM"             ;
+        case EACCES          : return "EACCES"             ;
+        case EFAULT          : return "EFAULT"             ;
+        case ENOTBLK         : return "ENOTBLK"            ;
+        case EBUSY           : return "EBUSY"              ;
+        case EEXIST          : return "EEXIST"             ;
+        case EXDEV           : return "EXDEV"              ;
+        case ENODEV          : return "ENODEV"             ;
+        case ENOTDIR         : return "ENOTDIR"            ;
+        case EISDIR          : return "EISDIR"             ;
+        case EINVAL          : return "EINVAL"             ;
+        case ENFILE          : return "ENFILE"             ;
+        case EMFILE          : return "EMFILE"             ;
+        case ENOTTY          : return "ENOTTY"             ;
+        case ETXTBSY         : return "ETXTBSY"            ;
+        case EFBIG           : return "EFBIG"              ;
+        case ENOSPC          : return "ENOSPC"             ;
+        case ESPIPE          : return "ESPIPE"             ;
+        case EROFS           : return "EROFS"              ;
+        case EMLINK          : return "EMLINK"             ;
+        case EPIPE           : return "EPIPE"              ;
+        case EDOM            : return "EDOM"               ;
+        case ERANGE          : return "ERANGE"             ;
 
         case EDEADLK          : return "EDEADLK/EDEADLOCK" ;
         case ENAMETOOLONG     : return "ENAMETOOLONG"      ;

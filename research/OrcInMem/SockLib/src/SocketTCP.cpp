@@ -19,8 +19,17 @@ SocketTCP::SocketTCP(int fd, const char *name)
 {
 }
 
+/*
 SocketTCP::SocketTCP(SocketTCP &&s)
     : Socket(std::move(s))
+{
+}
+*/
+
+SocketTCP::SocketTCP(const std::string &address, std::uint16_t port, const char *name)
+    : Socket(name)
+    , _address(address)
+    , _port(port)
 {
 }
 
@@ -28,12 +37,13 @@ SocketTCP::~SocketTCP()
 {
 }
 
+/*
 SocketTCP& SocketTCP::operator=(SocketTCP &&s)
 {
     Socket::operator = (std::move(s));
     return *this;
 }
-
+*/
 
 SocketResult SocketTCP::Init()
 {
@@ -77,10 +87,11 @@ SocketResult SocketTCP::Connect()
                             .sin_port   = htons(_port),
                             .sin_addr   = *((struct in_addr *)(host->h_addr))
                      };
-                     std::memset(&(addr.sin_zero), 0, 8);
+        std::memset(&(addr.sin_zero), 0, 8);
 
-    res = (::connect(fd(), (struct sockaddr *)&addr, sizeof(struct sockaddr)) == -1) ?
-        SocketResult::SR_ERROR_CONNECT : SocketResult::SR_SUCCESS;
+        errno = 0;
+        res = (::connect(fd(), (struct sockaddr *)&addr, sizeof(struct sockaddr)) == -1) ?
+            SocketResult::SR_ERROR_CONNECT : SocketResult::SR_SUCCESS;
     }
 
     return res;
@@ -129,7 +140,7 @@ ssize_t SocketTCP::Read  (void *pdata, size_t len)
     }
     else if (bytes == 0)
     {
-        std::cerr << "SocketTCP(" << Name() << ")::Read  Peer disconnected\n";
+        //std::cerr << "SocketTCP(" << Name() << ")::Read  Peer disconnected\n";
         Release();
     }
 
@@ -155,7 +166,7 @@ ssize_t SocketTCP::Write (const void *pdata, size_t len)
     }
     else if (bytes == 0)
     {
-        std::cerr << "SocketTCP(" << Name() << ")::Read  Peer disconnected\n";
+        //std::cerr << "SocketTCP(" << Name() << ")::Write  Peer disconnected\n";
         Release();
     }
     return bytes;
