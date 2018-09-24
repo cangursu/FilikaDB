@@ -477,6 +477,7 @@ auto thFunctor = [](std::array<StreamPacket, 6> &testPacketsXXX) -> void
     client.Address("127.0.0.1", 5001);
 
     EXPECT_EQ(SocketResult::SR_SUCCESS, res = client.Init());
+    if (SocketResult::SR_SUCCESS != res) return;
     EXPECT_EQ(SocketResult::SR_SUCCESS, res = client.Connect());
     if (SocketResult::SR_SUCCESS != res) return;
     msleep(1);

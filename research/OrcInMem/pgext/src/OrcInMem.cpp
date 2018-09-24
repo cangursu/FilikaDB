@@ -798,7 +798,7 @@ Datum orc_buffer_test(PG_FUNCTION_ARGS)
     const char *data[] =
     {
         "",
-        "1234567890abcdefghi",
+        "1234567890abcdefghijklmnopqrstuvwxyz",
         "jkl",
         "mn",
         "opqr",
@@ -832,7 +832,7 @@ Datum orc_buffer_remote_test(PG_FUNCTION_ARGS)
     elog(LOG, "orc_buffer_remote_test - Log socket:%s", logs.c_str());
 
     LogLineGlbSocketName (logs.c_str());
-    LOG_LINE_GLOBAL("Init", "Deneme");
+    LOG_LINE_GLOBAL("Init", "orc_buffer_remote_test");
     LOG_LINE_GLOBAL("Init", "VER  0.0.0");
     LOG_LINE_GLOBAL("Init", "");
 

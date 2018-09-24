@@ -1,5 +1,10 @@
 #!/bin/sh
 
+
+echo ............................................................................
+echo Build All
+echo ............................................................................
+
 pushd .
 set -e
 
@@ -18,16 +23,6 @@ do
     echo Building  $dir
     echo
     make -C $dir -f ./Makefile all
-done
-
-
-find . -type f -name "gtestapp" -print0 | while read -d $'\0' file
-do
-    dir=$(dirname $file)
-    echo
-    echo Testing  $dir
-    echo
-    ./$file
 done
 
 
