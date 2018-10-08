@@ -16,7 +16,7 @@
 
 #include "SocketServer.h"
 #include "SocketClient.h"
-#include "SocketUtils.h"
+#include "GeneralUtils.h"
 #include "StreamPacket.h"
 #include "LoggerGlobal.h"
 
@@ -53,7 +53,7 @@ class SocketServerPacket : public SocketServer <TSocketSrv, TSocketClt>
             LOG_LINE_GLOBAL("SServerClient", SocketServer<TSocketSrv, TSocketClt>::Name(), " - Using Logger : ", _prm._logName);
         }
 
-        virtual void OnAccept(const TSocketClt &sock, const sockaddr &addr)
+        virtual void OnAccept(TSocketClt &sock, const sockaddr &addr)
         {
             std::string host, serv;
             if (true == NameInfo(addr, host, serv))

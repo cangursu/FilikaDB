@@ -70,7 +70,7 @@ class PacketEchoServer : public SocketServer<SocketTCP, PacketEchoClient>
             : SocketServer<SocketTCP, PacketEchoClient>("ServerEcho")
         {
         }
-        virtual void OnAccept(const PacketEchoClient &sock, const sockaddr &addr)
+        virtual void OnAccept(PacketEchoClient &sock, const sockaddr &addr)
         {
             std::string host, serv;
             if (true == NameInfo(addr, host, serv))

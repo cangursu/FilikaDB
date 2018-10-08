@@ -1,13 +1,14 @@
 
 
 #include "SocketTCP.h"
-#include "SocketUtils.h"
+#include "GeneralUtils.h"
 
 #include <fcntl.h>
 #include <unistd.h>
 #include <iostream>
 #include <cstring>
 #include <netdb.h>
+ #include <arpa/inet.h>
 
 
 SocketTCP::SocketTCP(const char *name /*= "NA"*/)
@@ -78,6 +79,27 @@ SocketResult SocketTCP::InitServer()
 
 SocketResult SocketTCP::Connect()
 {
+    sockaddr_in addr {
+        .sin_family = AF_INET,
+        .sin_port   = htons(_port),
+    };
+    inet_pton(AF_INET, _address.c_str(), &addr.sin_addr);
+
+    SocketResult res = SocketResult::SR_ERROR_CONNECT;
+    char node[NI_MAXHOST];
+    if (0 == getnameinfo((struct sockaddr*)&addr, sizeof(addr),  node, NI_MAXHOST, NULL, 0, 0))
+    {
+        errno = 0;
+        res = (::connect(fd(), (struct sockaddr *)&addr, sizeof(struct sockaddr)) == -1) ?
+            SocketResult::SR_ERROR_CONNECT : SocketResult::SR_SUCCESS;
+    }
+
+    return res;
+}
+
+/*
+SocketResult SocketTCP::Connect()
+{
     SocketResult res = SocketResult::SR_ERROR;
 
     hostent *host = gethostbyname(_address.c_str());
@@ -85,7 +107,7 @@ SocketResult SocketTCP::Connect()
     {
         sockaddr_in addr {  .sin_family = AF_INET,
                             .sin_port   = htons(_port),
-                            .sin_addr   = *((struct in_addr *)(host->h_addr))
+                            .sin_addr   = * ((struct in_addr *)(host->h_addr))
                      };
         std::memset(&(addr.sin_zero), 0, 8);
 
@@ -96,7 +118,7 @@ SocketResult SocketTCP::Connect()
 
     return res;
 }
-
+*/
 SocketResult SocketTCP::SetNonBlock()
 {
     SocketResult res = SocketResult::SR_ERROR;

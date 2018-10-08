@@ -108,7 +108,7 @@ class PacketEchoServer : public SocketServer<TSocketServer, PacketEchoClient<TSo
             : SocketServer<TSocketServer, PacketEchoClient<TSocketClient>>("ServerEcho")
         {
         }
-        virtual void OnAccept(const PacketEchoClient<TSocketClient> &sock, const sockaddr &addr)
+        virtual void OnAccept(PacketEchoClient<TSocketClient> &sock, const sockaddr &addr)
         {
             std::string host, serv;
             if (true == NameInfo(addr, host, serv))
@@ -153,7 +153,7 @@ void ClientServerFrame(TServer &server, TClient &client, TTsetFunctor ftor)
 
     //Prepare Client
     EXPECT_EQ(SocketResult::SR_SUCCESS, client.Init());
-    EXPECT_EQ(SocketResult::SR_SUCCESS, client.Connect());
+    EXPECT_EQ(SocketResult::SR_SUCCESS, client.ConnectServer());
     msleep(1);
     EXPECT_EQ(1, server.ClientCount());
 
@@ -188,7 +188,7 @@ void ClientServerFrameMClient(TServer &server, std::vector<TClient> &clientList,
     for (auto &client : clientList)
     {
         EXPECT_EQ(SocketResult::SR_SUCCESS, client.Init());
-        EXPECT_EQ(SocketResult::SR_SUCCESS, client.Connect());
+        EXPECT_EQ(SocketResult::SR_SUCCESS, client.ConnectServer());
         msleep(2);
 
         thClientList.push_back(std::thread( [&client] () { client.LoopRead();} ));

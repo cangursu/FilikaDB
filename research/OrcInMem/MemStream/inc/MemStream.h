@@ -10,6 +10,7 @@
 #include <string>
 #include <sstream>
 #include <deque>
+#include <vector>
 #include <iostream>
 //#include <iomanip>
 
@@ -44,10 +45,6 @@ extern MemoryPoolDefault g_poolDefault;
  */
 
 
-
-//typedef char byte_t;
-
-
 template <class U>
 class MemStream
 {
@@ -70,6 +67,10 @@ public:
         close();
     }
 
+    void Write (const std::vector<byte_t> &buf)
+    {
+        Write(&buf[0], buf.size());
+    }
     void Write (const void* buf, size_t length)
     {
         if (nullptr == buf) return;

@@ -15,7 +15,7 @@
 
 #include "Logger.h"
 #include "StreamPacket.h"
-#include "SocketUtils.h"
+#include "GeneralUtils.h"
 
 #include <cstdio>
 #include <sys/un.h>

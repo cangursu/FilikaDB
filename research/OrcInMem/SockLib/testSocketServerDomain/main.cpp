@@ -26,7 +26,7 @@
 #include "SocketServer.h"
 #include "SocketClient.h"
 #include "SocketDomain.h"
-#include "SocketUtils.h"
+#include "GeneralUtils.h"
 
 #include <iostream>
 
@@ -39,7 +39,7 @@ class EchoServer : public SocketServer<TSockSrv, TSockCln>
         {
         }
 
-        virtual void OnAccept(const TSockCln &sock, const sockaddr &addr)
+        virtual void OnAccept(TSockCln &sock, const sockaddr &addr)
         {
             std::cout << "Connection Accepted  \n";
             ClientCount();

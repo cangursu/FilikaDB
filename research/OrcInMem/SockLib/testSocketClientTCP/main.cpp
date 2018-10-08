@@ -14,7 +14,7 @@
 #include "SocketTCP.h"
 #include "SocketDomain.h"
 #include "SocketClient.h"
-#include "SocketUtils.h"
+#include "GeneralUtils.h"
 
 #include <unistd.h>
 #include <iostream>
@@ -80,7 +80,7 @@ void Individiual()
         std::cerr << "ERROR : Unable to init SocketClient - (" << errno <<  ") " << strerror(errno) << std::endl;
         return;
     }
-    if (SocketResult::SR_SUCCESS != sock.Connect())
+    if (SocketResult::SR_SUCCESS != sock.ConnectServer())
     {
         std::cerr << "ERROR : Unable to Connect SocketClient - (" << errno <<  ") " << strerror(errno) << std::endl;
         return;
@@ -107,7 +107,7 @@ int main()
         sock[i].Port(5000);
         sock[i].Address("127.0.0.1");
 
-        if (SocketResult::SR_SUCCESS != sock[i].Connect())
+        if (SocketResult::SR_SUCCESS != sock[i].ConnectServer())
         {
             std::cerr << " ERROR : Unable to Connect SocketClient (" << errno <<  ") " << strerror(errno) << std::endl;
             return -2;

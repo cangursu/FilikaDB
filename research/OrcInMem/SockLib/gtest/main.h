@@ -64,7 +64,7 @@ class TestServer : public SocketServer<TSockSrv, TSockCln>
         TestServer(const char *name = "TestServer"):SocketServer<TSockSrv, TSockCln>(name)
         {
         }
-        virtual void OnAccept(const TSockCln &sock, const sockaddr &addr)
+        virtual void OnAccept(TSockCln &sock, const sockaddr &addr)
         {
             //std::cout << "Connection Accepted.  _conCount = " << ++_conCount << " - ";
             //ClientCountMsg();

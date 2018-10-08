@@ -51,7 +51,7 @@ class LogServer : public SocketServer<TSockSrv, TSockCln>
         }
 
 
-        virtual void OnAccept(const TSockCln &sock, const sockaddr &addr)
+        virtual void OnAccept(TSockCln &sock, const sockaddr &addr)
         {
             std::cout << "Accepted connection - ";
             ClientCount();
@@ -162,7 +162,7 @@ void Help()
 int main(int argc, char** argv)
 {
     const char *sfile = (argc > 1) ? argv[1] : SOCK_PATH_DEFAULT;
-    std::cout << "Filika Logger Receiver " << std::endl;
+    std::cout << "\n\nFilika Log Server (" << sfile << ")\n";
 
     LogLineGlbSocketName(nullptr);
 
@@ -199,6 +199,11 @@ int main(int argc, char** argv)
                 case 'x' :
                 case 'X' :
                     quit = true;
+                    break;
+
+                case '\n':
+                case '\r':
+                    std::cout << std::endl;
                     break;
 
                 case 'd' :

@@ -28,31 +28,39 @@ MODULE_big    = $(EXTENSION)
 LIB_DIR_ORC   = /home/postgres/projects/orc/build/_CPack_Packages/Linux/TGZ/ORC-1.5.2-Linux/lib
 INC_DIR_ORC   = /home/postgres/projects/orc/build/_CPack_Packages/Linux/TGZ/ORC-1.5.2-Linux/include
 INC_DIR_LOG   = ../Logger/inc/
+INC_DIR_UTL   = ../Util/inc/
 INC_DIR_MEM   = ../MemStream/inc/
 INC_DIR_SRV   = ../MemStreamServer/inc/
 INC_DIR_SCK   = ../SockLib/inc/
 INC_DIR_CRC   = ../3rdparty/crc32
+INC_DIR_JSN   = ../3rdparty/rapidjson.1/include
+INC_DIR_B64   = ../3rdparty/base64/include
 
 
-INC_DIRS      = $(INC_DIR_ORC) $(INC_DIR_LOG) $(INC_DIR_MEM)  $(INC_DIR_SRV) $(INC_DIR_SCK) $(INC_DIR_CRC)
+INC_DIRS      = $(INC_DIR_ORC) $(INC_DIR_LOG) $(INC_DIR_MEM) $(INC_DIR_SRV) \
+                $(INC_DIR_SCK) $(INC_DIR_CRC) $(INC_DIR_JSN) $(INC_DIR_B64) $(INC_DIR_UTL)
 LIB_DIRS      = $(LIB_DIR_ORC)
 
-CUSTOM_CC = g++
+CUSTOM_CC     = g++
 
-PG_CPPFLAGS = -fPIC -std=c++17 -rdynamic      \
-              $(foreach d, $(INC_DIRS), -I$d) \
+PG_CPPFLAGS   = -fPIC -std=c++17 -rdynamic         \
+                 $(foreach d, $(INC_DIRS), -I$d)   \
 
-              
+
 
 #PG_LIBS = -libstdc++
-CUSTOM_COPT = -lstdc++ -rdynamic -shared      \
-              $(foreach d, $(LIB_DIRS), -L$d) \
-              -lorc                           \
-              -lprotobuf                      \
-              -lz                             \
-              -lsnappy                        \
-              -llz4                           \
+CUSTOM_COPT   = 
 
+
+
+SHLIB_LINK    = -lstdc++ -rdynamic -shared         \
+                $(foreach d, $(LIB_DIRS), -L$d)	   \
+                -lorc                              \
+                -lprotobuf                         \
+                -lz                                \
+                -lsnappy                           \
+                -llz4                              \
+                ../3rdparty/base64/lib/libbase64.o \
 
 
 
@@ -65,3 +73,4 @@ include $(PGXS)
 
 .PHONY: print-%
 print-%: ; @echo $* = $($*)
+

@@ -7,7 +7,7 @@
 #include "main.h"
 
 #include "SocketDomain.h"
-#include "SocketUtils.h"
+#include "GeneralUtils.h"
 
 #include <gtest/gtest.h>
 
@@ -76,7 +76,7 @@ TEST(SocketDomain, Connect)
     TestClient<SocketDomain> cln("TestClient");
     cln.SocketPath(".sock_rawtest");
     ASSERT_EQ (SocketResult::SR_SUCCESS, cln.Init());
-    ASSERT_EQ (SocketResult::SR_SUCCESS, cln.Connect());
+    ASSERT_EQ (SocketResult::SR_SUCCESS, cln.ConnectServer());
 
     msleep(2);
     EXPECT_EQ (1, srv.ClientCount());
@@ -102,7 +102,7 @@ TEST(SocketDomain, Transmission_Echo)
     SocketResult resSrv, resCln;
     std::thread thSrv ( [&srv, &resSrv]() {resSrv = srv.LoopListen();} );
 
-    ASSERT_EQ (SocketResult::SR_SUCCESS, cln.Connect());
+    ASSERT_EQ (SocketResult::SR_SUCCESS, cln.ConnectServer());
     std::thread thCln ( [&cln, &resCln]() {resCln = cln.LoopRead();  } );
 
     msleep(1);

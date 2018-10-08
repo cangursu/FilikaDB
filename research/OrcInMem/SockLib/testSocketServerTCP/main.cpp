@@ -27,7 +27,7 @@
 #include "SocketServer.h"
 #include "SocketClient.h"
 #include "SocketDomain.h"
-#include "SocketUtils.h"
+#include "GeneralUtils.h"
 
 #include <iostream>
 
@@ -44,7 +44,7 @@ class EchoServer : public SocketServer<TSckSrv, TSckCln>
 
 
 
-        virtual void OnAccept(const TSckCln &sock, const sockaddr &addr)
+        virtual void OnAccept(TSckCln &sock, const sockaddr &addr)
         {
             std::string host, serv;
             if (/*SocketResult::SR_SUCCESS*/true == NameInfo(addr, host, serv))

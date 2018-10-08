@@ -19,10 +19,11 @@ CFLAGS= -g -O0 -w -Wall -Werror -fPIC -std=c++17 -rdynamic  \
         -DGIT_DATE=\"$(GIT_DATE)\"        \
         -DBUILD_DATE=\"$(BUILD_DATE)\"
 LDFLAGS=-L../../3rdparty/gtest/_build/googlemock/gtest
-LDLIBS=-lstdc++fs  -lpthread -lgtest
+LDLIBS=../../3rdparty/base64/lib/libbase64.o -lstdc++fs  -lpthread -lgtest
 
 INCLUDE_PATH=-I..                                      \
              -I../inc                                  \
+             -I../../Util/inc                           \
              -I../../SockLib/inc                       \
              -I../../MemStream/inc                     \
              -I../../MemStreamServer/inc               \
@@ -30,13 +31,13 @@ INCLUDE_PATH=-I..                                      \
              -I../../3rdparty/rapidjson.1/include      \
              -I../../3rdparty/crc32                    \
              -I../../3rdparty/gtest/googletest/include \
+             -I../../3rdparty/base64/include
 
 SOURCES=$(wildcard *.cpp)
 SOURCES+=$(wildcard ../src/*.cpp)
-#SOURCES+=$(wildcard ../../SockLib/src/*.cpp)
+SOURCES+=$(wildcard ../../Util/src/*.cpp)
 SOURCES+=$(wildcard ../../MemStream/src/*.cpp)
 SOURCES+=$(wildcard ../../MemStreamServer/src/*.cpp)
-#SOURCES+=$(wildcard ../../Logger/src/*.cpp)
 SOURCES+=$(wildcard ../../3rdparty/rapidjson.1/*.cpp)
 SOURCES+=$(wildcard ../../3rdparty/crc32/*.cpp)
 

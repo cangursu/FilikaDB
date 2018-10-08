@@ -3,6 +3,7 @@
 
 #include "MemStream.h"
 #include "StreamPacket.h"
+#include "MemStreamPacket.h"
 
 #include <iostream>
 
@@ -110,9 +111,24 @@ void Test_StreamPacket()
 }
 
 
+void Test_MemStreamPacket()
+{
+    char *buf   = "XXX";
+    int  length = 3;
+
+    MemStreamPacket packet;
+    int i = packet.CreatePacketWrite("TableXXX", buf, length);
+
+    MemStreamPacket::byte_t payload[1024] = "";
+    int len = packet.Payload(payload, 1024);
+    std::cout << "payload len  : " << len << std::endl;
+    std::cout << "payload data : " << payload << std::endl;
+}
+
 int main(int argc, char** argv)
 {
-    Test_StreamPacket();
+    //Test_StreamPacket();
+    Test_MemStreamPacket();
 }
 
 

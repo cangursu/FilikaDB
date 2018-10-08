@@ -18,10 +18,10 @@ do
     [ -f $file ] && rm -d $file
 done
 
-find . -type d -name "nbproject" -print0 | while read -d $'\0' filex
+find . -type d -name "nbproject" -print0 | while read -d $'\0' file
 do
-    echo file: $filex
-    [ -d $filex ] && rm -d -r $filex
+    echo file: $file
+    [ -d $file ] && rm -d -r $file
 done
 
 find . -name "Makefile" -print0 | while read -d $'\0' file

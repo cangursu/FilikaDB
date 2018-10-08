@@ -14,27 +14,31 @@ endif
 CC=g++
 
 CFLAGS= -g -O0 -w -Wall -Werror -fPIC -std=c++17 -rdynamic  \
-        -DGIT_VERSION=\"$(GIT_VERSION)\"  \
-        -DGIT_COMMIT=\"$(GIT_COMMIT)\"    \
-        -DGIT_DATE=\"$(GIT_DATE)\"        \
-        -DBUILD_DATE=\"$(BUILD_DATE)\"
+        -DGIT_VERSION=\"$(GIT_VERSION)\"                    \
+        -DGIT_COMMIT=\"$(GIT_COMMIT)\"                      \
+        -DGIT_DATE=\"$(GIT_DATE)\"                          \
+        -DBUILD_DATE=\"$(BUILD_DATE)\"                      \
+        
 LDFLAGS=-L../../3rdparty/gtest/_build/googlemock/gtest
-LDLIBS=-lstdc++fs  -lpthread -lgtest
+LDLIBS=../../3rdparty/base64/lib/libbase64.o -lstdc++fs  -lpthread -lgtest
 
-INCLUDE_PATH=-I..                                      \
-             -I../inc                                  \
-             -I../../SockLib/inc                       \
-             -I../../MemStream/inc                     \
-             -I../../MemStreamServer/inc               \
-             -I../../Logger/inc                        \
-             -I../../3rdparty/rapidjson.1/include      \
-             -I../../3rdparty/crc32                    \
-             -I../../3rdparty/gtest/googletest/include \
+INCLUDE_PATH=-I..                                       \
+             -I../inc                                   \
+             -I../../Util/inc                           \
+             -I../../SockLib/inc                        \
+             -I../../MemStream/inc                      \
+             -I../../MemStreamServer/inc                \
+             -I../../Logger/inc                         \
+             -I../../3rdparty/rapidjson.1/include       \
+             -I../../3rdparty/crc32                     \
+             -I../../3rdparty/gtest/googletest/include  \
+             -I../../3rdparty/base64/include            \
 
 SOURCES=$(wildcard *.cpp)
+SOURCES+=$(wildcard ../../Util/src/*.cpp)
+SOURCES+=$(wildcard ../../SockLib/src/*.cpp)
 SOURCES+=$(wildcard ../../MemStream/src/*.cpp)
 SOURCES+=$(wildcard ../../MemStreamServer/src/*.cpp)
-SOURCES+=$(wildcard ../../SockLib/src/*.cpp)
 SOURCES+=$(wildcard ../../Logger/src/*.cpp)
 SOURCES+=$(wildcard ../../3rdparty/crc32/*.cpp)
 

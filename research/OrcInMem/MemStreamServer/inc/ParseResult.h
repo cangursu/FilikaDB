@@ -11,10 +11,10 @@
  * Created on 23 July 2018, 08:39
  */
 
-#ifndef __XXX_PARSE_RESULT_H__
-#define __XXX_PARSE_RESULT_H__
+#ifndef __PARSE_RESULT_H__
+#define __PARSE_RESULT_H__
 
 enum class ParseResult { ERROR, CONTINUE, NEXT, FINISH };
 
-#endif /* __XXX_PARSE_RESULT_H__ */
+#endif /* __PARSE_RESULT_H__ */
 

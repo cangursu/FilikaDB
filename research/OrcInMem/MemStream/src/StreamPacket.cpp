@@ -14,7 +14,7 @@
 #include "StreamPacket.h"
 #include "LoggerGlobal.h"
 #include "crc32.h"
-#include "SocketUtils.h"
+#include "GeneralUtils.h"
 
 #include <utility>
 #include <cstring>
@@ -69,8 +69,6 @@ bool StreamPacket::Check() const
 {
 //    std::cout << "CRC Test "  << std::endl;
 //    std::cout << "_buffLen :" << _buffLen << " - _buff  :\n" << dumpMemory(_buff, _buffLen) << std::endl;
-
-
 
     const StreamPacket::byte_t *ptWalk = _buff;
     const StreamPacket::byte_t *ptData = nullptr;
@@ -144,7 +142,7 @@ std::uint32_t StreamPacket::PayloadPart(byte_t *buff, std::uint32_t lenBuff, std
 
 std::uint32_t StreamPacket::Payload(byte_t *buff, std::uint32_t lenBuff) const
 {
-    if (false == Check()) return false;
+    if (false == Check()) return 0;
 
     std::uint32_t         len    = 0;
     const StreamPacket::byte_t *ptWalk = _buff  + g_lenMID;

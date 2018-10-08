@@ -13,7 +13,6 @@
 #include <list>
 
 
-
 TEST(MemStreamServerTCP, Individual)
 {
     PacketEchoServer<SocketTCP, SocketTCP>  server;
@@ -462,12 +461,11 @@ TEST(MemStreamServerTCP, IndividualMClient)
 }
 
 
-
 std::mutex              g_mtx;
 std::condition_variable g_cv;
 bool                    g_ready = false;
 
-auto thFunctor = [](std::array<StreamPacket, 6> &testPacketsXXX) -> void
+auto thFunctor = [](std::array<StreamPacket, 6> &testPackets) -> void
 {
     SocketResult res;
 
@@ -478,8 +476,10 @@ auto thFunctor = [](std::array<StreamPacket, 6> &testPacketsXXX) -> void
 
     EXPECT_EQ(SocketResult::SR_SUCCESS, res = client.Init());
     if (SocketResult::SR_SUCCESS != res) return;
-    EXPECT_EQ(SocketResult::SR_SUCCESS, res = client.Connect());
+
+    EXPECT_EQ(SocketResult::SR_SUCCESS, res = client.ConnectServer());
     if (SocketResult::SR_SUCCESS != res) return;
+
     msleep(1);
     std::thread thRead = std::thread( [&client](){ client.LoopRead(); });
 
@@ -487,16 +487,18 @@ auto thFunctor = [](std::array<StreamPacket, 6> &testPacketsXXX) -> void
     g_cv.wait(lk, []{return g_ready;});
     lk.unlock();
 
-    for(const auto &pck : testPacketsXXX)
+    for(const auto &pck : testPackets)
         client.SendPacket(pck);
-    for(int i = 0; (i < 30) && client._packetList.size() != testPacketsXXX.size(); ++i)
+    for(int i = 0; (i < 30) && client._packetList.size() != testPackets.size(); ++i)
         msleep(5);
 
-    EXPECT_EQ (client._packetList.size(), testPacketsXXX.size() );
-    if (client._packetList.size() == testPacketsXXX.size())
+    EXPECT_EQ (client._packetList.size(), testPackets.size() );
+    if (client._packetList.size() == testPackets.size())
     {
-        for(int i = 0; i < testPacketsXXX.size(); ++i)
-            EXPECT_TRUE(client._packetList[i] == testPacketsXXX[i]);
+        for(int i = 0; i < testPackets.size(); ++i)
+        {
+            EXPECT_TRUE(client._packetList[i] == testPackets[i]);
+        }
     }
 
     client.LoopReadStop();
@@ -513,7 +515,6 @@ TEST(MemStreamServerTCP, IndividualConcurrent)
     server.Address("127.0.0.1", 5001);
     ASSERT_EQ(SocketResult::SR_SUCCESS, server.Init());
     std::thread thServer(   [&server](){server.LoopListen();}   );
-    msleep(5);
 
     std::array<StreamPacket, 6> testPackets
     {
@@ -547,5 +548,4 @@ TEST(MemStreamServerTCP, IndividualConcurrent)
 
     server.Release();
 }
-
 

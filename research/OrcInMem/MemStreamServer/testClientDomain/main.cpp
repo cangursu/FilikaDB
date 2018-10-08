@@ -14,7 +14,7 @@
 
 #include "SocketClientPacket.h"
 #include "SocketDomain.h"
-#include "SocketUtils.h"
+#include "GeneralUtils.h"
 #include "StreamPacket.h"
 
 #include <iostream>
@@ -196,7 +196,7 @@ int main(int , char** )
         return 0;
     }
 
-    if (SocketResult::SR_SUCCESS != sock.Connect())
+    if (SocketResult::SR_SUCCESS != sock.ConnectServer())
     {
         std::cerr << "ERROR : Unable to Connect SocketDomain \n";
         return 0;

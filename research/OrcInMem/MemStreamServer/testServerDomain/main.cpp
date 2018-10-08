@@ -69,14 +69,19 @@ class PacketEchoServer : public SocketServer<SocketDomain, PacketEchoClient>
             : SocketServer<SocketDomain, PacketEchoClient>("ServerEcho")
         {
         }
-        virtual void OnAccept(const PacketEchoClient &sock, const sockaddr &addr)
+        virtual void OnAccept(PacketEchoClient &sock, const sockaddr &addr)
         {
-            std::string host, serv;
+            LOG_LINE_GLOBAL("ServerEcho", "Accepted client");
+            ClientCount();
+
+/*
+          std::string host, serv;
             if (true == NameInfo(addr, host, serv))
             {
                 LOG_LINE_GLOBAL("ServerEcho", "Accepted connection on host = ", host, " port = ", serv);
                 ClientCount();
             }
+*/
         }
 
         virtual void OnDisconnect  (const PacketEchoClient &sock)
@@ -128,14 +133,14 @@ public:
 
 int main(int argc, char** argv)
 {
-    std::cout << "StreamServerClient v0\n";
+    std::cout << "StreamServerClient ver 0.0.0.1\n";
 
     const char *slog = "/home/postgres/.sock_domain_log";
     const char *ssrv = "/home/postgres/.sock_domain_pgext";
 
     std::cout << "Using LogServer : " << slog << std::endl;
     LogLineGlbSocketName(slog);
-    LOG_LINE_GLOBAL("ServerEcho", "ver 0.0.0.0");
+    LOG_LINE_GLOBAL("ServerEcho", "ver 0.0.0.1");
 
 
     PacketEchoServer server;

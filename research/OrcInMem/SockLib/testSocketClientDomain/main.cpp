@@ -14,7 +14,7 @@
 //#include "SocketTCP.h"
 #include "SocketDomain.h"
 #include "SocketClient.h"
-#include "SocketUtils.h"
+#include "GeneralUtils.h"
 
 #include <unistd.h>
 #include <iostream>
@@ -67,12 +67,12 @@ int main()
     sock1.SocketPath(sname);
     sock2.SocketPath(sname);
     
-    if (SocketResult::SR_SUCCESS != sock2.Connect())
+    if (SocketResult::SR_SUCCESS != sock2.ConnectServer())
     {
         std::cerr << "ERROR : Unable to Connect SocketClient - (" << errno <<  ") " << strerror(errno) << std::endl;
         return -2;
     }
-    if (SocketResult::SR_SUCCESS != sock1.Connect())
+    if (SocketResult::SR_SUCCESS != sock1.ConnectServer())
     {
         std::cerr << "ERROR : Unable to Connect SocketClient - (" << errno <<  ") " << strerror(errno) << std::endl;
         return -2;

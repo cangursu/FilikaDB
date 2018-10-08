@@ -21,7 +21,7 @@ TEST(MemStream, Test1)
     ASSERT_EQ  (pck.Create(data, len), g_lenOverhead + len);
     ASSERT_TRUE(pck.Check());
 
-    ASSERT_EQ  (pck.Payload(buff, len), len);
+    ASSERT_EQ  (pck.Payload(buff, len)      , len);
     ASSERT_EQ  (std::memcmp(buff, data, len), 0);
 
     data = "kenemem";
@@ -30,7 +30,7 @@ TEST(MemStream, Test1)
     ASSERT_EQ  (pck.Create(data, len), g_lenOverhead + len);
     ASSERT_TRUE(pck.Check());
 
-    ASSERT_EQ  (pck.Payload(buff, len), len);
+    ASSERT_EQ  (pck.Payload(buff, len)      , len);
     ASSERT_EQ  (std::memcmp(buff, data, len), 0);
 }
 
@@ -49,8 +49,8 @@ TEST(MemStream, Test2)
     ASSERT_EQ  (pck.Create(data, len), g_lenOverhead + len);
     ASSERT_TRUE(pck.Check());
 
-    ASSERT_EQ  (pck.Payload(buff, len), len);
-    ASSERT_EQ  (0, std::memcmp(buff, data, len));
+    ASSERT_EQ  (pck.Payload(buff, len)      , len);
+    ASSERT_EQ  (0, std::memcmp(buff, data   , len));
 }
 
 

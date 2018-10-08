@@ -19,19 +19,22 @@ CFLAGS= -g -O0 -w -Wall -fPIC -std=c++17  \
         -DGIT_DATE=\"$(GIT_DATE)\"        \
         -DBUILD_DATE=\"$(BUILD_DATE)\"
 
-LDFLAGS=
+LDFLAGS=../../3rdparty/base64/lib/libbase64.o
 #LDLIBS=../HElib/src/fhe.a ../ntl-10.3.0/src/ntl.a -lgmp -lpthread
 LDLIBS=-lstdc++fs -pthread
-INCLUDE_PATH=	-I..                                    \
-		-I../inc                                \
-		-I../../MemStream/inc                   \
-		-I../../MemStreamServer/inc             \
-		-I../../SockLib/inc                     \
-		-I../../3rdparty/crc32                  \
-		-I../../3rdparty/rapidjson.1/include
+INCLUDE_PATH=   -I..                                    \
+                -I../inc                                \
+                -I../../Util/inc                        \
+                -I../../MemStream/inc                   \
+                -I../../MemStreamServer/inc             \
+                -I../../SockLib/inc                     \
+                -I../../3rdparty/crc32                  \
+                -I../../3rdparty/rapidjson.1/include    \
+                -I../../3rdparty/base64/include         \
 
 SOURCES=$(wildcard *.cpp)
 SOURCES+=$(wildcard ../src/*.cpp)
+SOURCES+=$(wildcard ../../Util/src/*.cpp)
 SOURCES+=$(wildcard ../../MemStream/src/*.cpp)
 SOURCES+=$(wildcard ../../SockLib/src/*.cpp)
 SOURCES+=$(wildcard ../../3rdparty/crc32/*.cpp)
@@ -44,7 +47,7 @@ EXEC=LoggerSender
 
 all: $(EXEC)
 
-$(EXEC): $(OBJECTS)
+$(EXEC): $(OBJECTS) $(OBJECTS_NOCPP)
 	$(CC) $(LDFLAGS) $^ -o $@ $(LDLIBS)
 
 %.o:%.cpp

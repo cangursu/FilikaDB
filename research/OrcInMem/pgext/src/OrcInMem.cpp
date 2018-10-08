@@ -2,11 +2,17 @@
 
 #include "OrcInMem.h"
 #include "OrcStreamInMem.h"
-#include "OrcMemStreamRemoteSender.h"
+#include "OrcStreamRemote.h"
 #include "OrcInMemTime.h"
 #include "LoggerGlobal.h"
 #include "OrcInMemGlobals.h"
-#include "SocketUtils.h"
+#include "GeneralUtils.h"
+
+#include "rapidjson/document.h"
+#include "rapidjson/writer.h"
+#include "rapidjson/stringbuffer.h"
+#include "rapidjson/prettywriter.h"
+
 
 
 #ifdef __cplusplus
@@ -46,6 +52,7 @@ PG_FUNCTION_INFO_V1(orc_buffer_remote_test);
 #include <algorithm>
 #include <dirent.h>
 #include <stdexcept>
+#include <thread>
 
 
 
@@ -479,15 +486,14 @@ class RandomBatchLoader  : public BatchLoader
 
 
 
-
-void MemTestLoad(const std::string &msg, const std::string &input, std::unique_ptr<orc::OutputStream> &outStream)
+void MemTestLoad(const std::string &msg, const std::string &input, orc::OutputStream *outStream)
 {
     uint64_t                                batchSize   = 1024;
 
     orc::DataBuffer<char>                   buffer(*orc::getDefaultPool(), 4 * 1024 * 1024);
 
     std::unique_ptr<orc::Type>              fileType = orc::Type::buildTypeFromString("struct<col1:bigint,col2:string,col3:double>");
-    std::unique_ptr<orc::Writer>            writer   = MemTestWriter(*fileType, outStream.get());
+    std::unique_ptr<orc::Writer>            writer   = MemTestWriter(*fileType, outStream/*.get()*/);
     std::unique_ptr<orc::ColumnVectorBatch> rowBatch = writer->createRowBatch(batchSize);
 
 
@@ -549,6 +555,7 @@ void MemTestLoad(const std::string &msg, const std::string &input, std::unique_p
 
         LOG_LINE_GLOBAL("InMemTestLog", "Closing Writer (", itemCount, " items)");
         callElapses += CallMeasureFrame([&](){writer->close();});
+        LOG_LINE_GLOBAL("InMemTestLog", "Closed");
     }
     catch(std::exception &ex)
     {
@@ -563,8 +570,14 @@ void MemTestLoad(const std::string &msg, const std::string &input, std::unique_p
     LOG_LINE_GLOBAL("InMemMeasure", msg, " - Total Load Elasped time: ", callElapses.elapses, " ms. - CPU time : ", callElapses.elapsesCPU, " ms.");
 }
 
+void MemTestLoad(const std::string &msg, const std::string &input, std::unique_ptr<orc::OutputStream> &outStream)
+{
+    /*return */MemTestLoad(msg, input, outStream.get());
+}
 
-bool MemTestReader(const std::string &msg, const std::string &fname, std::unique_ptr<orc::InputStream> &inStream)
+
+
+bool MemTestReader(const std::string &msg, const std::string &fname, orc::InputStream *inStream)
 {
     CallMeasure  callMsr;
     int  lnCompare   = 0;
@@ -583,6 +596,7 @@ bool MemTestReader(const std::string &msg, const std::string &fname, std::unique
         }
         else
         {
+            LOG_LINE_GLOBAL("InMemTest");
             orc::ReaderOptions                      readerOpts;
             std::unique_ptr<orc::Reader>            reader;
             orc::RowReaderOptions                   rowReaderOpts;
@@ -590,15 +604,23 @@ bool MemTestReader(const std::string &msg, const std::string &fname, std::unique
             std::unique_ptr<orc::ColumnVectorBatch> batch;
             std::unique_ptr<orc::ColumnPrinter>     printer;
 
+            LOG_LINE_GLOBAL("InMemTest");
             std::string lineORC;
             char        lineOut[g_readLineLength];
 
+            LOG_LINE_GLOBAL("InMemTest");
             //rowReaderOpts.include({0,1,2});
 
-            callMsr += CallMeasureFrame([&](){reader    = orc::createReader(std::unique_ptr<orc::InputStream> (inStream.release()), readerOpts);});
+
+            callMsr += CallMeasureFrame([&](){reader    = orc::createReader(std::unique_ptr<orc::InputStream> (inStream), readerOpts);});
+            LOG_LINE_GLOBAL("InMemTest");
             callMsr += CallMeasureFrame([&](){rowReader = reader->createRowReader(rowReaderOpts);});
+            LOG_LINE_GLOBAL("InMemTest");
             callMsr += CallMeasureFrame([&](){batch     = rowReader->createRowBatch(512);});
+            LOG_LINE_GLOBAL("InMemTest");
             callMsr += CallMeasureFrame([&](){printer   = createColumnPrinter(lineORC, &rowReader->getSelectedType());});
+            LOG_LINE_GLOBAL("InMemTest");
+
             while ((lnCompare == 0) && isNext)
             {
                 callMsr += CallMeasureFrame([&](){isNext = rowReader->next(*batch);});
@@ -648,6 +670,11 @@ bool MemTestReader(const std::string &msg, const std::string &fname, std::unique
     return lnCompare == 0;
 }
 
+bool MemTestReader(const std::string &msg, const std::string &fname, std::unique_ptr<orc::InputStream> &inStream)
+{
+    return MemTestReader(msg, fname, inStream.release());
+}
+
 
 bool OrcInmemTest(const std::string &fname)
 {
@@ -687,7 +714,7 @@ bool OrcInmemTest(const std::string &fname)
 
 Datum orc_inmem_test(PG_FUNCTION_ARGS)
 {
-    elog(LOG, "orc_inmem_test - ver:0.0.1");
+    elog(LOG, "orc_inmem_test - ver:0.0.3");
 
     const std::string logs = GETARG_TEXT(0, g_defLogSocket);
     const std::string path = GETARG_TEXT(1, g_defTestDataPath);
@@ -823,42 +850,128 @@ Datum orc_buffer_test(PG_FUNCTION_ARGS)
 
 Datum orc_buffer_remote_test(PG_FUNCTION_ARGS)
 {
-    elog(LOG, "orc_buffer_remote_test - ver:0.0.0");
+    elog(LOG, "orc_buffer_remote_test - ver:0.1.0.1");
 
     const std::string logs = GETARG_TEXT(0, g_defLogSocket);
-    const std::string remt = GETARG_TEXT(1, g_defRemoteSocket);
+    //const std::string remt = GETARG_TEXT(1, g_defRemoteSocket);
 
 
     elog(LOG, "orc_buffer_remote_test - Log socket:%s", logs.c_str());
 
     LogLineGlbSocketName (logs.c_str());
-    LOG_LINE_GLOBAL("Init", "orc_buffer_remote_test");
-    LOG_LINE_GLOBAL("Init", "VER  0.0.0");
+    LOG_LINE_GLOBAL("Init", "orc_buffer_remote_test - ver:0.0.0.2");
     LOG_LINE_GLOBAL("Init", "");
 
 
-    OrcMemStreamRemoteSender mem("OrcRemote", "/home/postgres/.sock_domain_pgext");
+    {
 
-    SocketResult rc = mem.init();
+        OrcStreamRemote streamMem("MemOStream");
+        streamMem.Address("127.0.0.1", 5001);
+        SocketResult res = streamMem.init();
+        LOG_LINE_GLOBAL ("InMemTest", "streamMem->init : ", SocketResultText(res));
+        if (SocketResult::SR_SUCCESS == res)
+        {
+            LOG_LINE_GLOBAL ("InMemTest", "MemTestLoad --->");
+            MemTestLoad("MemTestReader", "/home/postgres/projects/filikadb/research/OrcInMem/pgext/test/data/TestDate10.in", &streamMem);
+            LOG_LINE_GLOBAL ("InMemTest", "MemTestLoad ---<");
+            streamMem.Release();
+        }
+    }
+    {
+        OrcStreamRemote streamMem("MemIStream");
+        streamMem.Address("127.0.0.1", 5001);
+        SocketResult res = streamMem.init();
+        LOG_LINE_GLOBAL ("OutMemTest", "streamMem->init : ", SocketResultText(res));
+        if (SocketResult::SR_SUCCESS == res)
+        {
+            LOG_LINE_GLOBAL ("OutMemTest", "MemTestReader --->");
+            //std::unique_ptr<orc::InputStream> inStreamMem  (dynamic_cast<OrcMemStream<char> *>(streamMem.release()));
+            bool result = MemTestReader("MemTestReader", "/home/postgres/projects/filikadb/research/OrcInMem/pgext/test/data/TestDate10.out", &streamMem);
+            LOG_LINE_GLOBAL ("OutMemTest", "MemTestReader ---<   result:", result?"true":"false");
+        }
+    }
 
-    const char *data;
-    int         len;
+
+
+//        bool b = OrcInmemTest("/home/postgres/projects/filikadb/research/OrcInMem/pgext/test/data/TestDate10");
+//        LOG_LINE_GLOBAL("XXX", "OrcInmemTest ->", b?"true":"false");
+
+
+
+    PG_RETURN_TEXT_P(cstring_to_text(""));
+
+
+
+/*
+
+
+
+    OrcStreamRemote client("OrcRemote");
+    client.SocketPath(remt.c_str());
+
+    SocketResult rc = client.init();
+
+    const char *data = nullptr;
+    int         len  = 0;
+
     if (rc == SocketResult::SR_SUCCESS)
     {
+        std::thread th ( [&client] () { client.LoopRead();} );
+
+
+        rapidjson::Document doc;
+        auto &a = doc.GetAllocator();
+
+        doc.SetObject();
+
+        rapidjson::Value cmdItem1;
+        cmdItem1.SetObject();
+        cmdItem1.AddMember("Name",              "TableXXX"  , a);
+        cmdItem1.AddMember("CmdID",             "Write"     , a);
+        cmdItem1.AddMember("RefID",             "UUID1"     , a);
+        cmdItem1.AddMember("prm.DataContent",   "b64xxx"    , a);
+        cmdItem1.AddMember("prm.DataLenght",    "6"         , a);
+        cmdItem1.AddMember("prm.DataOffset",    "0"         , a);
+        cmdItem1.AddMember("prm.DataEnc",       "Base64"    , a);
+
+        rapidjson::Value cmdArray(rapidjson::kArrayType);
+        cmdArray.PushBack(cmdItem1, a);
+        doc.AddMember("MYSFRIF", cmdArray, a);
+
+        rapidjson::StringBuffer sbuf;
+        rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(sbuf);
+
+        doc.Accept(writer);
+        len  = sbuf.GetSize();
+        data = sbuf.GetString();
+        client.write(data, len);
+
+
+
+
+
+
+
+/ *
         data = "denemem";
         len  = strlen(data);
-        mem.write(data, len);
+        client.write(data, len);
 
         data = "hebelemem";
         len  = strlen(data);
-        mem.write(data, len);
+        client.write(data, len);
 
         data = "debelemem";
         len  = strlen(data);
-        mem.write(data, len);
+        client.write(data, len);
+* /
+        sleep(10);
 
   //      char buff[len + 1] = "";
-  //      mem.read(buff, len, 0);
+  //      client.read(buff, len, 0);
+
+        client.LoopReadStop();
+        if (th.joinable()) th.join();
     }
     else
     {
@@ -868,5 +981,6 @@ Datum orc_buffer_remote_test(PG_FUNCTION_ARGS)
     const char *resStr = "orc_buffer_remote_test FAILED";
     LOG_LINE_GLOBAL("remote", "----<  ", resStr);
     PG_RETURN_TEXT_P(cstring_to_text(resStr));
+*/
 }
 

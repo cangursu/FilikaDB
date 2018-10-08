@@ -19,7 +19,7 @@
 #include "SocketClient.h"
 #include "ParseResult.h"
 #include "LoggerGlobal.h"
-#include "SocketUtils.h"
+#include "GeneralUtils.h"
 
 
 

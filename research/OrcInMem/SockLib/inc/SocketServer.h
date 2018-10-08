@@ -16,7 +16,7 @@
 
 #include "SocketResult.h"
 #include "MemStream.h"
-#include "SocketUtils.h"
+#include "GeneralUtils.h"
 
 #include <unordered_map>
 #include <unistd.h>
@@ -63,7 +63,7 @@ class SocketServer  : public TSocketSrv
 
     public:
         // Events
-        virtual void  OnAccept      (const TSocketClt &, const sockaddr &)           = 0;
+        virtual void  OnAccept      (TSocketClt &, const sockaddr &)                 = 0;
         virtual void  OnRecv        (TSocketClt &,       MemStream<std::uint8_t> &&) = delete;
         virtual void  OnDisconnect  (const TSocketClt &)                             = 0;
         virtual void  OnErrorClient (const TSocketClt &, SocketResult)               = 0;

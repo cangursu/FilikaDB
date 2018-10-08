@@ -12,7 +12,7 @@
  */
 
 #include "SocketDomain.h"
-#include "SocketUtils.h"
+#include "GeneralUtils.h"
 
 #include <cstring>
 #include <unistd.h>

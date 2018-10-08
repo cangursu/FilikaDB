@@ -13,7 +13,7 @@
 
 #include "SocketServerPacket.h"
 #include "LoggerGlobal.h"
-#include "SocketUtils.h"
+#include "GeneralUtils.h"
 
 #include <cstring>
 #include <iostream>

@@ -16,7 +16,7 @@
 
 #include "SocketResult.h"
 #include "MemStream.h"
-#include "SocketUtils.h"
+#include "GeneralUtils.h"
 
 
 #include <string>
@@ -37,9 +37,9 @@ class SocketClient : public TSocket
         SocketClient& operator=(const SocketClient &val) = delete;
 
 
-        SocketResult Connect ();
-        SocketResult Send    (const void *data, std::uint64_t len);
-        SocketResult Send    (const MemStream<std::uint8_t> &)    ;
+        SocketResult ConnectServer ();
+        SocketResult Send          (const void *data, std::uint64_t len);
+        SocketResult Send          (const MemStream<std::uint8_t> &)    ;
 
         SocketResult LoopRead();
         SocketResult LoopReadStop() { _exit = true; }
@@ -58,7 +58,7 @@ class SocketClient : public TSocket
 
 
 template <typename TSocket>
-SocketResult SocketClient<TSocket>::Connect()
+SocketResult SocketClient<TSocket>::ConnectServer()
 {
     SocketResult res = SocketResult::SR_EMPTY;
 
@@ -66,7 +66,7 @@ SocketResult SocketClient<TSocket>::Connect()
     int ntry = 0;
     for (ntry = 0; (res != SocketResult::SR_SUCCESS) && (ntry < 5); ++ntry)
     {
-        res = TSocket::Connect();
+        res = this->Connect();
         nsleep(10);
     }
 

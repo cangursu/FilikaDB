@@ -84,7 +84,7 @@ void LogLineGlobalFormat(const char *desc, int lineNo, const char *fname, const 
     LogLineGlobalFormatPrefix(os, desc, lineNo, fname, funcName);
     LogLineGlobalFormat(os, args ...);
 
-    if (Filika::FILIKA_RESULT::FR_ERROR == Filika::logger().___xxx___SendRaw())
+    if (Filika::FILIKA_RESULT::FR_ERROR == Filika::logger().SendRaw())
     {
         std::cerr << "ERROR - Log : Unable to send log\n";
     }

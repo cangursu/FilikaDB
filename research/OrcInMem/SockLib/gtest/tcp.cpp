@@ -60,7 +60,7 @@ TEST(SocketTCP, Transmission_Echo)
     std::thread thSrv ( [&srv, &resSrv]() {resSrv = srv.LoopListen();} );
 
 
-    EXPECT_EQ (SocketResult::SR_SUCCESS, cln.Connect());
+    EXPECT_EQ (SocketResult::SR_SUCCESS, cln.ConnectServer());
     msleep(1);
     EXPECT_EQ (1, srv.ClientCount());
 
@@ -106,7 +106,7 @@ TEST(SocketTCP, Transmission_MultipleConnect1)
         cln[i].Name(std::string(namePrefix) += std::to_string(i));
         cln[i].Port(5000);
         EXPECT_EQ (SocketResult::SR_SUCCESS, res = cln[i].Init());
-        EXPECT_EQ (SocketResult::SR_SUCCESS, res = cln[i].Connect());
+        EXPECT_EQ (SocketResult::SR_SUCCESS, res = cln[i].ConnectServer());
     }
 
     msleep(100);
@@ -140,7 +140,7 @@ TEST(SocketTCP, Transmission_MultipleConnect_ClientLost)
         {
             EXPECT_EQ (SocketResult::SR_SUCCESS, res = clns[cidx].Init());
             clns[cidx].Port(5000);
-            EXPECT_EQ (SocketResult::SR_SUCCESS, res = clns[cidx].Connect());
+            EXPECT_EQ (SocketResult::SR_SUCCESS, res = clns[cidx].ConnectServer());
             msleep(1);
         }
         EXPECT_EQ (countClient, srv.ClientCount());
@@ -178,7 +178,7 @@ TEST(SocketTCP, Transmission_MultipleConnect_ResetServer)
         {
             EXPECT_EQ (SocketResult::SR_SUCCESS, res = clns[cidx].Init());
             clns[cidx].Port(5000);
-            EXPECT_EQ (SocketResult::SR_SUCCESS, res = clns[cidx].Connect());
+            EXPECT_EQ (SocketResult::SR_SUCCESS, res = clns[cidx].ConnectServer());
         }
         msleep(1);
         EXPECT_EQ (countClient, srv.ClientCount());
@@ -213,7 +213,7 @@ TEST(SocketTCP, Transmission_MultipleEcho)
     {
         EXPECT_EQ (SocketResult::SR_SUCCESS, clns[cid].Init());
         clns[cid].Port(5000);
-        EXPECT_EQ (SocketResult::SR_SUCCESS, clns[cid].Connect());
+        EXPECT_EQ (SocketResult::SR_SUCCESS, clns[cid].ConnectServer());
 
         clnsTh[cid] = std::thread ( [&clns, &cid, &clnsRes]() {clnsRes[cid] = clns[cid].LoopRead();  } );
         msleep(2);
