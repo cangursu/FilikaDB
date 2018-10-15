@@ -60,17 +60,17 @@ bool NameInfo(const sockaddr &addr, std::string &host, std::string &serv) /*cons
 }
 
 
-std::string dumpMemory(const std::uint8_t *p, std::uint32_t len)
+std::string DumpMemory(const std::uint8_t *p, std::uint32_t len)
 {
-    return dumpMemory( (const char *)p, len);
+    return DumpMemory( (const char *)p, len);
 }
 
-std::string dumpMemory(const void *p, std::uint32_t len)
+std::string DumpMemory(const void *p, std::uint32_t len)
 {
-    return dumpMemory( (const char *)p, len);
+    return DumpMemory( (const char *)p, len);
 }
 
-std::string dumpMemory(const char *p, std::uint32_t len)
+std::string DumpMemory(const char *p, std::uint32_t len)
 {
     std::stringstream ss;
 

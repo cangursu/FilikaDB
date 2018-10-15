@@ -3,9 +3,11 @@ CC=g++
 
 #CFLAGS= -ggdb -w -Wall -fPIC -std=c++11
 CFLAGS= -g -O0 -w -Wall -fPIC -std=c++17
-LDFLAGS=../../3rdparty/base64/lib/libbase64.o
+LDFLAGS=../../3rdparty/base64/lib/libbase64.o 
+LDFLAGS+=-lpthread
 #LDLIBS=../HElib/src/fhe.a ../ntl-10.3.0/src/ntl.a -lgmp -lpthread
 LDLIBS=
+
 INCLUDE_PATH=   -I..                                \
                 -I../inc                            \
                 -I../../Util/inc                    \

@@ -12,6 +12,7 @@
 #include "ParseResult.h"
 
 #include <sys/socket.h>
+#include <functional>
 #include <cstdint>
 #include <string>
 
@@ -21,9 +22,9 @@ int             msleep              (long miliseconds);
 int             nsleep              (long nanoseconds);
 
 bool            NameInfo            (const sockaddr &addr, std::string &host, std::string &serv);
-std::string     dumpMemory          (const void *p,         std::uint32_t len);
-std::string     dumpMemory          (const std::uint8_t *p, std::uint32_t len);
-std::string     dumpMemory          (const char *p,         std::uint32_t len);
+std::string     DumpMemory          (const void *p,         std::uint32_t len);
+std::string     DumpMemory          (const std::uint8_t *p, std::uint32_t len);
+std::string     DumpMemory          (const char *p,         std::uint32_t len);
 
 
 
@@ -35,8 +36,6 @@ std::string     EPollEvents         (std::uint32_t eid);
 
 const char *    SocketResultText    (const SocketResult &val);
 const char *    ParseResultText     (const ParseResult  &val);
-
-
 
 
 #endif //__SOCKET_UTILITIES_H__

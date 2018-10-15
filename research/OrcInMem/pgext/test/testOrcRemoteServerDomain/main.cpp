@@ -8,6 +8,7 @@
 
 
 #include <stdio.h>
+#include <thread>
 #include <termios.h>
 #include <unistd.h>
 #include <sys/ioctl.h>
@@ -166,6 +167,34 @@ public:
 
 
 
+#define KEY_EVENT_ID_HELP 0
+#define KEY_EVENT_ID_QUIT 1
+#define KEY_EVENT_ID_LF   2
+
+
+class MyConsole : public Console
+{
+public:
+    MyConsole(OrcRemoteServer<SocketTCP, OrcRemoteServerClient> &server)
+        :_server (server)
+    {
+    }
+    virtual void EventFired(const Console::KeyHandler &kh)
+    {
+        switch(kh._id)
+        {
+            case KEY_EVENT_ID_HELP  :   DisplayHelp();  break;
+            case KEY_EVENT_ID_QUIT  :   _server.LoopListenStop(); LoopStop();  break;
+            case KEY_EVENT_ID_LF    :   std::cout   << std::endl << std::endl << std::endl << std::endl << std::endl << std::endl; break;
+        }
+    }
+
+private :
+    OrcRemoteServer<SocketTCP, OrcRemoteServerClient> &_server;
+};
+
+
+
 
 // *************************************************************************
 // ***                                                                   ***
@@ -178,20 +207,25 @@ int main(int argc, char** argv)
 {
     LogLineGlbSocketName(nullptr);
 
-    Console con;
-
-    con.AddKeyHandler({'q', 'Q', 'x', 'X'}  , "q"       , "Quit");
-    con.AddKeyHandler({'\n', '\r'}          , "Enter"   , "Line feed");
-    con.AddKeyHandler({'h', 'H'}            , "h"       , "Help");
-
-    //const char *sfile = (argc > 1) ? argv[1] : SOCK_PATH_DEFAULT;
-    con.DisplayMsg("\nRemote ORC Test SERVER\n");
-
-
     // Prepare Server
     OrcRemoteServer<SocketTCP, OrcRemoteServerClient> srv("OrcRemoteServer");
-    //srv.SocketPath(sfile);
     srv.Address("127.0.0.1", 5001);
+
+
+
+    MyConsole con(srv);
+    con.KeyHandlerAdd({'h', 'H'}            , KEY_EVENT_ID_HELP, "h"       , "Help");
+    con.KeyHandlerAdd({'q', 'Q', 'x', 'X'}  , KEY_EVENT_ID_QUIT, "q"       , "Quit");
+    con.KeyHandlerAdd({'\n', '\r'}          , KEY_EVENT_ID_LF  , "Enter"   , "Line feed");
+
+    //const char *sfile = (argc > 1) ? argv[1] : SOCK_PATH_DEFAULT;
+    con.DisplayMsg("\nRemote ORC Test SERVER");
+
+
+
+    con.DisplayMsg("Server Path : ") << /*sfile*/ srv.Address() << ":" << srv.Port() << std::endl << std::endl;
+    con.DisplayHelp();
+
 
     if (SocketResult::SR_ERROR == srv.Init())
     {
@@ -200,29 +234,25 @@ int main(int argc, char** argv)
     }
 
 
-    con.DisplayMsg("Server Path : ") << /*sfile*/ srv.Address() << ":" << srv.Port() << std::endl << std::endl;
-    con.DisplayHelp();
-
-
-    srv.LoopListenPrepare();
-    bool quit = false;
-    char ch;
+    std::thread th( [&srv](){srv.LoopListen(); } );
 
     con.DisplayMsg("Packet Server Listen Loop Entered\n");
+    con.LoopStart();
+    if (th.joinable()) th.join();
+    con.DisplayMsg("Packet Server Listen Loop Quitted\n");
+
+
+
 
 
 
 
 /*
-    con.rawmode(true);
-    Loop loop([&con]()->void
-    {
+    con.DisplayMsg("Packet Server Listen Loop Entered\n");
 
-    } );
-    con.rawmode(false);
-*/
-
-
+ *     srv.LoopListenPrepare();
+    bool quit = false;
+    char ch;
 
     con.rawmode(true);
     while(false == quit)
@@ -261,13 +291,8 @@ int main(int argc, char** argv)
         }
     }
     con.rawmode(false);
-
-
-
-
-
-
     std::cout << "Packet Server Listen Loop Quitted\n";
+    */
 
     return 0;
 }

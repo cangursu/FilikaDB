@@ -19,40 +19,41 @@
 #include <sys/ioctl.h>
 #include <iomanip>
 
-Console::Console()
-{
-}
 
-Console::Console(const Console& orig)
+void Console::KeyHandlerAdd(std::vector<char> keys, int id, const std::string &keyLabel, const std::string &desc)
 {
-}
-
-Console::~Console()
-{
-}
-
-
-void Console::AddKeyHandler(std::vector<char> keys, const std::string &keyLabel, const std::string &desc)
-{
-    _keyHandlers.push_back({._keyLabel = keyLabel, ._desc = desc});
+    _keyHandlers.push_back({._keyLabel = keyLabel, ._desc = desc, ._id = id});
     size_t idx = _keyHandlers.size()-1;
 
     for (const auto &key : keys)
         _keyHandlerTable[key] = idx;
 }
 
+bool Console::KeyHandlerGet(char key, KeyHandler &kh) const
+{
+    const auto &it = _keyHandlerTable.find(key);
+    if (it != _keyHandlerTable.cend())
+    {
+        kh = _keyHandlers[it->second];
+        return true;
+    }
+    return false;
+}
+
 
 std::ostream &Console::DisplayMsg(const char *msg)
 {
-    std::cout << msg/* << std::endl*/;
+    std::cout << msg << std::endl;
     std::cout.flush();
     return std::cout;
 }
+
 
 std::ostream &Console::DisplayMsg(const std::string &msg)
 {
     return DisplayMsg(msg.c_str());
 }
+
 
 std::ostream &Console::DisplayErrMsg(const char *msg)
 {
@@ -60,10 +61,12 @@ std::ostream &Console::DisplayErrMsg(const char *msg)
     return std::cerr;
 }
 
+
 std::ostream &Console::DisplayErrMsg(const std::string &msg)
 {
     return DisplayErrMsg(msg.c_str());
 }
+
 
 void Console::DisplayHelp()
 {
@@ -86,6 +89,7 @@ bool Console::kbhit()
     return byteswaiting > 0;
 }
 
+
 void Console::rawmode(bool enable)
 {
     termios term;
@@ -97,4 +101,30 @@ void Console::rawmode(bool enable)
     tcsetattr(0, TCSANOW, &term);
 }
 
+
+
+void Console::LoopStart()
+{
+    //Loop loop;
+    //loop.Start
+    Loop::Start ( [this]()->void
+                    {
+                        //std::cout << "Looping\n";
+                        char ch;
+                        if (kbhit())
+                        {
+                            read(STDIN_FILENO, &ch, 1);
+
+                            KeyHandler kh;
+                            if (true == KeyHandlerGet(ch, kh))
+                            {
+                                EventFired(kh);
+                            }
+                        }
+                        msleep(500);
+                    } ,
+            [this]()->void { rawmode(true);  } ,
+            [this]()->void { rawmode(false); }
+        );
+}
 

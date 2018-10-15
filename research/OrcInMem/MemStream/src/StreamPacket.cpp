@@ -181,7 +181,7 @@ std::string StreamPacket::Dump(const std::string &msg /*= ""*/) const
 
     ss << "Dump Packet --->  " << msg                          << std::endl;
     ss << "buffLen :  "        << _buffLen                     << std::endl;
-    ss << "buff    : \n"       << dumpMemory(_buff, _buffLen)  << std::endl;
+    ss << "buff    : \n"       << DumpMemory(_buff, _buffLen)  << std::endl;
 
     return std::move(ss.str());
 }

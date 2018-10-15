@@ -1,12 +1,14 @@
 
 #include "SocketClientPacket.h"
 #include "SocketServer.h"
+#include "Console.h"
 
 
 #include <stdio.h>
 #include <termios.h>
 #include <unistd.h>
 #include <sys/ioctl.h>
+#include <thread>
 
 #define SOCK_PATH_DEFAULT "/home/postgres/.sock_domain_log"
 
@@ -127,42 +129,41 @@ public:
 };
 
 
+#define KEY_EVENT_ID_HELP           0
+#define KEY_EVENT_ID_QUIT           1
+#define KEY_EVENT_ID_LF             2
+#define KEY_EVENT_ID_OPT_DISPLAY    3
 
-
-
-
-void rawmode(bool enable)
+template <typename TServer>
+class LogServerConsole : public Console
 {
-    termios term;
-    tcgetattr(0, &term);
-    if (enable)
-        term.c_lflag &= ~(ICANON | ECHO);
-    else
-        term.c_lflag |= ICANON | ECHO;
-    tcsetattr(0, TCSANOW, &term);
-}
+public:
+    TServer &_srv;
+    LogServerConsole (TServer &srv) : _srv(srv)
+    {
+    }
+
+    virtual void EventFired(const Console::KeyHandler &kh)
+    {
+        switch(kh._id)
+        {
+            case KEY_EVENT_ID_HELP          :   DisplayHelp();  break;
+            case KEY_EVENT_ID_QUIT          :   _srv.LoopListenStop(); LoopStop();  break;
+            case KEY_EVENT_ID_LF            :   std::cout   << std::endl << std::endl << std::endl << std::endl << std::endl << std::endl; break;
+            case KEY_EVENT_ID_OPT_DISPLAY   :   g_options.Display(!g_options.Display());
+                                                DisplayMsg(g_options.Display() ? "log entries displaying \n" : "log entries hiding \n");
+                                                break;
+        }
+    }
+};
 
 
-bool kbhit()
-{
-    int byteswaiting;
-    ioctl(0, FIONREAD, &byteswaiting);
-    return byteswaiting > 0;
-}
 
-void Help()
-{
-    std::cout << std::endl;
-    std::cout << "Keybord Functionalities : \n";
-    std::cout << "   q -> quit\n";
-    std::cout << "   d -> Toogle display log entries\n";
-    std::cout << "   h -> help\n";
-}
 
 int main(int argc, char** argv)
 {
     const char *sfile = (argc > 1) ? argv[1] : SOCK_PATH_DEFAULT;
-    std::cout << "\n\nFilika Log Server (" << sfile << ")\n";
+    //std::cout << "\n\nFilika Log Server (" << sfile << ")\n";
 
     LogLineGlbSocketName(nullptr);
 
@@ -175,52 +176,24 @@ int main(int argc, char** argv)
     }
 
 
-    Help();
 
 
-    srv.LoopListenPrepare();
-    bool quit = false;
-    char ch;
+    LogServerConsole<LogServer<SocketDomain, LogServerClient>> con(srv);
+    con.KeyHandlerAdd({'h', 'H'}            , KEY_EVENT_ID_HELP       , "h"       , "Help");
+    con.KeyHandlerAdd({'q', 'Q', 'x', 'X'}  , KEY_EVENT_ID_QUIT       , "q"       , "Quit");
+    con.KeyHandlerAdd({'\n', '\r'}          , KEY_EVENT_ID_LF         , "Enter"   , "Line feed");
+    con.KeyHandlerAdd({'d', 'D'}            , KEY_EVENT_ID_OPT_DISPLAY, "d"       , "Toogle Display Messages");
 
-    std::cout << "Packet Server Listen Loop Entered\n";
+    con.DisplayMsg("\nCIMRI Central Log Server ver:1.0");
+    con.DisplayMsg("Path : " + srv.SocketPath() + "\n");
+    con.DisplayHelp();
 
+    con.DisplayMsg("CIMRI Central Log Server Listen Loop Entered\n");
+    std::thread thSrv ([&srv] () { srv.LoopListen();} );
+    con.LoopStart();
+    if (thSrv.joinable()) {thSrv.join();}
+    con.DisplayMsg("CIMRI Central Log Server Listen Loop Quitted\n");
 
-    rawmode(true);
-    while(false == quit)
-    {
-        srv.LoopListenSingleShot();
-        if (kbhit())
-        {
-            read(STDIN_FILENO, &ch, 1);
-            switch(ch)
-            {
-                case 'q' :
-                case 'Q' :
-                case 'x' :
-                case 'X' :
-                    quit = true;
-                    break;
-
-                case '\n':
-                case '\r':
-                    std::cout << std::endl;
-                    break;
-
-                case 'd' :
-                case 'D' :
-                    g_options.Display(!g_options.Display());
-                    std::cout << (g_options.Display() ? "log entries displaying \n" : "log entries hiding \n");
-                    break;
-
-                case 'h' :
-                case 'H' :
-                    Help();
-                    break;
-            }
-        }
-    }
-    rawmode(false);
-    std::cout << "Packet Server Listen Loop Quitted\n";
 
     return 0;
 }
