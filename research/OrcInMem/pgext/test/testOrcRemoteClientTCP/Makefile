@@ -27,7 +27,7 @@ SOURCES+=$(wildcard ../../../3rdparty/crc32/*.cpp)
 OBJECTS=$(SOURCES:.cpp=.o)
 DEPENDS=$(SOURCES:.cpp=.d)
 
-EXEC=testOrcRemoteServerDomain
+EXEC=testOrcRemoteClientTCP
 
 all: $(EXEC)
 

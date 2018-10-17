@@ -107,7 +107,7 @@ std::uint32_t MemStreamPacket::CreatePacketWrite(const char *source, const void 
     return StreamPacket::Create(sbuf.GetString(), sbuf.GetSize());
 }
 
-int  MemStreamPacket::EncodePacket (const StreamPacket &packet, std::vector<Cmd> &cmds)
+int  MemStreamPacket::DecodePacket (const StreamPacket &packet, std::vector<Cmd> &cmds)
 {
     StreamPacket::byte_t payload[512] = "";
     if (1 < packet.Payload(payload, 512))
@@ -120,6 +120,7 @@ int  MemStreamPacket::EncodePacket (const StreamPacket &packet, std::vector<Cmd>
             return 0;
 
         cmds.empty();
+
         for (auto& v : doc["MYSFRIF"].GetArray())
         {
             // Parameter Validation
@@ -155,22 +156,26 @@ int  MemStreamPacket::EncodePacket (const StreamPacket &packet, std::vector<Cmd>
                         public:
                             typedef char Ch;
                             VectorHolder(std::vector<Ch> &d, int s)  : _d(d) { _d.reserve(s); }
-                            void Put(Ch c)      { _d.push_back(c);  }
-                            void Clear()        { _d.clear();       }
-                            void Flush()        { return;           }
-                            size_t Size() const { return _d.size(); }
+                            void Put(Ch c)      { if (false == (_pos==0 && c=='\"'))  _d.push_back(c);  }
+                            void Clear()        { _pos = 0; _d.clear(); }
+                            void Flush()        { return;               }
+                            size_t Size() const { return _pos;          }//_d.size(); }
                         private:
                             std::vector<Ch> &_d;
+                            int              _pos = 0;
                     };
+
                     VectorHolder vholder(cmd._buffer._buf, std::stol(cmd._buffer._length));
                     rapidjson::Writer<VectorHolder> writer(vholder);
                     b["Content"].Accept(writer);
+                    if (vholder.Size() > 0 && cmd._buffer._buf[vholder.Size()] == '\"')
+                        cmd._buffer._buf.pop_back();
                 }
             }
-
             cmds.push_back(std::move(cmd));
         }
     }
+
     return cmds.size();
 }
 

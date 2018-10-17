@@ -161,7 +161,7 @@ public:
     std::uint32_t   CreatePacketWrite   (const char *source, const void *data, std::size_t len);
     std::uint64_t   CreateRefID();
 
-    int             EncodePacket        (const StreamPacket &, std::vector<Cmd> &cmds);
+    int             DecodePacket        (const StreamPacket &, std::vector<Cmd> &cmds);
 
 
 private:

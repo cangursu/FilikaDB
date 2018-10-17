@@ -106,8 +106,8 @@ void OrcStreamRemote::write(const void* buf, size_t length)
     packet.CreatePacketWrite("TableXXX", buf, length);
 
 
-    MemStreamPacket::byte_t payload[1024] = "";
-    int len = packet.Payload(payload, 1024);
+    //MemStreamPacket::byte_t payload[2048] = "";
+    //int len = packet.Payload(payload, 2048);
     //LOG_LINE_GLOBAL("remote", "len=", len);
     //LOG_LINE_GLOBAL("remote", "payload=", payload);
 

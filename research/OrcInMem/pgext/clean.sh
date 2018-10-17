@@ -27,4 +27,7 @@ else
     echo .... start db ....
     echo
     pg_ctl -D ~/pgdata -l ~/pgdata/log start
+    rs=$?
 fi
+
+exit $rs

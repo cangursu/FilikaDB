@@ -211,6 +211,17 @@ SocketResult SocketServer<TSocketSrv, TSocketClt>::LoopListenSingleShot()
         //std::cout << n << ". epoll_wait released (" << events[i].data.fd << ") : " << EPollEvents(events[i].events) << std::endl;
 
         // .......................................
+        // ............... EPOLLIN ...............
+        if (events[i].events & EPOLLIN)
+        {
+            if (events[i].data.fd == TSocketSrv::fd())
+                Accept();
+            else
+                Recv(events[i].data.fd);
+        }
+
+
+        // .......................................
         // ............... EPOLLERR ..............
         if (events[i].events & EPOLLERR)
         {
@@ -225,15 +236,6 @@ SocketResult SocketServer<TSocketSrv, TSocketClt>::LoopListenSingleShot()
             Disconnect(events[i].data.fd);
         }
 
-        // .......................................
-        // ............... EPOLLIN ...............
-        if (events[i].events & EPOLLIN)
-        {
-            if (events[i].data.fd == TSocketSrv::fd())
-                Accept();
-            else
-                Recv(events[i].data.fd);
-        }
 
         // .......................................
         // ......... EPOLLRDHUP/EPOLLHUP .........

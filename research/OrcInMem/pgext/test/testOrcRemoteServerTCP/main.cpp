@@ -5,6 +5,7 @@
 #include "Console.h"
 #include "MemStreamPacketStore.h"
 #include "MemStreamPacket.h"
+#include "libbase64.h"
 
 
 #include <stdio.h>
@@ -90,21 +91,21 @@ public:
     {
        // if (g_options.Display())
         {
-            std::cout << "OnRecvPacket --->\n";
+            //std::cout << "OnRecvPacket --->\n";
             //DisplayPacket(packet);
         }
-        EncodePacket(packet);
-        SendPacket(packet);
+        DecodePacket(packet);
+        //SendPacket(packet);
     }
 
-    void EncodePacket(StreamPacket &packet)
+    void DecodePacket(StreamPacket &packet)
     {
         if (_pstore)
         {
             MemStreamPacket stream;
 
             std::vector <MemStreamPacket::Cmd> cmds;
-            if ( 1 > stream.EncodePacket(packet, cmds))
+            if ( 1 > stream.DecodePacket(packet, cmds))
             {
                 OnErrorClient(SocketResult::SR_ERROR_PARSE);
             }
@@ -112,11 +113,14 @@ public:
             {
                 for(const auto &cmd : cmds)
                 {
-                    std::cout << "Command \n";
-                    std::cout << "_cmdid          : " << cmd._cmdidStr       << std::endl;
-                    std::cout << "_source         : " << cmd._source         << std::endl;
+
+#ifdef FOLLOW_PYLDATA_FLOW
+                    std::time_t tmt = std::stol(cmd._ts);
+                    std::cout << "\nCommand \n";
                     std::cout << "_sender         : " << cmd._sender         << std::endl;
-                    std::cout << "_ts             : " << cmd._ts             << std::endl;
+                    std::cout << "_ts             : " << std::ctime(&tmt);
+                    std::cout << "_source         : " << cmd._source         << std::endl;
+                    std::cout << "_cmdid          : " << cmd._cmdidStr       << std::endl;
                     std::cout << "_refid          : " << cmd._refid          << std::endl;
                     std::cout << "_result         : " << cmd._result         << std::endl;
                     std::cout << "_message        : " << cmd._message        << std::endl;
@@ -125,6 +129,13 @@ public:
                     std::cout << "_buffer._enc    : " << cmd._buffer._enc    << std::endl;
                     std::cout << "_buffer._buf    : " << std::string(&cmd._buffer._buf[0], cmd._buffer._buf.size()) << std::endl;
 
+                    size_t outLen = std::stol(cmd._buffer._length);
+                    char outBuff[outLen];
+                    const char *ppp = &cmd._buffer._buf[0];
+                    base64_decode (ppp, cmd._buffer._buf.size(), outBuff, &outLen, BASE64_FORCE_AVX2);
+                    std::cout << "Decoded _buf    : " << std::string(outBuff, outLen) << std::endl;
+                    std::cout << std::endl;
+#endif //FOLLOW_PYLDATA_FLOW
 
                     switch (cmd._cmdid)
                     {
@@ -227,7 +238,7 @@ int main(int argc, char** argv)
     con.DisplayHelp();
 
 
-    if (SocketResult::SR_ERROR == srv.Init())
+    if (SocketResult::SR_SUCCESS != srv.Init())
     {
         con.DisplayErrMsg("Unable to initialize Echo Server\n");
         return -1;

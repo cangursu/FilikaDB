@@ -81,6 +81,7 @@ public:
     std::uint32_t   BufferLen  () const                                  { return _buffLen; }
 
     std::string     Dump       (const std::string &msg = "") const;
+    std::string     DumpPayload(const std::string &msg = "") const;
 private:
 
     byte_t          _buff[g_lenMaxBuffer];

@@ -53,12 +53,12 @@ public:
         , _name (name)
     {
     }
-    virtual uint64_t getLength() const                              {return 128;}
-    virtual uint64_t getNaturalReadSize() const                     {return 128;}
-    virtual void read(void* buf,uint64_t length,uint64_t offset)    {return ;}
-    virtual const std::string& getName() const                      {return _name;}
-    virtual void OnRecvPacket(StreamPacket &&packet)                {return ;}
-    virtual void OnErrorClient (SocketResult)                       {return ;}
+    virtual uint64_t            getLength() const                               {return 128;}
+    virtual uint64_t            getNaturalReadSize() const                      {return 128;}
+    virtual void                read(void* buf,uint64_t length,uint64_t offset) {return ;}
+    virtual const std::string&  getName() const                                 {return _name;}
+    virtual void                OnRecvPacket(StreamPacket &&packet)             {return ;}
+    virtual void                OnErrorClient (SocketResult)                    {return ;}
 
     SocketResult init(const char *address, std::uint16_t post)
     {

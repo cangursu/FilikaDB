@@ -22,11 +22,12 @@
 *.x86_64
 *.hex
 *.swp
-temp
-results
+temp/
+results/
 
 # Prj
-nbproject
+nbproject/
+.git/
 
 
 TestData*

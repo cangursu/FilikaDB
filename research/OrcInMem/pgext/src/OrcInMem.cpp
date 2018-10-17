@@ -850,7 +850,7 @@ Datum orc_buffer_test(PG_FUNCTION_ARGS)
 
 Datum orc_buffer_remote_test(PG_FUNCTION_ARGS)
 {
-    elog(LOG, "orc_buffer_remote_test - ver:0.1.0.1");
+    elog(LOG, "orc_buffer_remote_test - ver:0.1.0.3");
 
     const std::string logs = GETARG_TEXT(0, g_defLogSocket);
     //const std::string remt = GETARG_TEXT(1, g_defRemoteSocket);
@@ -859,7 +859,7 @@ Datum orc_buffer_remote_test(PG_FUNCTION_ARGS)
     elog(LOG, "orc_buffer_remote_test - Log socket:%s", logs.c_str());
 
     LogLineGlbSocketName (logs.c_str());
-    LOG_LINE_GLOBAL("Init", "orc_buffer_remote_test - ver:0.0.0.2");
+    LOG_LINE_GLOBAL("Init", "orc_buffer_remote_test - ver:0.0.0.3");
     LOG_LINE_GLOBAL("Init", "");
 
 

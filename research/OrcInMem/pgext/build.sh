@@ -38,21 +38,23 @@ else
     rs=$?
 fi
 
-echo .... finish ....
+#   
+#   echo .... finish ....
+#   
+#   
+#   if [ "$rs" = "0" ]; then
+#       echo .... unit test ....
+#       make installcheck
+#   fi
+#   
+#   
+#   
+#   if [ "$rs" = "0" ]; then
+#       echo .... test ....
+#   
+#   #    psql -c "drop extension orcinmem cascade;"
+#   #    psql -c "create extension orcinmem version '0.0.3';"
+#   #    psql -c "select orc_inmem_test('')";
+#   fi
 
-
-if [ "$rs" = "0" ]; then
-    echo .... unit test ....
-    make installcheck
-fi
-
-
-
-if [ "$rs" = "0" ]; then
-    echo .... test ....
-
-#    psql -c "drop extension orcinmem cascade;"
-#    psql -c "create extension orcinmem version '0.0.3';"
-#    psql -c "select orc_inmem_test('')";
-fi
-
+exit $rs

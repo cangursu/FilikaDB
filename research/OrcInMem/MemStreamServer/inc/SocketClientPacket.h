@@ -78,16 +78,32 @@ public:
 
         if (SocketResult::SR_SUCCESS != res)
             this->OnErrorClient(res);
+#ifdef FOLLOW_PYLDATA_FLOW
+        else
+        {
+            size_t len = packet.PayloadLen();
+            StreamPacket::byte_t payload[len + 1] = "";
+            packet.Payload(payload, len);
+
+            std::cout << "Sended Payload (Len:" + std::to_string(len) << ")\n";
+            std::cout << std::string((char*)payload, len)       << std::endl;
+        }
+#endif
 
         return res;
     }
 
+    //
+    // Abstract Recieve Handler
+    //
     virtual void OnRecvPacket(StreamPacket &&packet) = 0;
 
 
     virtual void OnRecv(MemStream<std::uint8_t> &&stream)
     {
-//        std::cout << stream.Dump("SocketClientPacket::OnRecv --->");
+#ifdef FOLLOW_RAWDATA_FLOW
+        std::cout << stream.Dump("SocketClientPacket::OnRecv --->");
+#endif
 
         SocketResult res = SocketResult::SR_ERROR_AGAIN;
         while(SocketResult::SR_ERROR_AGAIN == res)
@@ -96,7 +112,9 @@ public:
 
             auto reader = [&stream] (char *buff, int offset, int len) -> int { return stream.Read(buff, len, offset); };
             res = recvPacket(packet, reader);
+
 //            std::cout << "SocketClientPacket::OnRecv recvPacket:" << SocketResultText(res) << std::endl;
+//            std::cout << packet.DumpPayload("len : " + std::to_string(packet.PayloadLen())) << std::endl;
 
             switch(res)
             {

@@ -13,6 +13,7 @@ REGRESS_OPTS  = --inputdir=test               \
 REGRESS       = $(patsubst test/sql/%.sql,%,$(TESTS))
 OBJS          = $(patsubst %.c,%.o,$(wildcard src/*.c))
 OBJS         += $(patsubst %.cpp,%.o,$(wildcard src/*.cpp))
+OBJS         += $(patsubst %.cpp,%.o,$(wildcard ../Util/src/*.cpp))
 OBJS         += $(patsubst %.cpp,%.o,$(wildcard ../Logger/src/*.cpp))
 OBJS         += $(patsubst %.cpp,%.o,$(wildcard ../MemStream/src/*.cpp))
 OBJS         += $(patsubst %.cpp,%.o,$(wildcard ../MemStreamServer/src/*.cpp))

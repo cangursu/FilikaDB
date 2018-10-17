@@ -92,8 +92,11 @@ SocketResult SocketClient<TSocket>::Send(const void *data, std::uint64_t len)
         }
         else
         {
-            //std::cout << "i = " << i << "  errno = " <<  errno << " (" << strerror(errno) << ")\n";
             res = SocketResult::SR_SUCCESS;
+#ifdef FOLLOW_RAWDATA_FLOW
+            std::cout << "i = " << i << "  errno = " <<  errno << " (" << strerror(errno) << ")\n";
+            std::cout << "Send Data  (length:" << len << ") ->\n" << DumpMemory(data, len) << std::endl;
+#endif
         }
     }
     return res;

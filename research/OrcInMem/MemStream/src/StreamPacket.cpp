@@ -174,6 +174,21 @@ bool StreamPacket::operator == (const StreamPacket& orig) const
 }
 
 
+std::string StreamPacket::DumpPayload(const std::string &msg /* = "" */) const
+{
+    std::stringstream ss;
+
+    ss << "Dump Packet Payload --->  "  << msg    << std::endl;
+
+    size_t len = PayloadLen();
+    ss << "pload len :  "               << len    << std::endl;
+
+    byte_t buff[len];
+    Payload(buff, len);
+    ss << "buff      : \n"              << std::string ((char *)buff, len)  << std::endl;
+
+    return std::move(ss.str());
+}
 
 std::string StreamPacket::Dump(const std::string &msg /*= ""*/) const
 {
