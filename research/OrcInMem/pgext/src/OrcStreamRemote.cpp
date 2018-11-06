@@ -90,31 +90,63 @@ uint64_t OrcStreamRemote::getNaturalWriteSize() const
     return 128L;
 }
 
-void OrcStreamRemote::read(void* buf, uint64_t length, uint64_t offset)
+void OrcStreamRemote::OnErrorClient (SocketResult err)
 {
-    LOG_LINE_GLOBAL("remote", "************");
-    LOG_LINE_GLOBAL("remote", "length:", length, " - offset:", offset);
-    LOG_LINE_GLOBAL("remote", "************");
-    //Assert(true);
+    std::cout << "ERROR : SClient::OnErrorClient - " << SocketResultText(err) << std::endl;
 }
 
-void OrcStreamRemote::write(const void* buf, size_t length)
+void OrcStreamRemote::OnRecvPacket  (StreamPacket &&packet)
 {
-    LOG_LINE_GLOBAL("remote", "length=", length);
+    msize_t         pyLen     = packet.PayloadLen();
+    msize_t         pyLenRead = 0;
+    const msize_t   buffLen   = 32;
+    byte_t          buff [buffLen];
 
+    std::stringstream ss;
+
+    for (msize_t i = 0; i < pyLen; i += buffLen)
+    {
+        if ((pyLenRead = packet.PayloadPart(buff, buffLen, i)) > 0)
+            ss << std::string((char*)buff, pyLenRead);
+    }
+    LOG_LINE_GLOBAL("ClientEcho", "PGEXT Packet:", ss.str());
+}
+
+void OrcStreamRemote::read(void* buf, uint64_t length, uint64_t offset)
+{
+    for(int i = 0; i < length; ++i)
+        ((char*)buf)[i] = '\0';
+
+
+    LOG_LINE_GLOBAL("remote");
+    LOG_LINE_GLOBAL("remote", "length:", length, " - offset:", offset);
     MemStreamPacket packet;
-    packet.CreatePacketWrite("TableXXX", buf, length);
+    packet.CreatePacketRead("SenderYYY", "TableYYY", length, offset);
 
-
-    //MemStreamPacket::byte_t payload[2048] = "";
-    //int len = packet.Payload(payload, 2048);
-    //LOG_LINE_GLOBAL("remote", "len=", len);
-    //LOG_LINE_GLOBAL("remote", "payload=", payload);
+    LOG_LINE_GLOBAL("remote", packet.DumpPayload("\n"));
 
     if (SocketResult::SR_SUCCESS != SendPacket(packet))
     {
         LOG_LINE_GLOBAL("remote", "ERROR: Unable to send packet. errno:", errno);
-        std::cerr <<  "ERROR : SendPacket failed.\n";
+        elog(LOG, "ERROR : SendPacket failed.");
+    }
+}
+
+void OrcStreamRemote::write(const void* buf, size_t length)
+{
+    LOG_LINE_GLOBAL("remote");
+    LOG_LINE_GLOBAL("remote", "length=", length);
+//    LOG_LINE_GLOBAL("remote", "buf=\n", DumpMemory(buf, length));
+
+    MemStreamPacket packet;
+    packet.CreatePacketWrite("SenderYYY", "TableXXX", length, buf);
+
+    //LOG_LINE_GLOBAL("remote", packet.DumpPayload());
+
+    if (SocketResult::SR_SUCCESS != SendPacket(packet))
+    {
+        LOG_LINE_GLOBAL("remote", "ERROR: Unable to send packet. errno:", errno);
+        elog(LOG, "ERROR : SendPacket failed.");
     }
 }
 

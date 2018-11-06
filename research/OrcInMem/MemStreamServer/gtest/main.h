@@ -15,7 +15,6 @@
 #define __MAIN_H__
 
 #include "SocketServer.h"
-//#include "SocketClient.h"
 #include "SocketClientPacket.h"
 #include "MemStream.h"
 
@@ -45,7 +44,7 @@ class SClient : public SocketClientPacket<TSocket>
         }
         virtual void OnErrorClient (SocketResult err)
         {
-            std::cerr << "SocketTCP(" << this->Name() << ")::Connect  ERROR - " << ErrnoText(errno) <<  "(" << errno << ") " << strerror(errno) << std::endl;
+            std::cerr << "SocketTCP(" << this->TSocket::Name() << ")::Connect  ERROR - " << ErrnoText(errno) <<  "(" << errno << ") " << strerror(errno) << std::endl;
             std::cout << ".ERROR : SClient::OnErrorClient - " << SocketResultText(err) << std::endl;
         }
         virtual void OnRecvPacket  (StreamPacket &&packet)
@@ -55,7 +54,6 @@ class SClient : public SocketClientPacket<TSocket>
 
         bool                SendPacket(const char *payload)    { SendPacket(std::move(StreamPacket(payload, strlen(payload)))); }
         bool                SendPacket(const StreamPacket &pack);
-        //const StreamPacket &Packet(int idxPacket);
 
         std::deque <StreamPacket> _packetList;
 };
@@ -157,14 +155,14 @@ void ClientServerFrame(TServer &server, TClient &client, TTsetFunctor ftor)
     msleep(1);
     EXPECT_EQ(1, server.ClientCount());
 
-    std::thread thCln ( [&client] () { client.LoopRead();} );
+    std::thread thCln ( [&client] () { client.LoopStart();} );
     msleep(1);
 
 
     ftor(client);
 
 
-    client.LoopReadStop();
+    client.LoopStop();
     if (thCln.joinable()) thCln.join();
 
     server.LoopListenStop();
@@ -191,7 +189,7 @@ void ClientServerFrameMClient(TServer &server, std::vector<TClient> &clientList,
         EXPECT_EQ(SocketResult::SR_SUCCESS, client.ConnectServer());
         msleep(2);
 
-        thClientList.push_back(std::thread( [&client] () { client.LoopRead();} ));
+        thClientList.push_back(std::thread( [&client] () { client.LoopStart();} ));
         msleep(1);
     }
     msleep(35);
@@ -201,7 +199,7 @@ void ClientServerFrameMClient(TServer &server, std::vector<TClient> &clientList,
     f(clientList);
 
     for (auto &client : clientList)
-        client.LoopReadStop();
+        client.LoopStop();
     server.LoopListenStop();
 
     for (auto &thCln : thClientList)

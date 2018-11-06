@@ -14,51 +14,66 @@
 #ifndef __LOOP_H__
 #define __LOOP_H__
 
+#include "TimeUtils.h"
+
 #include <atomic>
 #include <functional>
+#include <iostream>
 
 class Loop
 {
 public:
     Loop(const Loop &)              = delete;
     Loop(Loop &&)                   = delete;
+
     Loop &operator = (const Loop &) = delete;
     Loop &operator = (Loop &&)      = delete;
 
-    virtual ~Loop()                 { Stop(); }
-    Loop()                          {         }
-    Loop(auto fncLoop, auto fncPre = _emptyFctr, auto fncPost = _emptyFctr)    { Start(fncLoop, fncPre, fncPost);  }
+    virtual ~Loop()                             { Stop();               }
+    Loop(const std::string &name) : _name(name) {                       }
+    Loop(auto fncLoop, auto fncPre = _emptyFctrBool, auto fncPost = _emptyFctrVoid)    { Start(fncLoop, fncPre, fncPost);    }
 
-    void PreFctor(auto fctr)        { _fctrPreLoop  = fctr; }
-    void PostFctor(auto fctr)       { _fctrPostLoop = fctr; }
-    void Fctor(auto fctr)           { _fctrLoop     = fctr; }
+    void PreFctor  (std::function<bool()> fctr) { _fctrPreLoop  = fctr; }
+    void PostFctor (std::function<void()> fctr) { _fctrPostLoop = fctr; }
+    void Fctor     (std::function<bool()> fctr) { _fctrLoop     = fctr; }
 
-    void Stop()                     { _exit         = true; }
+    std::string Name() const                    { return _name;         }
+    void Name(std::string &name)                { _name = name;         }
+
+    bool Stat()                                 { return _exit;         }
+    void Stop()                                 { _exit = true;         }
     void Start()
     {
-    _fctrPreLoop();
-    while(_exit == false) _fctrLoop();
-    _fctrPostLoop();
-}
+        if (true == _fctrPreLoop())
+        {
+            while((false == _exit) && (true == _fctrLoop()))
+                nsleep(100);
+        }
+        _fctrPostLoop();
+    }
 
-    void Start(auto fncLoop, auto fncPre = _emptyFctr, auto fncPost = _emptyFctr)
+    void Start(auto fncLoop, std::function<bool()>  fncPre = Loop::_emptyFctrBool,  std::function<void()>  fncPost = _emptyFctrVoid)
     {
-    PreFctor(fncPre);
-    PostFctor(fncPost);
-    Fctor(fncLoop);
+        PreFctor(fncPre);
+        PostFctor(fncPost);
+        Fctor(fncLoop);
 
-    Start();
-}
+        Start();
+    }
 
 
 private:
 
-    static std::function<void()>    _emptyFctr;
-    std::atomic<bool>               _exit  = false;
+    static std::function<bool()>    _emptyFctrBool;
+    static std::function<void()>    _emptyFctrVoid;
 
-    std::function<void()>           _fctrPreLoop    = _emptyFctr;
-    std::function<void()>           _fctrPostLoop   = _emptyFctr;
-    std::function<void()>           _fctrLoop       = _emptyFctr;
+    std::atomic<bool>               _exit       = false;
+    std::string                     _name;
+
+
+    std::function<bool()>           _fctrPreLoop    = _emptyFctrBool;
+    std::function<void()>           _fctrPostLoop   = _emptyFctrVoid;
+    std::function<bool()>           _fctrLoop       = _emptyFctrBool;
 };
 
 #endif /* LOOP_H */

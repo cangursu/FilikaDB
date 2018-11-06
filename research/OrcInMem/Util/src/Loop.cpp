@@ -13,5 +13,6 @@
 
 #include "Loop.h"
 
-std::function<void()>   Loop::_emptyFctr      = []()->void{} ;
+std::function<bool()>   Loop::_emptyFctrBool      = []()->bool { return true;} ;
+std::function<void()>   Loop::_emptyFctrVoid      = []()->void {} ;
 

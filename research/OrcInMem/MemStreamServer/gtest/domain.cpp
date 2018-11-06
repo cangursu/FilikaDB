@@ -16,7 +16,6 @@
 
 
 
-
 TEST(MemStreamServerDomain, Individual)
 {
     PacketEchoServer<SocketDomain, SocketDomain>    server;
@@ -29,7 +28,7 @@ TEST(MemStreamServerDomain, Individual)
 
     std::string dataPrefix("TestDataIndividual");
 
-    int count = 300;
+    int count = 50;
     std::vector<StreamPacket> data(count);
 
     for (int i = 0; i < count; ++i)
@@ -46,7 +45,7 @@ TEST(MemStreamServerDomain, Individual)
                 EXPECT_TRUE(client.SendPacket(item));
                 //msleep(1);
             }
-            msleep(50);
+            msleep(2000);
         }
     );
 
@@ -54,14 +53,14 @@ TEST(MemStreamServerDomain, Individual)
     const PacketEchoClient<SocketDomain> *cln = server.ClientByIdx(0);
     EXPECT_TRUE(cln != nullptr);
     EXPECT_EQ(count, cln->_packetList.size());
+    EXPECT_EQ(count, client._packetList.size());
 
-    if(cln)
+    if(cln && (count ==  cln->_packetList.size()) && (count == client._packetList.size()))
     {
         int idx = 0;
         for (const auto &item : data)
         {
             const StreamPacket &packRecievedServer = cln->_packetList[idx];
-
             EXPECT_TRUE(packRecievedServer.Check());
             EXPECT_TRUE(packRecievedServer == item);
 
@@ -72,6 +71,8 @@ TEST(MemStreamServerDomain, Individual)
             ++idx;
         }
     }
+
+    msleep(500);
 }
 
 
@@ -268,5 +269,6 @@ TEST(MemStreamServerDomain, BulkCorrupt)
     EXPECT_EQ(0, cln->_packetList.size());
     EXPECT_EQ(0, client._packetList.size());
 }
+
 
 

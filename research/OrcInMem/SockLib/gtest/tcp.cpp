@@ -50,7 +50,7 @@ TEST(SocketTCP, Transmission_Echo)
     TestClient<SocketTCP>                              cln("TestClient");
 
     srv.Port(5000);
-    cln.Port(5000);
+    cln.Address("127.0.0.", 5000);
 
     SocketResult resSrv, resCln;
 
@@ -64,7 +64,7 @@ TEST(SocketTCP, Transmission_Echo)
     msleep(1);
     EXPECT_EQ (1, srv.ClientCount());
 
-    std::thread thCln ( [&cln, &resCln]() {resCln = cln.LoopRead();  } );
+    std::thread thCln ( [&cln, &resCln]() {resCln = cln.LoopStart();  } );
 
     const char *p = "TestContent";
     EXPECT_EQ (SocketResult::SR_SUCCESS, cln.Send(p, std::strlen(p)));
@@ -75,7 +75,7 @@ TEST(SocketTCP, Transmission_Echo)
 
 
     srv.LoopListenStop();
-    cln.LoopReadStop();
+    cln.LoopStop();
 
     if (thSrv.joinable()) thSrv.join();
     if (thCln.joinable()) thCln.join();
@@ -215,7 +215,7 @@ TEST(SocketTCP, Transmission_MultipleEcho)
         clns[cid].Port(5000);
         EXPECT_EQ (SocketResult::SR_SUCCESS, clns[cid].ConnectServer());
 
-        clnsTh[cid] = std::thread ( [&clns, &cid, &clnsRes]() {clnsRes[cid] = clns[cid].LoopRead();  } );
+        clnsTh[cid] = std::thread ( [&clns, &cid, &clnsRes]() {clnsRes[cid] = clns[cid].LoopStart();  } );
         msleep(2);
 
         std::string data = dataPrefix + "." + std::to_string(cid);

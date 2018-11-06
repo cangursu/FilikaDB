@@ -17,6 +17,7 @@
 #include "SocketResult.h"
 #include "MemStream.h"
 #include "GeneralUtils.h"
+#include "Loop.h"
 
 #include <unordered_map>
 #include <unistd.h>
@@ -39,7 +40,7 @@ template <typename TSocketSrv, typename TSocketClt>
 class SocketServer  : public TSocketSrv
 {
     public:
-        SocketServer(const char *name) : TSocketSrv(name) {}
+        SocketServer(const char *name) : TSocketSrv(name), _loop(name) {}
         //virtual ~SocketServer() { Release(); }
 
         SocketResult      Init();
@@ -48,7 +49,8 @@ class SocketServer  : public TSocketSrv
         SocketResult      LoopListenPrepare();
         SocketResult      LoopListenSingleShot();
         SocketResult      LoopListen();
-        void              LoopListenStop()     { _exit = true; }
+        void              LoopListenStop()     { _loop.Stop();         }
+        bool              LoopListenStat()     { return _loop.Stat();  }
 
         void              Accept();
         virtual void      Recv(int fd);
@@ -130,7 +132,7 @@ class SocketServer  : public TSocketSrv
 
 
         int                 _epoll = -1;
-        std::atomic<bool>   _exit  = false;
+        Loop                _loop;
 };
 
 
@@ -253,16 +255,12 @@ SocketResult SocketServer<TSocketSrv, TSocketClt>::LoopListenSingleShot()
 template <typename TSocketSrv, typename TSocketClt>
 SocketResult SocketServer<TSocketSrv, TSocketClt>::LoopListen()
 {
-    SocketResult res = LoopListenPrepare();
-    if (SocketResult::SR_SUCCESS == res)
-    {
-//        std::cout << "Packet Server Listen Loop Entered\n";
-        while(_exit == false)
-        {
-            res = LoopListenSingleShot();
-        }
-    }
-//    std::cout << "Packet Server Listen Loop Quitted\n";
+    SocketResult res = SocketResult::SR_ERROR;
+
+    auto fncLoop  = [this, &res]()->bool  {   return SocketResult::SR_SUCCESS == (res = LoopListenSingleShot()); };
+    auto fncPre   = [this, &res]()->bool  {   return SocketResult::SR_SUCCESS == (res = LoopListenPrepare());    };
+
+    _loop.Start(fncLoop, fncPre);
 
     return res;
 }

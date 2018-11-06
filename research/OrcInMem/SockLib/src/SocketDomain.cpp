@@ -164,7 +164,7 @@ ssize_t  SocketDomain::Write(const void *pdata, size_t len)
 
     if (bytes == -1)
     {
-        std::cerr << "SocketDomain(" << Name() << ")::Write  ERROR - (" << ErrnoText(errno) << ") " << strerror(errno) << std::endl;
+        std::cerr << "SocketDomain(" << Name() << ")::Write  ERROR - " << errno << " (" << ErrnoText(errno) << ") " << strerror(errno) << std::endl;
         Release();
     }
     if (bytes == 0)

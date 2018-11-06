@@ -18,7 +18,7 @@ OBJS         += $(patsubst %.cpp,%.o,$(wildcard ../Logger/src/*.cpp))
 OBJS         += $(patsubst %.cpp,%.o,$(wildcard ../MemStream/src/*.cpp))
 OBJS         += $(patsubst %.cpp,%.o,$(wildcard ../MemStreamServer/src/*.cpp))
 OBJS         += $(patsubst %.cpp,%.o,$(wildcard ../SockLib/src/*.cpp))
-OBJS         += $(patsubst %.cpp,%.o,$(wildcard ../3rdparty/crc32/*.cpp))
+OBJS         += $(patsubst %.cpp,%.o,$(wildcard ../3rdParty/crc32/*.cpp))
 
 
 # final shared library to be build from multiple source files (OBJS)
@@ -33,9 +33,9 @@ INC_DIR_UTL   = ../Util/inc/
 INC_DIR_MEM   = ../MemStream/inc/
 INC_DIR_SRV   = ../MemStreamServer/inc/
 INC_DIR_SCK   = ../SockLib/inc/
-INC_DIR_CRC   = ../3rdparty/crc32
-INC_DIR_JSN   = ../3rdparty/rapidjson.1/include
-INC_DIR_B64   = ../3rdparty/base64/include
+INC_DIR_CRC   = ../3rdParty/crc32
+INC_DIR_JSN   = ../3rdParty/rapidjson.1/include
+INC_DIR_B64   = ../3rdParty/base64/include
 
 
 INC_DIRS      = $(INC_DIR_ORC) $(INC_DIR_LOG) $(INC_DIR_MEM) $(INC_DIR_SRV) \
@@ -61,7 +61,7 @@ SHLIB_LINK    = -lstdc++ -rdynamic -shared         \
                 -lz                                \
                 -lsnappy                           \
                 -llz4                              \
-                ../3rdparty/base64/lib/libbase64.o \
+                ../3rdParty/base64/lib/libbase64.o \
 
 
 

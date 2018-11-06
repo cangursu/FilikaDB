@@ -252,7 +252,7 @@ int main(int , char** )
         std::cerr << "ERROR : Unable to Connect SocketTCP \n";
         return -2;
     }
-    std::thread th ( [&sock] () { sock.LoopRead();} );
+    std::thread th ( [&sock] () { sock.LoopStart();} );
     sleep(1);
 
 
@@ -378,7 +378,7 @@ int main(int , char** )
     std::cout << "Sleeping before exit\n";
     sleep(10);
     //std::cout << "<\n";
-    sock.LoopReadStop();
+    sock.LoopStop();
     if (th.joinable())  th.join();
 
     return 0;

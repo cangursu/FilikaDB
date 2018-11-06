@@ -204,7 +204,7 @@ int main(int , char** )
 
 
 
-    std::thread th ( [&sock] () { sock.LoopRead();} );
+    std::thread th ( [&sock] () { sock.LoopStart();} );
 
 
     {
@@ -306,7 +306,7 @@ int main(int , char** )
 
 
     sleep(3);
-    sock.LoopReadStop();
+    sock.LoopStop();
     if (th.joinable())  th.join();
 
     return 0;

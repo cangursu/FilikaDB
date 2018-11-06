@@ -35,10 +35,11 @@ TEST(MemStreamServerTCP, Individual)
         {
             for (const auto &item : data)
                 client.SendPacket(item);
-            msleep(10);
+            msleep(1000);
         }
     );
 
+    msleep(100);
 
     const PacketEchoClient<SocketTCP> *cln = server.ClientByIdx(0);
     ASSERT_TRUE(cln != nullptr);
@@ -65,7 +66,6 @@ TEST(MemStreamServerTCP, Individual)
     }
     server.Release();
 }
-
 
 TEST(MemStreamServerTCP, BulkIndividual)
 {
@@ -96,7 +96,7 @@ TEST(MemStreamServerTCP, BulkIndividual)
                 len += lenPck;
             }
             client.Write(buff, len);
-            msleep(50);
+            msleep(1000);
         }
     );
     const PacketEchoClient<SocketTCP> *cln = server.ClientByIdx(0);
@@ -175,6 +175,7 @@ TEST(MemStreamServerTCP, Fragmanted)
 
     server.Release();
 }
+
 
 
 
@@ -481,7 +482,7 @@ auto thFunctor = [](std::array<StreamPacket, 6> &testPackets) -> void
     if (SocketResult::SR_SUCCESS != res) return;
 
     msleep(1);
-    std::thread thRead = std::thread( [&client](){ client.LoopRead(); });
+    std::thread thRead = std::thread( [&client](){ client.LoopStart(); });
 
     std::unique_lock<std::mutex> lk(g_mtx);
     g_cv.wait(lk, []{return g_ready;});
@@ -501,7 +502,7 @@ auto thFunctor = [](std::array<StreamPacket, 6> &testPackets) -> void
         }
     }
 
-    client.LoopReadStop();
+    client.LoopStop();
     if (thRead.joinable()) thRead.join();
 };
 
@@ -548,4 +549,7 @@ TEST(MemStreamServerTCP, IndividualConcurrent)
 
     server.Release();
 }
+
+
+
 

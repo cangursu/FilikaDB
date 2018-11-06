@@ -61,6 +61,10 @@ public:
     MemStream(const MemStream &other) = default;
     MemStream(MemStream &&other)      = default;
 
+    MemStream(const std::vector<byte_t> &buf) : MemStream() { Write(buf); }
+    MemStream(const void* buf, size_t length) : MemStream() { Write(buf, length); }
+
+
 
     virtual ~MemStream()
     {
@@ -71,6 +75,7 @@ public:
     {
         Write(&buf[0], buf.size());
     }
+
     void Write (const void* buf, size_t length)
     {
         if (nullptr == buf) return;
@@ -91,7 +96,23 @@ public:
         }
     }
 
-    std::uint64_t Read (void* buf, std::uint64_t length, std::uint64_t offset) const
+    friend inline bool operator == (const MemStream& left, const MemStream& right)
+    {
+        bool res = false;
+        if (left.Len() == right.Len())
+        {
+            res = true;
+
+            size_t cnt = std::max(left.Cnt(), right.Cnt());
+            for (size_t idx = 0; idx < cnt && res == true; ++idx)
+            {
+                res = (left._listBuffer[idx] == right._listBuffer[idx]);
+            }
+        }
+        return res;
+    }
+
+    std::uint64_t Read (void* buf, std::uint64_t length, std::uint64_t offset = 0) const
     {
         if (nullptr == buf) return 0L;
 
@@ -110,8 +131,7 @@ public:
             sze = item.Idx();
             len   = (pos + length) > sze ? (pos > sze ? 0 : sze - pos) : length;
 
-            std::memcpy(buffer, item.Ptr() + pos, len);  //TODO: std::memcpy sould call from MemPool
-
+            std::memcpy(buffer, item.Ptr() + pos, len);  //TODO: std::memcpy should call from MemPool
 
             pos     = 0;
             readed += len;
@@ -122,9 +142,16 @@ public:
         return readed;
      }
 
+    void reset()
+    {
+        close();
+        AddNewBuffer();
+    }
+
     void close()
     {
-        //_buffer.Clear();
+        _listBuffer.clear();
+        _listSize = 0;
     }
 
     std::string Dump(const std::string &msg = "") const
@@ -195,8 +222,10 @@ public:
 
     std::uint64_t Size() const { return _listSize * g_defBufferSize; }
     std::uint64_t Len()  const { return ((_listSize-1) * g_defBufferSize) + _listBuffer[_listSize-1].Idx(); }
-    std::uint64_t Cnt()  const { _listBuffer.size();  }
+    std::uint64_t Cnt()  const { return _listSize; }//return _listBuffer.size();  }
 
+
+    friend inline bool operator!=(const MemStream& left, const MemStream& right){ return !(left == right); }
 
 private :
 
@@ -282,6 +311,16 @@ private :
                 std::memcpy(_ptr + _idx, buff, amount);
                 _idx += amount;
                 return amount;
+            }
+
+            friend inline bool operator == (const Buffer& left, const Buffer& right)
+            {
+                return (left._idx == right._idx) && (0 == std::memcmp(left._ptr, right._ptr, left._idx * sizeof(T)));
+            }
+
+            friend inline bool operator!=(const Buffer& left, const Buffer& right)
+            {
+                return !(left == right);
             }
 
         private :

@@ -5,6 +5,7 @@
  */
 
 #include "GeneralUtils.h"
+#include "libbase64.h"
 
 #include <iostream>
 #include <sstream>
@@ -14,29 +15,8 @@
 #include <iomanip>
 
 
-int nsleep(long nanoseconds)
-{
-    timespec rem{0,0}, req {.tv_sec = 0, .tv_nsec = nanoseconds};
-    nanosleep(&req, &rem);
-}
+#define NANO_
 
-int msleep(long miliseconds)
-{
-   timespec req, rem;
-
-   if(miliseconds > 999)
-   {
-        req.tv_sec  = (int)(miliseconds / 1000);                           /* Must be Non-Negative */
-        req.tv_nsec = (miliseconds - ((long)req.tv_sec * 1000)) * 1000000; /* Must be in range of 0 to 999999999 */
-   }
-   else
-   {
-        req.tv_sec  = 0;                        /* Must be Non-Negative */
-        req.tv_nsec = miliseconds * 1000000;    /* Must be in range of 0 to 999999999 */
-   }
-
-   return nanosleep(&req , &rem);
-}
 
 bool NameInfo(const sockaddr &addr, std::string &host, std::string &serv) /*const*/
 {
@@ -355,3 +335,97 @@ const char *ErrnoText(int val)
     }
     return "NA";
 }
+
+void EncodeBase64(const MemStream<StreamPacket::byte_t> &stream, char *buffer, std::uint64_t &bufferSize)
+{
+    std::uint64_t       lenStream    = stream.Len();
+    const std::uint64_t lenRead      = 256;
+    std::uint64_t       lenOut       = 0;
+    std::uint64_t       offsetBuff64 = 0;
+
+    StreamPacket::byte_t buff[lenRead];
+    StreamPacket::byte_t out[lenRead*(int(4.0/3.0)+8)];
+
+    base64_state state;
+    base64_stream_encode_init(&state, BASE64_FORCE_AVX2);
+    for (size_t sz = 0; sz < lenStream; sz += lenRead)
+    {
+        std::uint64_t readed = stream.Read(buff, lenRead, sz);
+        base64_stream_encode(&state, (char*)buff, readed, (char*)out, &lenOut);
+
+        std::memcpy(buffer + offsetBuff64, out, lenOut);
+        offsetBuff64+=lenOut;
+    }
+    base64_stream_encode_final(&state, (char*)out, &lenOut);
+    std::memcpy(buffer + offsetBuff64, out, lenOut);
+    bufferSize = offsetBuff64+=lenOut;
+    //stream64.Write(out, lenOut);
+}
+
+void EncodeBase64(const MemStream<StreamPacket::byte_t> &stream, MemStream<StreamPacket::byte_t> &stream64)
+{
+    std::uint64_t       lenStream = stream.Len();
+    const std::uint64_t lenRead   = 256;
+    std::uint64_t       lenOut    = 0;
+
+    StreamPacket::byte_t buff[lenRead];
+    StreamPacket::byte_t out[lenRead*(int(4.0/3.0)+8)];
+
+    base64_state state;
+    base64_stream_encode_init(&state, BASE64_FORCE_AVX2);
+    for (size_t sz = 0; sz < lenStream; sz += lenRead)
+    {
+        std::uint64_t readed = stream.Read(buff, lenRead, sz);
+        base64_stream_encode(&state, (char*)buff, readed, (char*)out, &lenOut);
+        stream64.Write(out, lenOut);
+    }
+    base64_stream_encode_final(&state, (char*)out, &lenOut);
+    stream64.Write(out, lenOut);
+}
+
+void DecodeBase64(const MemStream<StreamPacket::byte_t> &stream64, char *buffer, std::uint64_t &bufferSize)
+{
+    std::uint64_t       lenStream  = stream64.Len();
+    const std::uint64_t lenRead    = 256;
+    std::uint64_t       lenOut     = 0;
+    std::uint64_t       offsetBuff = 0;
+
+    StreamPacket::byte_t buff[lenRead];
+    StreamPacket::byte_t out[lenRead*(int(4.0/3.0)+8)];
+
+    base64_state state;
+    base64_stream_decode_init(&state, BASE64_FORCE_AVX2);
+    for (size_t sz = 0; sz < lenStream; sz += lenRead)
+    {
+        std::uint64_t readed = stream64.Read(buff, lenRead, sz);
+        base64_stream_decode(&state, (char*)buff, readed, (char*)out, &lenOut);
+
+        std::memcpy(buffer + offsetBuff, out, lenOut);
+        offsetBuff += lenOut;
+        //stream.Write(out, lenOut);
+    }
+    bufferSize = offsetBuff;
+}
+
+void DecodeBase64(const MemStream<StreamPacket::byte_t> &stream64, MemStream<StreamPacket::byte_t> &stream)
+{
+    std::uint64_t       lenStream = stream64.Len();
+    const std::uint64_t lenRead   = 256;
+    std::uint64_t       lenOut    = 0;
+
+    StreamPacket::byte_t buff[lenRead];
+    StreamPacket::byte_t out[lenRead*(int(4.0/3.0)+8)];
+
+    base64_state state;
+    base64_stream_decode_init(&state, BASE64_FORCE_AVX2);
+    for (size_t sz = 0; sz < lenStream; sz += lenRead)
+    {
+        std::uint64_t readed = stream64.Read(buff, lenRead, sz);
+        base64_stream_decode(&state, (char*)buff, readed, (char*)out, &lenOut);
+
+        stream.Write(out, lenOut);
+    }
+//    base64_stream_decode_final(&state, (char*)out, &lenOut);
+//    stream.Write(out, lenOut);
+}
+

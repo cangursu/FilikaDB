@@ -102,14 +102,11 @@ void Console::rawmode(bool enable)
 }
 
 
-
 void Console::LoopStart()
 {
-    //Loop loop;
-    //loop.Start
-    Loop::Start ( [this]()->void
+    Loop::Start (
+            [this]()->bool
                     {
-                        //std::cout << "Looping\n";
                         char ch;
                         if (kbhit())
                         {
@@ -122,9 +119,11 @@ void Console::LoopStart()
                             }
                         }
                         msleep(500);
+                        return true;
                     } ,
-            [this]()->void { rawmode(true);  } ,
+            [this]()->bool { rawmode(true); return true; } ,
             [this]()->void { rawmode(false); }
         );
 }
+
 

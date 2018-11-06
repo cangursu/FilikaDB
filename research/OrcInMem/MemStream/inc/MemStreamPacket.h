@@ -16,9 +16,14 @@
 
 #include "StreamPacket.h"
 #include "rapidjson/document.h"
+#include "libbase64.h"
 
+
+
+#include <uuid/uuid.h>
 #include <map>
 #include <vector>
+#include <ctime>
 
 
 /*
@@ -48,7 +53,7 @@
             "Sender": "NodaBBB",
             "Timestamp":"123123",
             "Source": "TableXXX",
-            "CmdID": "Write",
+            "CmdID": "WRITE",
             "RefID": "UUID",
             "Status": "SUCCESS",
             "Message": "Command executed successfully"
@@ -57,7 +62,7 @@
             "Sender": "NodaAAA",
             "Timestamp":"123123",
             "Source": "TableXXX",
-            "CmdID": "Read",
+            "CmdID": "READ",
             "RefID": "UUID",
             "Status": "REQUEST",
             "Message": "Command executed successfully",
@@ -71,7 +76,7 @@
             "Sender": "NodaBBB",
             "Timestamp":"123123",
             "Source": "TableXXX",
-            "CmdID": "Read",
+            "CmdID": "READ",
             "RefID": "UUID",
             "Status": "SUCCESS",
             "Message": "",
@@ -86,7 +91,7 @@
             "Sender": "NodaAAA",
             "Timestamp":"123123",
             "Source": "TableXXX",
-            "CmdID": "Length",
+            "CmdID": "DELETE",
             "RefID": "UUID",
             "Status": "REQUEST",
             "Message": ""
@@ -95,7 +100,25 @@
             "Sender": "NodaBBB",
             "Timestamp":"123123",
             "Source": "TableXXX",
-            "CmdID": "Length",
+            "CmdID": "DELETE",
+            "RefID": "UUID",
+            "Status": "ERROR",
+            "Message": "Unable to execute request",
+        }
+        {
+            "Sender": "NodaAAA",
+            "Timestamp":"123123",
+            "Source": "TableXXX",
+            "CmdID": "LENGTH",
+            "RefID": "UUID",
+            "Status": "REQUEST",
+            "Message": ""
+        },
+        {
+            "Sender": "NodaBBB",
+            "Timestamp":"123123",
+            "Source": "TableXXX",
+            "CmdID": "LENGTH",
             "RefID": "UUID",
             "Status": "ERROR",
             "Message": "Unable to execute request",
@@ -118,10 +141,11 @@ public:
 
     enum class CmdID
     {
-        CMD_NA,
+        CMD_NA = 0,
         CMD_LENGTH,
         CMD_WRITE,
-        CMD_READ
+        CMD_READ,
+        CMD_DELETE,
     };
     enum class CmdStatus
     {
@@ -132,11 +156,11 @@ public:
 
     struct Cmd
     {
-        CmdID       _cmdid  = CmdID::CMD_NA;
-        std::string _cmdidStr  ;
-        std::string _source ;
-        std::string _sender ;
-        std::string _ts     ;
+        std::string _sender  ;
+        std::string _ts      ;
+        std::string _source  ;
+        CmdID       _cmdid   = CmdID::CMD_NA;
+        std::string _cmdidStr;
         std::string _refid  ;
         std::string _result ;
         std::string _message;
@@ -147,6 +171,9 @@ public:
             std::string       _enc;
             std::vector<char> _buf;
         } _buffer;
+
+        MemStream<StreamPacket::byte_t> DecodeBuffer() const;
+        std::string                     Dump() const;
     };
 
 
@@ -156,23 +183,50 @@ public:
 
     virtual ~MemStreamPacket();
 
-    void            JsonBase            (rapidjson::Value &item, rapidjson::Document::AllocatorType &a, CmdID cmd, const char *source);
-    void            JsonDataB64         (rapidjson::Value &item, rapidjson::Document::AllocatorType &a, std::size_t length, std::size_t offset = 0, const void *data = nullptr);
-    std::uint32_t   CreatePacketWrite   (const char *source, const void *data, std::size_t len);
-    std::uint64_t   CreateRefID();
+    static void     JsonBase                (rapidjson::Value &item,
+                                             rapidjson::Document::AllocatorType &a,
+                                             CmdID cmd,
+                                             const char *refID,
+                                             CmdStatus cmdStat,
+                                             const char *sender,
+                                             const char *source,
+                                             const char *msg = nullptr);
 
-    int             DecodePacket        (const StreamPacket &, std::vector<Cmd> &cmds);
+    static void     JsonDataB64             (rapidjson::Value &item,
+                                             rapidjson::Document::AllocatorType &a,
+                                             std::size_t length,
+                                             std::size_t offset = 0,
+                                             const void *data = nullptr);
 
+    static void     JsonDataB64             (rapidjson::Value &item,
+                                             rapidjson::Document::AllocatorType &a,
+                                             std::size_t length,
+                                             std::size_t offset,
+                                             MemStream<byte_t> &stream);
+
+    std::string     CreatePacketWrite       (const char *sender, const char *source, std::size_t len, MemStream<StreamPacket::byte_t> &stream);
+    std::string     CreatePacketWrite       (const char *sender, const char *source, std::size_t len, const void *data);
+    std::string     CreatePacketRead        (const char *sender, const char *source, std::size_t len, std::size_t offset);
+    std::string     CreatePacketDelete      (const char *sender, const char *source);
+    std::string     CreatePacketLength      (const char *sender, const char *source);
+    std::string     CreatePacketResponse    (const char *sender, const Cmd &cmd, CmdStatus stat, const char *msg, std::size_t len = 0, const void *data = nullptr);
+
+    virtual std::string CreateRefID         ();
+
+    int                 DecodePacket        (const StreamPacket &, std::vector<Cmd> &cmds);
+
+
+    static const std::string&  CmdIDText           (CmdID cmdid)            { return _strCmd[cmdid]; }
+    static CmdID               CmdIDVal            (const std::string &str)
+    {
+        for(const auto &scmd : _strCmd)
+            if (scmd.second == str) return scmd.first;
+        return CmdID::CMD_NA;
+    }
 
 private:
-    std::map<CmdID, std::string> _strCmd       = { { CmdID::CMD_LENGTH,      "LENGTH"  },
-                                                   { CmdID::CMD_WRITE,       "WRITE"   },
-                                                   { CmdID::CMD_READ,        "READ"    }
-    };
-    std::map<CmdStatus, std::string> _strCStat = { { CmdStatus::CST_REQUEST, "REQUEST" },
-                                                   { CmdStatus::CST_SUCCESS, "SUCCESS" },
-                                                   { CmdStatus::CST_ERROR,   "ERROR"   }
-    };
+    static std::map<CmdID,     std::string>     _strCmd;
+    static std::map<CmdStatus, std::string>     _strCStat;
 };
 
 #endif /* __ORC_STREAM_REMOTE_PACKET_H__ */

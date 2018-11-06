@@ -140,6 +140,29 @@ std::uint32_t StreamPacket::PayloadPart(byte_t *buff, std::uint32_t lenBuff, std
     return lenRead;
 }
 
+std::uint32_t StreamPacket::Payload(MemStream<StreamPacket::byte_t> &stream) const
+{
+    if (false == Check()) return 0;
+
+    std::uint32_t len    = 0;
+    const StreamPacket::byte_t *ptWalk = _buff  + g_lenMID;
+
+    std::memcpy((void*)&len, (void*)ptWalk, g_lenPLen);
+    ptWalk += g_lenPLen;
+
+    stream.Write(ptWalk, len);
+
+/*
+    if (len > lenBuff)
+        return 0L;
+
+    std::memcpy(buff, ptWalk, len);
+    ptWalk += len;
+*/
+
+    return len;
+}
+
 std::uint32_t StreamPacket::Payload(byte_t *buff, std::uint32_t lenBuff) const
 {
     if (false == Check()) return 0;

@@ -16,6 +16,7 @@
 
 
 #include "SocketResult.h"
+#include "MemStream.h"
 
 #include <cstdint>
 #include <cstring>
@@ -27,8 +28,10 @@
 
 
 #define  _1K   (1024)
-#define  _4K   (4*_1K)
-#define _16K   (16*_1K)
+#define  _2K   (2  * _1K)
+#define  _4K   (4  * _1K)
+#define  _8K   (8  * _1K)
+#define _16K   (16 * _1K)
 
 
 constexpr std::uint32_t  g_posMID              = 0;
@@ -71,6 +74,7 @@ public:
     std::uint32_t   Create     (const byte_t *payload, std::uint32_t len);
     std::uint32_t   Create     (const void   *payload, std::uint32_t len)   { return Create((byte_t *)payload, len); }
     std::uint32_t   Payload    (byte_t       *buff   , std::uint32_t len) const;
+    std::uint32_t   Payload    (MemStream<byte_t> &stream) const;
     std::uint32_t   PayloadPart(byte_t       *buff   , std::uint32_t len, std::uint32_t offset) const;
     std::uint32_t   PayloadLen () const;
 

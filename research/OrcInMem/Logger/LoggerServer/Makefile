@@ -3,10 +3,10 @@ CC=g++
 
 #CFLAGS= -ggdb -w -Wall -fPIC -std=c++11
 CFLAGS= -g -O0 -w -Wall -fPIC -std=c++17
-LDFLAGS=../../3rdparty/base64/lib/libbase64.o 
-LDFLAGS+=-lpthread
+LDFLAGS=../../3rdParty/base64/lib/libbase64.o 
+LDFLAGS+=
 #LDLIBS=../HElib/src/fhe.a ../ntl-10.3.0/src/ntl.a -lgmp -lpthread
-LDLIBS=
+LDLIBS=-lpthread -luuid
 
 INCLUDE_PATH=   -I..                                \
                 -I../inc                            \
@@ -14,9 +14,9 @@ INCLUDE_PATH=   -I..                                \
                 -I../../MemStream/inc               \
                 -I../../MemStreamServer/inc         \
                 -I../../SockLib/inc                 \
-                -I../../3rdparty/crc32              \
-                -I../../3rdparty/base64/include     \
-                -I../../3rdparty/rapidjson.1/include\
+                -I../../3rdParty/crc32              \
+                -I../../3rdParty/base64/include     \
+                -I../../3rdParty/rapidjson.1/include\
                 
 
 SOURCES=$(wildcard *.cpp)
@@ -25,7 +25,7 @@ SOURCES+=$(wildcard ../../Util/src/*.cpp)
 SOURCES+=$(wildcard ../../SockLib/src/*.cpp)
 SOURCES+=$(wildcard ../../MemStream/src/*.cpp)
 SOURCES+=$(wildcard ../../MemStreamServer/src/*.cpp)
-SOURCES+=$(wildcard ../../3rdparty/crc32/*.cpp)
+SOURCES+=$(wildcard ../../3rdParty/crc32/*.cpp)
 
 OBJECTS=$(SOURCES:.cpp=.o)
 DEPENDS=$(SOURCES:.cpp=.d)

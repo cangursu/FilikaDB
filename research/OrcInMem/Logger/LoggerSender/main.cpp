@@ -93,12 +93,12 @@ int main(int argc, char** argv)
         LOG_LINE_GLOBAL(pdesc, "Test- -> ", 5555, " <- olayi");
     }
 
-    /*
+
     for (int i = 0; i < 10000; ++i)
     {
         LOG_LINE_GLOBAL(pdesc, "Global Log = ", std::to_string(i), " . ");
     }
-    */
+
 
 
 //    sleep(15);

@@ -42,8 +42,8 @@ public:
     };
 
 
-    Console()                       { }
-    Console(const Console& orig)    { }
+    Console()                    : Loop("Console")    { }
+    Console(const Console& orig) : Loop(orig.Loop::Name())   { }
     virtual ~Console()              { }
 
     virtual void EventFired(const Console::KeyHandler &kh) = 0;

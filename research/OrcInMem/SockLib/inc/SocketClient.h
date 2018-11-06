@@ -17,23 +17,27 @@
 #include "SocketResult.h"
 #include "MemStream.h"
 #include "GeneralUtils.h"
+#include "Loop.h"
 
 
 #include <string>
 #include <netdb.h>
 #include <atomic>
+#include <ios>
 
 
 template <typename TSocket>
 class SocketClient : public TSocket
 {
     public:
-        SocketClient(const char *name)          : TSocket(name) {}
-        SocketClient(int fd, const char *name)  : TSocket(fd, name) {}
+        SocketClient(const char *name)          : TSocket(name)     , _loop(name)   {}
+        SocketClient(int fd, const char *name)  : TSocket(fd, name) , _loop(name)   {}
         SocketClient(const SocketClient &val) = delete;
-        SocketClient(SocketClient &&val)        : TSocket(std::move(val)) { }
+        SocketClient(SocketClient &&val)        : TSocket(std::move(val)) , _loop(val.Name())
+        {
+        }
 
-        SocketClient& operator=(SocketClient &&s)   { TSocket::operator =(std::move(s));}
+        SocketClient& operator=(SocketClient &&s)   { TSocket::operator =(std::move(s)); }
         SocketClient& operator=(const SocketClient &val) = delete;
 
 
@@ -41,10 +45,10 @@ class SocketClient : public TSocket
         SocketResult Send          (const void *data, std::uint64_t len);
         SocketResult Send          (const MemStream<std::uint8_t> &)    ;
 
-        SocketResult LoopRead();
-        SocketResult LoopReadStop() { _exit = true; }
 
-
+        SocketResult LoopStart();
+        void         LoopStop() {_loop.Stop();}
+        bool         LoopStat() {_loop.Stat();}
 
     public:
         // Events
@@ -53,8 +57,8 @@ class SocketClient : public TSocket
 
     private:
         std::atomic<bool> _exit = false;
+        Loop              _loop;
 };
-
 
 
 template <typename TSocket>
@@ -78,6 +82,7 @@ SocketResult SocketClient<TSocket>::ConnectServer()
     return res;
 }
 
+
 template <typename TSocket>
 SocketResult SocketClient<TSocket>::Send(const void *data, std::uint64_t len)
 {
@@ -96,11 +101,12 @@ SocketResult SocketClient<TSocket>::Send(const void *data, std::uint64_t len)
 #ifdef FOLLOW_RAWDATA_FLOW
             std::cout << "i = " << i << "  errno = " <<  errno << " (" << strerror(errno) << ")\n";
             std::cout << "Send Data  (length:" << len << ") ->\n" << DumpMemory(data, len) << std::endl;
-#endif
+#endif //FOLLOW_RAWDATA_FLOW
         }
     }
     return res;
 }
+
 
 template <typename TSocket>
 SocketResult SocketClient<TSocket>::Send(const MemStream<std::uint8_t> &stream)
@@ -121,60 +127,70 @@ SocketResult SocketClient<TSocket>::Send(const MemStream<std::uint8_t> &stream)
     return result;
 }
 
-
 template <typename TSocket>
-SocketResult SocketClient<TSocket>::LoopRead()
+SocketResult SocketClient<TSocket>::LoopStart()
 {
-//    std::cout << "Enter LoopRead - SocketClient<TSocket>\n";
-    SocketResult result = SocketResult::SR_ERROR_AGAIN;
-    if (TSocket::IsGood())
+    SocketResult result = SocketResult::SR_ERROR;
+
+    std::function<bool()> fncLoop = [this, &result]()->bool
     {
-        timeval tv { .tv_sec = 1, .tv_usec = 0 };
-        if (0 > setsockopt(TSocket::fd(), SOL_SOCKET, SO_RCVTIMEO, (const char*)(&tv), sizeof(timeval)))
+        const int buffLen = 512;
+        uint8_t   buff[buffLen];
+
+        MemStream<std::uint8_t> stream;
+        ssize_t bytes = TSocket::Read(buff, buffLen);
+
+        if (bytes == 0)
         {
-            std::cerr << "setsockopt : " << ErrnoText(errno) << " (" << errno << ")\n";
-            result = SocketResult::SR_ERROR_SOCKOPT;
+            result = SocketResult::SR_ERROR_CONNECT;
         }
-        else
+        else if (bytes < 0)
         {
-            const int buffLen = 512;
-            uint8_t   buff[buffLen];
-            while ((_exit == false) && (result == SocketResult::SR_ERROR_AGAIN))
+            switch (errno)
             {
-                MemStream<std::uint8_t> stream;
-
-                ssize_t bytes = TSocket::Read(buff, buffLen);
-                //std::cout << "TSocket::Read -> bytes:" << bytes << " errno:" << ErrnoText(errno) << std::endl;
-
-                if (bytes == 0)
-                {
-                    result = SocketResult::SR_ERROR_CONNECT;
-                }
-                else if (bytes < 0)
-                {
-                    //std::cout << "ERROR errno:" << errno << " - " << ErrnoText(errno) << std::endl;
-                    switch (errno)
-                    {
-                        case EAGAIN     : result = SocketResult::SR_ERROR_AGAIN; break;
-                        default         : result = SocketResult::SR_ERROR_READ;  break;
-                    }
-                }
-                else //(bytes > 0)
-                {
-                    stream.Write(buff, bytes);
-                    OnRecv(std::move(stream));
-                }
+                case EAGAIN     : result = SocketResult::SR_ERROR_AGAIN; break;
+                default         : result = SocketResult::SR_ERROR_READ;  break;
             }
         }
-    }
+        else //(bytes > 0)
+        {
+            stream.Write(buff, bytes);
+            OnRecv(std::move(stream));
 
-    if ( (_exit == true) && (result == SocketResult::SR_ERROR_AGAIN) )
+            result = SocketResult::SR_ERROR_AGAIN;
+        }
+
+        return result == SocketResult::SR_ERROR_AGAIN;
+    };
+
+
+
+    std::function<bool()> fncPre  = [this, &result]()->bool
+    {
+        bool res = false;
+
+        if (this->IsGood())
+        {
+            timeval tv { .tv_sec = 1, .tv_usec = 0 };
+            res = (0 == setsockopt(TSocket::fd(), SOL_SOCKET, SO_RCVTIMEO, (const char*)(&tv), sizeof(timeval)));
+            if (false == res)
+            {
+                std::cerr << "setsockopt : " << ErrnoText(errno) << " (" << errno << ")\n";
+                result = SocketResult::SR_ERROR_SOCKOPT;
+            }
+        }
+
+        return res;
+    };
+
+
+
+    _loop.Start(fncLoop, fncPre);
+    if ( (_loop.Stat() == true) || (result == SocketResult::SR_ERROR_AGAIN) )
         result = SocketResult::SR_SUCCESS; //Gracefully quit
 
-//    std::cout << "Leaveing LoopRead - SocketClient<TSocket> - " << SocketResultText(result) << std::endl;
     return result;
 }
-
 
 
 

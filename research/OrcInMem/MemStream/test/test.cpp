@@ -117,11 +117,13 @@ void Test_MemStreamPacket()
     int  length = 3;
 
     MemStreamPacket packet;
-    int i = packet.CreatePacketWrite("TableXXX", buf, length);
+    std::string refid = packet.CreatePacketWrite("SenderXXX", "TableXXX", length, buf);
 
     MemStreamPacket::byte_t payload[1024] = "";
     int len = packet.Payload(payload, 1024);
-    std::cout << "payload len  : " << len << std::endl;
+
+    std::cout << "refid        : " << refid   << std::endl;
+    std::cout << "payload len  : " << len     << std::endl;
     std::cout << "payload data : " << payload << std::endl;
 }
 

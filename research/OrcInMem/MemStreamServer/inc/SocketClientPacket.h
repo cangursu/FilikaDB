@@ -81,14 +81,9 @@ public:
 #ifdef FOLLOW_PYLDATA_FLOW
         else
         {
-            size_t len = packet.PayloadLen();
-            StreamPacket::byte_t payload[len + 1] = "";
-            packet.Payload(payload, len);
-
-            std::cout << "Sended Payload (Len:" + std::to_string(len) << ")\n";
-            std::cout << std::string((char*)payload, len)       << std::endl;
+            std::cout << std::endl << packet.DumpPayload("SocketClientPacket::SendPacket ->") << std::endl;
         }
-#endif
+#endif  //FOLLOW_PYLDATA_FLOW
 
         return res;
     }
@@ -103,7 +98,7 @@ public:
     {
 #ifdef FOLLOW_RAWDATA_FLOW
         std::cout << stream.Dump("SocketClientPacket::OnRecv --->");
-#endif
+#endif //FOLLOW_RAWDATA_FLOW
 
         SocketResult res = SocketResult::SR_ERROR_AGAIN;
         while(SocketResult::SR_ERROR_AGAIN == res)
@@ -266,6 +261,10 @@ public:
 
                             if (true == packet.Check())
                             {
+#ifdef FOLLOW_PYLDATA_FLOW
+                                std::cout << packet.DumpPayload("SocketClientPacket::recvPacket -> ") << std::endl;
+#endif //FOLLOW_PYLDATA_FLOW
+
                                 result = SocketResult::SR_ERROR_AGAIN;
                                 isDone = true;
                             }

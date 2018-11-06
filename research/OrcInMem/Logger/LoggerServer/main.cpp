@@ -149,7 +149,7 @@ public:
         {
             case KEY_EVENT_ID_HELP          :   DisplayHelp();  break;
             case KEY_EVENT_ID_QUIT          :   _srv.LoopListenStop(); LoopStop();  break;
-            case KEY_EVENT_ID_LF            :   std::cout   << std::endl << std::endl << std::endl << std::endl << std::endl << std::endl; break;
+            case KEY_EVENT_ID_LF            :   for(int i = 0; i < 24; i++) std::cout << std::endl; break;
             case KEY_EVENT_ID_OPT_DISPLAY   :   g_options.Display(!g_options.Display());
                                                 DisplayMsg(g_options.Display() ? "log entries displaying \n" : "log entries hiding \n");
                                                 break;

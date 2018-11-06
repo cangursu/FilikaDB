@@ -872,11 +872,13 @@ Datum orc_buffer_remote_test(PG_FUNCTION_ARGS)
         if (SocketResult::SR_SUCCESS == res)
         {
             LOG_LINE_GLOBAL ("InMemTest", "MemTestLoad --->");
-            MemTestLoad("MemTestReader", "/home/postgres/projects/filikadb/research/OrcInMem/pgext/test/data/TestDate10.in", &streamMem);
+            MemTestLoad("MemTestReader", "/home/postgres/projects/filikadb/research/OrcInMem/pgext/test/data/TestData10.in", &streamMem);
             LOG_LINE_GLOBAL ("InMemTest", "MemTestLoad ---<");
             streamMem.Release();
         }
+        streamMem.Release();
     }
+
     {
         OrcStreamRemote streamMem("MemIStream");
         streamMem.Address("127.0.0.1", 5001);
@@ -886,14 +888,14 @@ Datum orc_buffer_remote_test(PG_FUNCTION_ARGS)
         {
             LOG_LINE_GLOBAL ("OutMemTest", "MemTestReader --->");
             //std::unique_ptr<orc::InputStream> inStreamMem  (dynamic_cast<OrcMemStream<char> *>(streamMem.release()));
-            bool result = MemTestReader("MemTestReader", "/home/postgres/projects/filikadb/research/OrcInMem/pgext/test/data/TestDate10.out", &streamMem);
+            bool result = MemTestReader("MemTestReader", "/home/postgres/projects/filikadb/research/OrcInMem/pgext/test/data/TestData10.out", &streamMem);
             LOG_LINE_GLOBAL ("OutMemTest", "MemTestReader ---<   result:", result?"true":"false");
         }
     }
 
 
 
-//        bool b = OrcInmemTest("/home/postgres/projects/filikadb/research/OrcInMem/pgext/test/data/TestDate10");
+//        bool b = OrcInmemTest("/home/postgres/projects/filikadb/research/OrcInMem/pgext/test/data/TestData10");
 //        LOG_LINE_GLOBAL("XXX", "OrcInmemTest ->", b?"true":"false");
 
 

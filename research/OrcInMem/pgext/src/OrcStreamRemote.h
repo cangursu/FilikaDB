@@ -102,44 +102,24 @@ public:
     virtual ~OrcStreamRemote();
 
     // From orc::OutputStream  &&  orc::InputStream
-    virtual uint64_t           getLength() const;
-    virtual uint64_t           getNaturalReadSize() const;
-    virtual uint64_t           getNaturalWriteSize() const;
-    virtual void               read(void* buf, uint64_t length, uint64_t offset);
-    virtual void               write(const void* buf, size_t length);
-    virtual const std::string& getName() const;
-    virtual void               close();
+    virtual uint64_t            getLength() const;
+    virtual uint64_t            getNaturalReadSize() const;
+    virtual uint64_t            getNaturalWriteSize() const;
+    virtual void                read(void* buf, uint64_t length, uint64_t offset);
+    virtual void                write(const void* buf, size_t length);
+    virtual const std::string&  getName() const;
+    virtual void                close();
 
-    SocketResult               init();
-    SocketResult               init(const char *address, std::uint16_t post);
-    bool                       validateName();
-    std::uint64_t              refid();
-    StreamPacket               packet();
-
+    SocketResult                init();
+    SocketResult                init(const char *address, std::uint16_t post);
+    bool                        validateName();
+    std::uint64_t               refid();
+    StreamPacket                packet();
 
 
     // From SocketClientPacket
-    inline void OnErrorClient (SocketResult err)
-    {
-        std::cout << "ERROR : SClient::OnErrorClient - " << SocketResultText(err) << std::endl;
-    }
-
-    inline void OnRecvPacket  (StreamPacket &&packet)
-    {
-        msize_t         pyLen     = packet.PayloadLen();
-        msize_t         pyLenRead = 0;
-        const msize_t   buffLen   = 32;
-        byte_t          buff [buffLen];
-
-        std::stringstream ss;
-
-        for (msize_t i = 0; i < pyLen; i += buffLen)
-        {
-            if ((pyLenRead = packet.PayloadPart(buff, buffLen, i)) > 0)
-                ss << std::string((char*)buff, pyLenRead);
-        }
-        LOG_LINE_GLOBAL("ClientEcho", "PGEXT Packet:", ss.str());
-    }
+    void                        OnErrorClient (SocketResult err);
+    void                        OnRecvPacket  (StreamPacket &&packet);
 private:
 
     std::string _name;

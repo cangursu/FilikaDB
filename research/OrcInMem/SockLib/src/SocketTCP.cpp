@@ -126,14 +126,14 @@ SocketResult SocketTCP::SetNonBlock()
     int flags = fcntl(fd(), F_GETFL, 0);
     if (-1 == flags)
     {
-        perror("fcntl");
+        std::cerr << "ERROR: fcntl\n";
         return SocketResult::SR_ERROR;
     }
 
     flags |= O_NONBLOCK;
     if (-1 == fcntl(fd(), F_SETFL, flags))
     {
-        perror("fcntl");
+        std::cerr << "ERROR: fcntl\n";
         return SocketResult::SR_ERROR;
     }
 
@@ -183,7 +183,7 @@ ssize_t SocketTCP::Write (const void *pdata, size_t len)
 
     if (bytes == -1)
     {
-        std::cerr << "SocketTCP(" << Name() << ")::Write  ERROR - (" << errno << ") " << strerror(errno) << std::endl;
+        std::cerr << "SocketTCP(" << Name() << ")::Write  ERROR - (" << errno << "-" << ErrnoText(errno) << ") " << strerror(errno) << std::endl;
         Release();
     }
     else if (bytes == 0)

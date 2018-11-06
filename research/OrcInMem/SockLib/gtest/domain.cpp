@@ -88,6 +88,7 @@ TEST(SocketDomain, Connect)
     ASSERT_EQ (SocketResult::SR_SUCCESS, resSrv);
 }
 
+
 TEST(SocketDomain, Transmission_Echo)
 {
     TestServer<SocketDomain, TestServerClient<SocketDomain>> srv("TestServerGTest");
@@ -103,20 +104,20 @@ TEST(SocketDomain, Transmission_Echo)
     std::thread thSrv ( [&srv, &resSrv]() {resSrv = srv.LoopListen();} );
 
     ASSERT_EQ (SocketResult::SR_SUCCESS, cln.ConnectServer());
-    std::thread thCln ( [&cln, &resCln]() {resCln = cln.LoopRead();  } );
+    std::thread thCln ( [&cln, &resCln]() {resCln = cln.LoopStart();  } );
 
-    msleep(1);
+    msleep(10);
     EXPECT_EQ (1, srv.ClientCount());
 
     std::string data = "TestContent";
     EXPECT_EQ (SocketResult::SR_SUCCESS, cln.Send(data.c_str(), data.size()));
 
-    msleep(1);
+    msleep(10);
     EXPECT_STREQ (data.c_str(), srv.TestData(0).c_str());
     EXPECT_STREQ ((data + "::From-TestServerClient").c_str(), cln._testContent.c_str());
 
     srv.LoopListenStop();
-    cln.LoopReadStop();
+    cln.LoopStop();
 
     thSrv.join();
     thCln.join();
