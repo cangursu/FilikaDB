@@ -1,0 +1,1 @@
+For information please refer : filikadb/research/OrcInMem/doc
